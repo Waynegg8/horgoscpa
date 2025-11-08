@@ -55,6 +55,16 @@ export default {
 		if (path.startsWith("/internal/api/") && method === "OPTIONS") {
 			return corsPreflightResponse(request, env);
 		}
+		
+		// CORS Preflight：處理 /api/v1/public/* 的 OPTIONS
+		if (path.startsWith("/api/v1/public/") && method === "OPTIONS") {
+			return corsPreflightResponse(request, env);
+		}
+
+		// Public API - 获取已发布文章列表（不需要登录）
+		if (path === "/api/v1/public/articles" || path.startsWith("/api/v1/public/articles/")) {
+			return handleCMS(request, env, null, requestId, url, path);
+		}
 
 	// ⚡ Cache Test Endpoint (for debugging)
 	if (path === "/internal/api/v1/cache-test") {

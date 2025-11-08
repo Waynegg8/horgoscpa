@@ -305,7 +305,7 @@
                 <td>${statusTxt}</td>
                 <td>${r.updatedAt||''}</td>
                 <td>
-                  <button class="btn" type="button" onclick="alert('FAQ 編輯器開發中...')">編輯</button>
+                  <button class="btn" type="button" onclick="location.assign('/internal/faq-editor.html?id=${r.id}')">編輯</button>
                   <button class="btn" type="button" onclick="deleteFAQ(${r.id})">刪除</button>
                 </td>
               `;
@@ -352,7 +352,7 @@
                 <div class="doc-title">${r.title||r.key} ${badge}</div>
                 <div class="doc-meta"><div class="doc-meta-item">最後更新：${r.updatedAt||''}</div></div>
                 <div class="doc-footer" style="justify-content:flex-end;">
-                  <button class="btn" type="button" onclick="alert('服務編輯器開發中...')">編輯</button>
+                  <button class="btn" type="button" onclick="location.assign('/internal/service-editor.html?id=${r.id}')">編輯</button>
                 </div>
               `;
               wrap.appendChild(div);
@@ -392,7 +392,7 @@
                 <td>${r.updatedAt||''}</td>
                 <td>
                   <button class="btn" type="button" onclick="window.open('${r.fileUrl||''}', '_blank')">下載</button>
-                  <button class="btn" type="button" onclick="alert('資源編輯器開發中...')">編輯</button>
+                  <button class="btn" type="button" onclick="location.assign('/internal/resource-editor.html?id=${r.id}')">編輯</button>
                   <button class="btn" type="button" onclick="deleteResource(${r.id})">刪除</button>
                 </td>
               `;
@@ -422,8 +422,8 @@
         // Events
         let t1=null,t2=null,t3=null;
         document.getElementById('btnNewPost').addEventListener('click', () => location.assign('/internal/blog-editor.html'));
-        document.getElementById('btnNewFAQ').addEventListener('click', () => alert('FAQ 編輯器開發中...'));
-        document.getElementById('btnUploadResource').addEventListener('click', () => alert('資源上傳功能開發中...'));
+        document.getElementById('btnNewFAQ').addEventListener('click', () => location.assign('/internal/faq-editor.html'));
+        document.getElementById('btnUploadResource').addEventListener('click', () => location.assign('/internal/resource-editor.html'));
         
         document.getElementById('blogSearch').addEventListener('input', ()=>{ clearTimeout(t1); t1=setTimeout(renderBlog, 300); });
         document.getElementById('faqSearch').addEventListener('input', ()=>{ clearTimeout(t2); t2=setTimeout(renderFAQ, 300); });

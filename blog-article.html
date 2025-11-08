@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title id="page-title">文章載入中... | 霍爾果斯會計師事務所</title>
+  <meta name="description" id="page-description" content="專業會計、稅務、審計及商務諮詢服務">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- Material Symbols 圖示庫 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- 引用全站共用樣式 -->
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <link rel="stylesheet" href="/assets/css/navbar.css" />
+  <link rel="stylesheet" href="/assets/css/footer.css" />
+  <link rel="stylesheet" href="/assets/css/blog-article-modern.css" />
+  
+  <!-- 移動版導航欄樣式 -->
+  <link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
+</head>
+<body>
+  <!-- 導航欄 -->
+  <nav class="site-nav">
+    <div class="nav-container">
+      <div class="logo">
+        <a href="/index.html">
+          <div class="logo-container">
+            <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+            <div class="logo-sub">HorgosCPA</div>
+          </div>
+        </a>
+      </div>
+      <input type="checkbox" id="nav-toggle" class="nav-toggle">
+      <label for="nav-toggle" class="nav-toggle-label">
+        <span></span>
+      </label>
+      <ul class="nav-menu">
+        <li><a href="/services.html">專業服務</a></li>
+        <li><a href="/team.html">專業團隊</a></li>
+        <li><a href="/blog.html" class="active">專欄文章</a></li>
+        <li><a href="/faq.html">常見問題</a></li>
+        <li><a href="/resources.html">資源中心</a></li>
+        <li><a href="/contact.html">聯繫我們</a></li>
+        <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 移動版導航欄 -->
+  <div class="mobile-navbar" style="display: none;">
+    <div class="mobile-nav-container">
+      <div class="mobile-menu-btn" id="mobileMenuBtn">
+        <span class="material-symbols-rounded">menu</span>
+      </div>
+      <div class="logo">
+        <a href="/index.html">
+          <div class="logo-container">
+            <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+            <div class="logo-sub">HorgosCPA</div>
+          </div>
+        </a>
+      </div>
+      <div class="mobile-nav-spacer"></div>
+    </div>
+    
+    <div class="mobile-menu" id="mobileMenu">
+      <ul class="mobile-menu-links">
+        <li><a href="/services.html" class="mobile-nav-link">專業服務</a></li>
+        <li><a href="/team.html" class="mobile-nav-link">專業團隊</a></li>
+        <li><a href="/blog.html" class="mobile-nav-link">專欄文章</a></li>
+        <li><a href="/faq.html" class="mobile-nav-link">常見問題</a></li>
+        <li><a href="/resources.html" class="mobile-nav-link">資源中心</a></li>
+        <li><a href="/contact.html" class="mobile-nav-link">聯繫我們</a></li>
+        <li><a href="/booking.html" class="mobile-consult-btn">免費諮詢</a></li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- 加载提示 -->
+  <div id="loading" style="text-align: center; padding: 100px 20px;">
+    <div style="font-size: 24px; color: #6b7280; margin-bottom: 16px;">載入中...</div>
+    <div style="width: 40px; height: 40px; border: 4px solid #f3f4f6; border-top: 4px solid #2c5f7c; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+  </div>
+  
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  
+  <!-- 文章内容 -->
+  <article id="article-content" style="display: none; max-width: 900px; margin: 40px auto; padding: 0 24px;"></article>
+  
+  <!-- 错误提示 -->
+  <div id="error" style="display: none; text-align: center; padding: 100px 20px;">
+    <div style="font-size: 48px; margin-bottom: 16px;">😔</div>
+    <h2 style="color: #1f2937; margin-bottom: 8px;">文章不存在</h2>
+    <p style="color: #6b7280; margin-bottom: 24px;">抱歉，您要找的文章可能已被刪除或不存在。</p>
+    <a href="/blog.html" style="display: inline-block; padding: 12px 24px; background: #2c5f7c; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">返回部落格</a>
+  </div>
+  
+  <!-- 頁尾區域 -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-content">
+        <!-- Logo與簡介 -->
+        <div class="footer-logo">
+          <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="footer-logo-img">
+          <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
+          <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
+          <!-- LINE按鈕 -->
+          <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="footer-line-btn">
+            <span class="line-icon"></span>
+            <span>加入LINE好友</span>
+          </a>
+        </div>
+        
+        <!-- 聯絡資訊 -->
+        <div class="footer-contact">
+          <h3>聯絡我們</h3>
+          <ul class="contact-info">
+            <li>
+              <i class="icon-contact"><span class="material-symbols-rounded">location_on</span></i>
+              <span>台中市西區建國路21號3樓之1</span>
+            </li>
+            <li>
+              <i class="icon-contact"><span class="material-symbols-rounded">call</span></i>
+              <a href="tel:+886422205606">04-2220-5606</a>
+            </li>
+            <li>
+              <i class="icon-contact"><span class="material-symbols-rounded">schedule</span></i>
+              <span>週一至週五 8:30-17:30</span>
+            </li>
+            <li>
+              <i class="icon-contact"><span class="material-symbols-rounded">mail</span></i>
+              <a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- 快速連結 -->
+        <div class="footer-links">
+          <h3>快速連結</h3>
+          <ul class="quick-links">
+            <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
+            <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 專業團隊</a></li>
+            <li><a href="/services.html"><span class="material-symbols-rounded icon-link">business_center</span> 專業服務</a></li>
+            <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 專欄文章</a></li>
+            <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
+            <li><a href="/resources.html"><span class="material-symbols-rounded icon-link">folder</span> 資源中心</a></li>
+            <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯繫我們</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- 版權資訊 -->
+      <div class="footer-bottom">
+        <div class="footer-text">
+          <p>&copy; 2025 霍爾果斯會計師事務所</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 返回頂部按鈕 -->
+    <div class="back-to-top">
+      <span class="material-symbols-rounded">arrow_upward</span>
+    </div>
+  </footer>
+  
+  <script>
+    const onProdHost = location.hostname.endsWith('horgoscpa.com');
+    const apiBase = onProdHost ? '/api/v1/public' : 'https://www.horgoscpa.com/api/v1/public';
+    
+    // 从 URL 获取文章 slug 或 ID
+    const urlParams = new URLSearchParams(window.location.search);
+    const articleSlug = urlParams.get('slug') || urlParams.get('id');
+    
+    if (!articleSlug) {
+      showError();
+    } else {
+      loadArticle(articleSlug);
+    }
+    
+    async function loadArticle(slugOrId) {
+      try {
+        const res = await fetch(`${apiBase}/articles/${slugOrId}`);
+        if (!res.ok) {
+          showError();
+          return;
+        }
+        
+        const json = await res.json();
+        if (!json.ok || !json.data) {
+          showError();
+          return;
+        }
+        
+        const article = json.data;
+        renderArticle(article);
+      } catch (err) {
+        console.error('載入文章失敗:', err);
+        showError();
+      }
+    }
+    
+    function renderArticle(article) {
+      // 更新页面标题和 meta
+      document.getElementById('page-title').textContent = article.title + ' | 霍爾果斯會計師事務所';
+      document.getElementById('page-description').content = article.summary || article.seoDescription || '';
+      
+      // 渲染文章内容
+      const contentDiv = document.getElementById('article-content');
+      const publishedDate = article.publishedAt ? new Date(article.publishedAt) : new Date();
+      const tags = Array.isArray(article.tags) ? article.tags : [];
+      
+      contentDiv.innerHTML = `
+        ${article.featuredImage ? `
+        <div style="margin-bottom: 32px; border-radius: 12px; overflow: hidden;">
+          <img src="${article.featuredImage}" alt="${article.title}" style="width: 100%; height: auto; display: block;">
+        </div>
+        ` : ''}
+        
+        <header style="margin-bottom: 32px;">
+          <div style="color: #2c5f7c; font-weight: 600; margin-bottom: 12px;">📁 ${article.category || '未分類'}</div>
+          <h1 style="font-size: 36px; font-weight: 700; color: #1f2937; margin: 0 0 16px 0; line-height: 1.3;">${article.title}</h1>
+          ${article.summary ? `<p style="font-size: 18px; color: #6b7280; margin: 0 0 16px 0;">${article.summary}</p>` : ''}
+          <div style="display: flex; gap: 16px; color: #9ca3af; font-size: 14px; flex-wrap: wrap;">
+            <span>📅 ${publishedDate.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <span>👁️ ${Number(article.viewCount || 0)} 次瀏覽</span>
+            ${tags.length > 0 ? `<span>🏷️ ${tags.map(t => `<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-right: 4px;">${t}</span>`).join('')}</span>` : ''}
+          </div>
+        </header>
+        
+        <div style="font-size: 18px; line-height: 1.8; color: #374151;">
+          ${article.content}
+        </div>
+        
+        <div style="margin-top: 60px; padding-top: 32px; border-top: 2px solid #f0f0f0; text-align: center;">
+          <a href="/blog.html" style="display: inline-block; padding: 12px 32px; background: #2c5f7c; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s;">返回部落格列表</a>
+        </div>
+      `;
+      
+      document.getElementById('loading').style.display = 'none';
+      contentDiv.style.display = 'block';
+    }
+    
+    function showError() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+    }
+    
+    // 返回頂部按鈕功能
+    document.addEventListener('DOMContentLoaded', function() {
+      const backToTopButton = document.querySelector('.back-to-top');
+      
+      // 初始隱藏按鈕
+      if (backToTopButton) {
+        backToTopButton.classList.remove('visible');
+        
+        // 監聽滾動事件
+        window.addEventListener('scroll', function() {
+          if (window.pageYOffset > 300) {
+            backToTopButton.classList.add('visible');
+          } else {
+            backToTopButton.classList.remove('visible');
+          }
+        });
+        
+        // 點擊事件
+        backToTopButton.addEventListener('click', function() {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        });
+      }
+    });
+  </script>
+  
+  <!-- 導航欄功能腳本 -->
+  <script src="/assets/js/navbar.js"></script>
+  
+  <!-- 移動版導航欄功能腳本 -->
+  <script src="/assets/js/mobile-navbar.js"></script>
+</body>
+</html>
+

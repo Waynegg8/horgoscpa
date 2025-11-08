@@ -4,6 +4,91 @@ export async function handleCMS(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
   const method = request.method.toUpperCase();
 
+  // Public API - 获取已发布的文章列表（不需要登录）
+  if (path === "/api/v1/public/articles" && method === "GET") {
+    try {
+      const p = url.searchParams;
+      const category = (p.get("category") || "").trim();
+      const tag = (p.get("tag") || "").trim();
+      const keyword = (p.get("keyword") || p.get("q") || "").trim();
+      const page = Math.max(1, parseInt(p.get("page") || "1", 10));
+      const perPage = Math.min(50, Math.max(1, parseInt(p.get("perPage") || "10", 10)));
+      const offset = (page - 1) * perPage;
+      const where = ["is_deleted = 0", "is_published = 1"]; const binds = [];
+      if (category) { where.push("category = ?"); binds.push(category); }
+      if (tag) { where.push("tags LIKE ?"); binds.push(`%${tag}%`); }
+      if (keyword) { where.push("(title LIKE ? OR summary LIKE ?)"); binds.push(`%${keyword}%`, `%${keyword}%`); }
+      const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+      const totalRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS total FROM ExternalArticles ${whereSql}`).bind(...binds).first();
+      const rows = await env.DATABASE.prepare(
+        `SELECT article_id, title, slug, summary, featured_image, category, tags, published_at, view_count
+         FROM ExternalArticles
+         ${whereSql}
+         ORDER BY published_at DESC, article_id DESC
+         LIMIT ? OFFSET ?`
+      ).bind(...binds, perPage, offset).all();
+      const data = (rows?.results || []).map(r => ({
+        id: r.article_id,
+        title: r.title,
+        slug: r.slug,
+        summary: r.summary,
+        featuredImage: r.featured_image,
+        category: r.category || '',
+        tags: (()=>{ try { return JSON.parse(r.tags || '[]'); } catch(_) { return []; } })(),
+        publishedAt: r.published_at,
+        viewCount: Number(r.view_count || 0),
+      }));
+      return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, page, perPage, total: Number(totalRow?.total || 0) } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+
+  // Public API - 获取单篇已发布文章
+  if (path.match(/^\/api\/v1\/public\/articles\/[\w-]+$/) && method === "GET") {
+    try {
+      const slugOrId = path.split('/').pop();
+      const isId = /^\d+$/.test(slugOrId);
+      const article = await env.DATABASE.prepare(
+        `SELECT article_id, title, slug, summary, content, featured_image, category, tags, 
+                published_at, view_count, seo_title, seo_description, seo_keywords
+         FROM ExternalArticles
+         WHERE ${isId ? 'article_id' : 'slug'} = ? AND is_deleted = 0 AND is_published = 1`
+      ).bind(isId ? parseInt(slugOrId) : slugOrId).first();
+      
+      if (!article) {
+        return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"文章不存在", meta:{ requestId } }, corsHeaders);
+      }
+      
+      // 增加浏览次数
+      await env.DATABASE.prepare(
+        `UPDATE ExternalArticles SET view_count = view_count + 1 WHERE article_id = ?`
+      ).bind(article.article_id).run();
+      
+      const data = {
+        id: article.article_id,
+        title: article.title,
+        slug: article.slug,
+        summary: article.summary,
+        content: article.content,
+        featuredImage: article.featured_image,
+        category: article.category,
+        tags: (()=>{ try { return JSON.parse(article.tags || '[]'); } catch(_) { return []; } })(),
+        publishedAt: article.published_at,
+        viewCount: Number(article.view_count || 0) + 1,
+        seoTitle: article.seo_title,
+        seoDescription: article.seo_description,
+        seoKeywords: article.seo_keywords,
+      };
+      
+      return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+
   // 全部端點皆要求管理員；上層 router 已檢查，但這裡再保險
   if (!me?.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
 
