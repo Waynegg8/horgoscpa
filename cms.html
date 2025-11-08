@@ -10,10 +10,27 @@
     <link rel="stylesheet" href="/assets/css/internal-system.css" />
     <link rel="stylesheet" href="/assets/css/internal-components.css" />
     <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      
       .cms-content {
+        flex: 1 0 auto;
         padding: 24px;
         max-width: 1400px;
         margin: 0 auto;
+        width: 100%;
+      }
+      
+      #footer-placeholder {
+        flex-shrink: 0;
       }
       
       .tab-nav {
@@ -137,6 +154,12 @@
           grid-template-columns: repeat(3, 1fr);
         }
       }
+      
+      .services-count {
+        font-size: 14px;
+        color: #6b7280;
+        font-weight: normal;
+      }
     </style>
   </head>
   <body>
@@ -240,11 +263,12 @@
       <section id="panel-services" class="tab-panel" role="tabpanel">
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">服務介紹管理</h2>
-            <span class="text-muted">共 4 個服務介紹</span>
+            <h2 class="card-title">服務介紹管理 <span id="servicesCount" class="services-count"></span></h2>
           </div>
           <div class="card-body">
-            <div id="serviceCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"></div>
+            <div id="serviceCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              <div class="text-center text-muted" style="grid-column: 1 / -1;">載入中…</div>
+            </div>
           </div>
         </div>
       </section>
@@ -404,7 +428,7 @@
               const rows = json.data || [];
               tbody.innerHTML = '';
               if (!rows.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">尚無資料</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">尚無文章</td></tr>';
                 return;
               }
               
@@ -426,7 +450,8 @@
                 `;
                 tbody.appendChild(tr);
               });
-            } catch (_) {
+            } catch (err) {
+              console.error('載入文章失敗:', err);
               tbody.innerHTML = '<tr><td colspan="7" class="text-center text-error">載入失敗</td></tr>';
             }
           },
@@ -495,7 +520,7 @@
               const rows = json.data || [];
               tbody.innerHTML = '';
               if (!rows.length) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">尚無資料</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">尚無 FAQ</td></tr>';
                 return;
               }
               
@@ -515,7 +540,8 @@
                 `;
                 tbody.appendChild(tr);
               });
-            } catch (_) {
+            } catch (err) {
+              console.error('載入 FAQ 失敗:', err);
               tbody.innerHTML = '<tr><td colspan="6" class="text-center text-error">載入失敗</td></tr>';
             }
           },
@@ -541,19 +567,24 @@
         const services = {
           async render() {
             const wrap = document.getElementById('serviceCards');
-            wrap.innerHTML = '<div class="text-center text-muted">載入中…</div>';
+            const countEl = document.getElementById('servicesCount');
+            wrap.innerHTML = '<div class="text-center text-muted" style="grid-column: 1 / -1;">載入中…</div>';
             
             try {
               const res = await fetch(`${apiBase}/admin/services`, { credentials: 'include' });
               if (await utils.handleApiError(res)) return;
               
               const json = await res.json();
+              console.log('Services API response:', json);
+              
               if (!res.ok || !json?.ok) throw new Error();
               
               const rows = json.data || [];
+              countEl.textContent = `（共 ${rows.length} 個服務）`;
+              
               wrap.innerHTML = '';
               if (!rows.length) {
-                wrap.innerHTML = '<div class="text-center text-muted">尚無資料</div>';
+                wrap.innerHTML = '<div class="text-center text-muted" style="grid-column: 1 / -1;">尚無服務介紹</div>';
                 return;
               }
               
@@ -565,7 +596,7 @@
                   <div class="doc-title">${r.title || r.key} ${badge}</div>
                   <div class="doc-meta">
                     <div class="doc-meta-item">Key: ${r.key}</div>
-                    <div class="doc-meta-item">最後更新：${r.updatedAt || ''}</div>
+                    <div class="doc-meta-item">最後更新：${r.updatedAt || '—'}</div>
                   </div>
                   <div class="doc-footer">
                     <button class="btn btn-sm btn-primary" onclick="location.assign('/internal/service-editor.html?id=${r.id}')">編輯</button>
@@ -573,8 +604,10 @@
                 `;
                 wrap.appendChild(div);
               });
-            } catch (_) {
-              wrap.innerHTML = '<div class="text-center text-error">載入失敗</div>';
+            } catch (err) {
+              console.error('載入服務介紹失敗:', err);
+              wrap.innerHTML = '<div class="text-center text-error" style="grid-column: 1 / -1;">載入失敗</div>';
+              countEl.textContent = '';
             }
           }
         };
@@ -604,7 +637,7 @@
               const rows = json.data || [];
               tbody.innerHTML = '';
               if (!rows.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">尚無資料</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">尚無資源</td></tr>';
                 return;
               }
               
@@ -625,7 +658,8 @@
                 `;
                 tbody.appendChild(tr);
               });
-            } catch (_) {
+            } catch (err) {
+              console.error('載入資源失敗:', err);
               tbody.innerHTML = '<tr><td colspan="7" class="text-center text-error">載入失敗</td></tr>';
             }
           },

@@ -1,0 +1,9 @@
+dashboard 101-200 完成
+组件提取:
+  - StatCard.jsx (统计卡片组件)
+  - ListCard.jsx (列表卡片及其4个变体)
+  - utils/formatUtils.js (格式化工具函数)
+新代码: 组件已添加到组件库
+对比: ✓ 功能完整（8/8项）
+回溯: 无需回溯（实现方式一致）
+
