@@ -1136,16 +1136,26 @@
                 try {
                     // 批量修改所有选中的任务
                     const promises = batchSelectedTasks.map(taskId => 
-                        fetch(`/internal/api/v1/tasks/${taskId}`, {
-                            method: 'PATCH',
+                        fetch(`/internal/api/v1/tasks/${taskId}/update-status`, {
+                            method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             credentials: 'include',
-                            body: JSON.stringify({ status: newStatus })
+                            body: JSON.stringify({ 
+                                status: newStatus,
+                                progress_note: '批量修改'
+                            })
                         })
                     );
                     
-                    await Promise.all(promises);
-                    alert('✅ 批量修改成功！');
+                    const results = await Promise.all(promises);
+                    
+                    // 检查是否有失败的请求
+                    const failedCount = results.filter(r => !r.ok).length;
+                    if (failedCount > 0) {
+                        alert(`⚠️ 批量修改完成，但有 ${failedCount} 個任務失敗`);
+                    } else {
+                        alert('✅ 批量修改成功！');
+                    }
                     
                     // 重新加载数据
                     await loadTaskOverview();

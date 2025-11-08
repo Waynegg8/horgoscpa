@@ -256,8 +256,7 @@
           frag.innerHTML = [
             statCard('本月總工時', fmtNum(h.total), hoursMeta),
             listCard('我的任務（待辦/進行中）', taskRows),
-            receiptsPending.length > 0 ? listCard('⚠️ 收據已開但任務未完成', receiptsHtml) : '',
-            listCard('我的假期', leavesHtml)
+            receiptsPending.length > 0 ? listCard('⚠️ 收據已開但任務未完成', receiptsHtml) : ''
           ].filter(Boolean).join('');
           grid.appendChild(frag);
         }
