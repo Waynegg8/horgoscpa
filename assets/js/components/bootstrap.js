@@ -115,16 +115,85 @@
     });
   }
 
+  function bindLogout(){
+    const logoutBtn = document.getElementById('internalLogoutBtn');
+    console.log('[Bootstrap] 登出按鈕:', logoutBtn);
+    
+    if (!logoutBtn) {
+      console.error('[Bootstrap] 找不到登出按鈕！');
+      return;
+    }
+    
+    console.log('[Bootstrap] 開始綁定登出事件');
+    
+    logoutBtn.addEventListener('click', async function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      console.log('[Bootstrap] 登出按鈕被點擊');
+      
+      if (!confirm('確定要登出嗎？')) {
+        console.log('[Bootstrap] 用戶取消登出');
+        return;
+      }
+
+      logoutBtn.disabled = true;
+      logoutBtn.textContent = '登出中...';
+      
+      console.log('[Bootstrap] 開始登出流程...');
+
+      try {
+        const apiUrl = '/internal/api/v1/auth/logout';
+        console.log('[Bootstrap] 呼叫 API:', apiUrl);
+        
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+
+        console.log('[Bootstrap] API 回應狀態:', res.status);
+        
+        const json = await res.json().catch(() => {
+          console.error('[Bootstrap] 無法解析 JSON');
+          return null;
+        });
+        
+        console.log('[Bootstrap] API 回應:', json);
+        
+        if (res.ok && json && json.ok === true) {
+          // 登出成功，導向登入頁
+          console.log('[Bootstrap] 登出成功，導向登入頁');
+          window.location.href = '/login.html';
+        } else {
+          // 登出失敗，顯示錯誤訊息
+          console.error('[Bootstrap] 登出失敗:', json);
+          alert('登出失敗: ' + (json?.message || '未知錯誤'));
+          logoutBtn.disabled = false;
+          logoutBtn.textContent = '登出';
+        }
+      } catch (err) {
+        console.error('[Bootstrap] 登出錯誤:', err);
+        alert('網路或伺服器異常: ' + err.message);
+        logoutBtn.disabled = false;
+        logoutBtn.textContent = '登出';
+      }
+    });
+    
+    console.log('[Bootstrap] 登出事件監聽器已註冊');
+  }
+
   async function ensureNavbar(){
     if (document.querySelector('.internal-navbar')) return;
     if (!document.body) {
       console.warn('[Bootstrap] document.body 尚未就緒，等待...');
       return;
     }
-    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v4');
+    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v5');
     document.body.insertAdjacentHTML('afterbegin', html);
     markActiveNav();
     bindMobileToggle();
+    bindLogout();
     populateUser();
   }
 
