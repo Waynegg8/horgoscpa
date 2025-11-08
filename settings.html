@@ -1619,8 +1619,14 @@
         async function loadMyProfile() {
             try {
                 const userId = currentUser.user_id;
+                console.log('[Settings] 加载个人资料, userId:', userId);
+                console.log('[Settings] currentUser:', currentUser);
+                
                 const res = await fetch(`/internal/api/v1/users/${userId}`, { credentials: 'include' });
+                console.log('[Settings] API 响应状态:', res.status);
+                
                 const json = await res.json();
+                console.log('[Settings] API 响应数据:', json);
                 
                 if (json.ok && json.data) {
                     const user = json.data;
@@ -1629,10 +1635,14 @@
                     document.getElementById('myHireDate').value = user.hire_date || '';
                     document.getElementById('myGender').value = user.gender || '';
                     document.getElementById('myEmail').value = user.email || '';
+                    console.log('[Settings] ✅ 个人资料加载成功');
+                } else {
+                    console.error('[Settings] API 返回失败:', json);
+                    alert('加载个人资料失败: ' + (json.message || '未知错误'));
                 }
             } catch (e) {
-                console.error('加载个人资料失败:', e);
-                alert('加载个人资料失败');
+                console.error('[Settings] 加载个人资料异常:', e);
+                alert('加载个人资料失败: ' + e.message);
             }
         }
         
