@@ -45,7 +45,8 @@ if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
 </header>
 
 <script>
-(function() {
+// 使用 setTimeout 确保 DOM 完全加载后再绑定事件
+setTimeout(function() {
   'use strict';
 
   // 處理移動端選單切換
@@ -63,11 +64,9 @@ if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
   console.log('[Navbar] 登出按鈕:', logoutBtn);
   
   if (logoutBtn) {
-    // 移除可能存在的旧事件监听器
-    const newLogoutBtn = logoutBtn.cloneNode(true);
-    logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+    console.log('[Navbar] 開始綁定登出事件');
     
-    newLogoutBtn.addEventListener('click', async function(e) {
+    logoutBtn.addEventListener('click', async function(e) {
       e.preventDefault();
       e.stopPropagation();
       
@@ -78,8 +77,8 @@ if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
         return;
       }
 
-      newLogoutBtn.disabled = true;
-      newLogoutBtn.textContent = '登出中...';
+      logoutBtn.disabled = true;
+      logoutBtn.textContent = '登出中...';
       
       console.log('[Navbar] 開始登出流程...');
 
@@ -110,14 +109,14 @@ if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
           // 登出失敗，顯示錯誤訊息
           console.error('[Navbar] 登出失敗:', json);
           alert('登出失敗: ' + (json?.message || '未知錯誤'));
-          newLogoutBtn.disabled = false;
-          newLogoutBtn.textContent = '登出';
+          logoutBtn.disabled = false;
+          logoutBtn.textContent = '登出';
         }
       } catch (err) {
         console.error('[Navbar] 登出錯誤:', err);
         alert('網路或伺服器異常: ' + err.message);
-        newLogoutBtn.disabled = false;
-        newLogoutBtn.textContent = '登出';
+        logoutBtn.disabled = false;
+        logoutBtn.textContent = '登出';
       }
     });
     
@@ -135,7 +134,7 @@ if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
       link.classList.add('active');
     }
   });
-})();
+}, 0);
 </script>
 
 
