@@ -59,3 +59,4 @@ WHERE entity_type IN ('client', 'receipt', 'task')
 -- - related_entity_id 記錄原始的 entity_id
 -- - 所有附件的 category='attachment'，scope='task'
 
+
