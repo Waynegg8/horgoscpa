@@ -10,171 +10,290 @@
     <link rel="stylesheet" href="/assets/css/internal-system.css" />
     <link rel="stylesheet" href="/assets/css/internal-components.css" />
     <style>
+      .cms-content {
+        padding: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+      
+      .tab-nav {
+        display: flex;
+        gap: 8px;
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 24px;
+      }
+      
+      .tab-btn {
+        padding: 12px 24px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: #6b7280;
+        transition: all 0.2s;
+        margin-bottom: -2px;
+      }
+      
+      .tab-btn:hover {
+        color: #1f2937;
+        background: #f9fafb;
+      }
+      
+      .tab-btn.active {
+        color: #2563eb;
+        border-bottom-color: #2563eb;
+      }
+      
+      .tab-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
       .tab-panel {
         display: none;
       }
+      
       .tab-panel.active {
         display: block;
+      }
+      
+      .filter-bar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      
+      .filter-spacer {
+        flex: 1;
+      }
+      
+      .input-sm {
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      
+      .search-input {
+        min-width: 200px;
+      }
+      
+      .doc-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 16px;
+        transition: all 0.2s;
+      }
+      
+      .doc-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+      
+      .doc-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #1f2937;
+      }
+      
+      .doc-meta {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 12px;
+      }
+      
+      .doc-meta-item {
+        margin-bottom: 4px;
+      }
+      
+      .doc-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+      
+      .grid-cols-1 {
+        grid-template-columns: repeat(1, 1fr);
+      }
+      
+      @media (min-width: 768px) {
+        .md\:grid-cols-2 {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      
+      @media (min-width: 1024px) {
+        .lg\:grid-cols-3 {
+          grid-template-columns: repeat(3, 1fr);
+        }
       }
     </style>
   </head>
   <body>
     <div id="navbar-placeholder"></div>
 
-    <div class="page-container">
+    <main class="cms-content">
       <div id="permBar" class="alert alert-error" style="display:none; margin-bottom:20px;" role="alert">您沒有權限存取此模組</div>
 
-      <nav class="tab-nav" role="tablist" aria-label="內容類型" style="margin-bottom:20px;">
+      <nav class="tab-nav" role="tablist" aria-label="內容類型">
         <button class="tab-btn active" role="tab" aria-selected="true" data-tab="blog">Blog 文章</button>
         <button class="tab-btn" role="tab" aria-selected="false" data-tab="faq">FAQ</button>
         <button class="tab-btn" role="tab" aria-selected="false" data-tab="services">服務介紹</button>
         <button class="tab-btn" role="tab" aria-selected="false" data-tab="resources">資源下載</button>
       </nav>
 
-      <main class="tab-content">
-        <!-- Blog 文章 -->
-        <section id="panel-blog" class="tab-panel active" role="tabpanel">
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">Blog 文章管理</h2>
-              <button id="btnNewPost" class="btn btn-primary" type="button">+ 新增文章</button>
+      <!-- Blog 文章 -->
+      <section id="panel-blog" class="tab-panel active" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Blog 文章管理</h2>
+            <button id="btnNewPost" class="btn btn-primary" type="button">+ 新增文章</button>
+          </div>
+          <div class="card-body">
+            <div class="filter-bar">
+              <select id="blogStatus" class="input-sm">
+                <option value="all">全部狀態</option>
+                <option value="published">已發布</option>
+                <option value="draft">草稿</option>
+              </select>
+              <select id="blogCategory" class="input-sm">
+                <option value="all">全部分類</option>
+              </select>
+              <input id="blogTags" type="text" placeholder="標籤（逗號分隔）" class="input-sm" />
+              <div class="filter-spacer"></div>
+              <input id="blogSearch" type="search" placeholder="搜尋標題…" class="input-sm search-input" />
             </div>
-            <div class="card-body">
-              <div class="filter-bar">
-                <select id="blogStatus" class="input-sm">
-                  <option value="all">全部狀態</option>
-                  <option value="published">已發布</option>
-                  <option value="draft">草稿</option>
-                </select>
-                <select id="blogCategory" class="input-sm">
-                  <option value="all">全部分類</option>
-                </select>
-                <input id="blogTags" type="text" placeholder="標籤（逗號分隔）" class="input-sm" />
-                <div class="filter-spacer"></div>
-                <input id="blogSearch" type="search" placeholder="搜尋標題…" class="input-sm search-input" />
-              </div>
-              <div class="table-wrapper">
-                <table class="table" aria-label="文章列表">
-                  <thead>
-                    <tr>
-                      <th>標題</th>
-                      <th>分類</th>
-                      <th>標籤</th>
-                      <th>狀態</th>
-                      <th>更新時間</th>
-                      <th>瀏覽數</th>
-                      <th>操作</th>
-                    </tr>
-                  </thead>
-                  <tbody id="blogTbody">
-                    <tr><td colspan="7" class="text-center text-muted">載入中…</td></tr>
-                  </tbody>
-                </table>
-              </div>
+            <div class="table-wrapper">
+              <table class="table" aria-label="文章列表">
+                <thead>
+                  <tr>
+                    <th>標題</th>
+                    <th>分類</th>
+                    <th>標籤</th>
+                    <th>狀態</th>
+                    <th>更新時間</th>
+                    <th>瀏覽數</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="blogTbody">
+                  <tr><td colspan="7" class="text-center text-muted">載入中…</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- FAQ -->
-        <section id="panel-faq" class="tab-panel" role="tabpanel">
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">FAQ 管理</h2>
-              <button id="btnNewFAQ" class="btn btn-primary" type="button">+ 新增 FAQ</button>
+      <!-- FAQ -->
+      <section id="panel-faq" class="tab-panel" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">FAQ 管理</h2>
+            <button id="btnNewFAQ" class="btn btn-primary" type="button">+ 新增 FAQ</button>
+          </div>
+          <div class="card-body">
+            <div class="filter-bar">
+              <select id="faqCategory" class="input-sm">
+                <option value="all">全部分類</option>
+              </select>
+              <select id="faqStatus" class="input-sm">
+                <option value="all">全部狀態</option>
+                <option value="published">已發布</option>
+                <option value="draft">草稿</option>
+              </select>
+              <div class="filter-spacer"></div>
+              <input id="faqSearch" type="search" placeholder="搜尋問題…" class="input-sm search-input" />
             </div>
-            <div class="card-body">
-              <div class="filter-bar">
-                <select id="faqCategory" class="input-sm">
-                  <option value="all">全部分類</option>
-                </select>
-                <select id="faqStatus" class="input-sm">
-                  <option value="all">全部狀態</option>
-                  <option value="published">已發布</option>
-                  <option value="draft">草稿</option>
-                </select>
-                <div class="filter-spacer"></div>
-                <input id="faqSearch" type="search" placeholder="搜尋問題…" class="input-sm search-input" />
-              </div>
-              <div class="table-wrapper">
-                <table class="table" aria-label="FAQ 列表">
-                  <thead>
-                    <tr>
-                      <th>分類</th>
-                      <th>問題</th>
-                      <th>排序</th>
-                      <th>狀態</th>
-                      <th>更新時間</th>
-                      <th>操作</th>
-                    </tr>
-                  </thead>
-                  <tbody id="faqTbody">
-                    <tr><td colspan="6" class="text-center text-muted">載入中…</td></tr>
-                  </tbody>
-                </table>
-              </div>
+            <div class="table-wrapper">
+              <table class="table" aria-label="FAQ 列表">
+                <thead>
+                  <tr>
+                    <th>分類</th>
+                    <th>問題</th>
+                    <th>排序</th>
+                    <th>狀態</th>
+                    <th>更新時間</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="faqTbody">
+                  <tr><td colspan="6" class="text-center text-muted">載入中…</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- 服務介紹 -->
-        <section id="panel-services" class="tab-panel" role="tabpanel">
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">服務介紹管理</h2>
-              <span class="text-muted">共 4 個服務介紹</span>
-            </div>
-            <div class="card-body">
-              <div id="serviceCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            </div>
+      <!-- 服務介紹 -->
+      <section id="panel-services" class="tab-panel" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">服務介紹管理</h2>
+            <span class="text-muted">共 4 個服務介紹</span>
           </div>
-        </section>
+          <div class="card-body">
+            <div id="serviceCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"></div>
+          </div>
+        </div>
+      </section>
 
-        <!-- 資源下載 -->
-        <section id="panel-resources" class="tab-panel" role="tabpanel">
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title">資源下載管理</h2>
-              <button id="btnUploadResource" class="btn btn-primary" type="button">上傳資源</button>
+      <!-- 資源下載 -->
+      <section id="panel-resources" class="tab-panel" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">資源下載管理</h2>
+            <button id="btnUploadResource" class="btn btn-primary" type="button">上傳資源</button>
+          </div>
+          <div class="card-body">
+            <div class="filter-bar">
+              <select id="resCategory" class="input-sm">
+                <option value="all">全部分類</option>
+              </select>
+              <select id="resType" class="input-sm">
+                <option value="all">全部類型</option>
+                <option value="pdf">PDF</option>
+                <option value="excel">Excel</option>
+                <option value="word">Word</option>
+                <option value="zip">ZIP</option>
+                <option value="image">圖片</option>
+              </select>
+              <div class="filter-spacer"></div>
+              <input id="resSearch" type="search" placeholder="搜尋標題…" class="input-sm search-input" />
             </div>
-            <div class="card-body">
-              <div class="filter-bar">
-                <select id="resCategory" class="input-sm">
-                  <option value="all">全部分類</option>
-                </select>
-                <select id="resType" class="input-sm">
-                  <option value="all">全部類型</option>
-                  <option value="pdf">PDF</option>
-                  <option value="excel">Excel</option>
-                  <option value="word">Word</option>
-                  <option value="zip">ZIP</option>
-                  <option value="image">圖片</option>
-                </select>
-                <div class="filter-spacer"></div>
-                <input id="resSearch" type="search" placeholder="搜尋標題…" class="input-sm search-input" />
-              </div>
-              <div class="table-wrapper">
-                <table class="table" aria-label="資源列表">
-                  <thead>
-                    <tr>
-                      <th>標題</th>
-                      <th>分類</th>
-                      <th>檔案類型</th>
-                      <th>檔案大小</th>
-                      <th>下載次數</th>
-                      <th>更新時間</th>
-                      <th>操作</th>
-                    </tr>
-                  </thead>
-                  <tbody id="resTbody">
-                    <tr><td colspan="7" class="text-center text-muted">載入中…</td></tr>
-                  </tbody>
-                </table>
-              </div>
+            <div class="table-wrapper">
+              <table class="table" aria-label="資源列表">
+                <thead>
+                  <tr>
+                    <th>標題</th>
+                    <th>分類</th>
+                    <th>檔案類型</th>
+                    <th>檔案大小</th>
+                    <th>下載次數</th>
+                    <th>更新時間</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="resTbody">
+                  <tr><td colspan="7" class="text-center text-muted">載入中…</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
-        </section>
-      </main>
-    </div>
+        </div>
+      </section>
+    </main>
 
     <div id="footer-placeholder"></div>
 

@@ -1,0 +1,5 @@
+开始重构
+
+(请严格遵守refactor-2025/RULES.md的所有规则，读取refactor-2025/progress.md确定当前步骤，然后执行steps/X.md中的任务)
+
+

@@ -1,0 +1,354 @@
+{
+  "dashboard": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/dashboard",
+        "description": "获取仪表板数据（员工/管理员）",
+        "params": ["ym", "financeYm", "financeMode", "activity_days", "activity_user_id", "activity_type"]
+      }
+    ]
+  },
+  "tasks": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/tasks",
+        "description": "获取任务列表",
+        "params": ["page", "perPage", "q", "status", "due", "component_id", "service_year", "service_month", "hide_completed"]
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/tasks/overview",
+        "description": "获取任务总览（按客户+服务分组）",
+        "params": ["months", "statuses", "sources", "search"]
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/tasks/preview",
+        "description": "预览指定月份将生成的任务",
+        "params": ["target_month"]
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/tasks/:id",
+        "description": "获取任务详情"
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/tasks/:id/sops",
+        "description": "获取任务关联的SOP"
+      },
+      {
+        "method": "PUT",
+        "path": "/internal/api/v1/tasks/:id/sops",
+        "description": "更新任务关联的SOP",
+        "body": ["sop_ids"]
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/tasks",
+        "description": "新增任务",
+        "body": ["client_service_id", "task_name", "due_date", "assignee_user_id", "stage_names", "prerequisite_task_id", "service_month"]
+      },
+      {
+        "method": "PUT",
+        "path": "/internal/api/v1/tasks/:id",
+        "description": "更新任务",
+        "body": ["task_name", "due_date", "status", "assignee_user_id", "notes", "service_month"]
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/tasks/:id/stages",
+        "description": "获取任务阶段"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/tasks/:id/stages/:stageId/start",
+        "description": "开始任务阶段"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/tasks/:id/stages/:stageId/complete",
+        "description": "完成任务阶段"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/tasks/:id/update-status",
+        "description": "更新任务状态",
+        "body": ["status", "progress_note", "blocker_reason", "overdue_reason", "expected_completion_date"]
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/tasks/:id/adjust-due-date",
+        "description": "调整任务到期日",
+        "body": ["new_due_date", "reason"]
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/tasks/:id/adjustment-history",
+        "description": "查询任务调整历史"
+      }
+    ]
+  },
+  "clients": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/clients",
+        "description": "获取客户列表",
+        "params": ["page", "perPage", "q", "tag_id", "no_cache"]
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/clients/next-personal-id",
+        "description": "获取下一个可用的个人客户编号"
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/clients/diagnose",
+        "description": "数据库即时诊断",
+        "params": ["ids"]
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/clients/diagnose",
+        "description": "数据库即时诊断（POST）",
+        "body": ["client_ids"]
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/clients/:id",
+        "description": "获取客户详情"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/clients",
+        "description": "新增客户",
+        "body": ["client_id", "company_name", "tax_registration_number", "assignee_user_id", "phone", "email", "client_notes", "payment_notes", "tag_ids"]
+      },
+      {
+        "method": "PUT",
+        "path": "/internal/api/v1/clients/:id",
+        "description": "编辑客户",
+        "body": ["company_name", "tax_registration_number", "assignee_user_id", "phone", "email", "client_notes", "payment_notes", "tag_ids"]
+      },
+      {
+        "method": "PUT",
+        "path": "/internal/api/v1/clients/:clientId/tags",
+        "description": "仅更新客户标签",
+        "body": ["tag_ids"]
+      },
+      {
+        "method": "DELETE",
+        "path": "/internal/api/v1/clients/:id",
+        "description": "删除客户（软删除）"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/clients/batch-assign",
+        "description": "批量分配负责人（仅管理员）",
+        "body": ["client_ids", "assignee_user_id", "from_assignee_user_id", "include_unassigned", "tag_ids", "q", "dry_run"]
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/clients/:clientId/services",
+        "description": "获取客户服务列表"
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/clients/:clientId/services/:serviceId/items",
+        "description": "获取服务项目明细"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/clients/:clientId/services",
+        "description": "新增客户服务",
+        "body": ["service_id", "service_cycle", "status", "task_template_id", "auto_generate_tasks", "start_date", "end_date", "service_notes"]
+      },
+      {
+        "method": "PUT",
+        "path": "/internal/api/v1/clients/:clientId/services/:serviceId",
+        "description": "更新客户服务",
+        "body": ["service_cycle", "task_template_id", "auto_generate_tasks", "start_date", "end_date", "service_notes", "status"]
+      },
+      {
+        "method": "DELETE",
+        "path": "/internal/api/v1/clients/:clientId/services/:serviceId",
+        "description": "删除客户服务"
+      }
+    ]
+  },
+  "timesheets": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/timesheets",
+        "description": "获取工时记录列表"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/timesheets",
+        "description": "新增工时记录"
+      },
+      {
+        "method": "PUT",
+        "path": "/internal/api/v1/timesheets/:id",
+        "description": "更新工时记录"
+      },
+      {
+        "method": "DELETE",
+        "path": "/internal/api/v1/timesheets/:id",
+        "description": "删除工时记录"
+      }
+    ]
+  },
+  "leaves": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/leaves",
+        "description": "获取请假记录列表"
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/leaves/balances",
+        "description": "获取假期余额"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/leaves",
+        "description": "新增请假申请"
+      },
+      {
+        "method": "PUT",
+        "path": "/internal/api/v1/leaves/:id",
+        "description": "更新请假申请"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/leaves/:id/approve",
+        "description": "批准请假"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/leaves/:id/reject",
+        "description": "拒绝请假"
+      }
+    ]
+  },
+  "receipts": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/receipts",
+        "description": "获取收据列表"
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/receipts/:id",
+        "description": "获取收据详情"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/receipts",
+        "description": "新增收据"
+      },
+      {
+        "method": "PUT",
+        "path": "/internal/api/v1/receipts/:id",
+        "description": "更新收据"
+      },
+      {
+        "method": "DELETE",
+        "path": "/internal/api/v1/receipts/:id",
+        "description": "删除收据"
+      }
+    ]
+  },
+  "payroll": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/payroll",
+        "description": "获取薪资记录列表"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/payroll/run",
+        "description": "执行薪资计算"
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/payroll/:runId",
+        "description": "获取薪资详情"
+      }
+    ]
+  },
+  "reports": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/reports/revenue",
+        "description": "获取营收报表"
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/reports/costs",
+        "description": "获取成本报表"
+      },
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/reports/hours",
+        "description": "获取工时报表"
+      }
+    ]
+  },
+  "settings": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/settings",
+        "description": "获取系统设置"
+      },
+      {
+        "method": "PUT",
+        "path": "/internal/api/v1/settings",
+        "description": "更新系统设置"
+      }
+    ]
+  },
+  "documents": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/documents",
+        "description": "获取文档列表"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/documents/upload",
+        "description": "上传文档"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/documents",
+        "description": "新增文档"
+      }
+    ]
+  },
+  "faq": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/internal/api/v1/faq",
+        "description": "获取FAQ列表"
+      },
+      {
+        "method": "POST",
+        "path": "/internal/api/v1/faq",
+        "description": "新增FAQ"
+      }
+    ]
+  }
+}
