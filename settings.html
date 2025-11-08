@@ -1573,7 +1573,7 @@
                 }
             }
             
-            const isAdmin = currentUser?.is_admin === true || currentUser?.isAdmin === true;
+            const isAdmin = currentUser?.isAdmin === true || currentUser?.is_admin === true;
             
             if (isAdmin) {
                 // 管理员：显示用户列表
@@ -1618,7 +1618,7 @@
         // 加载员工自己的个人资料
         async function loadMyProfile() {
             try {
-                const userId = currentUser.user_id;
+                const userId = currentUser.userId || currentUser.user_id;
                 console.log('[Settings] 加载个人资料, userId:', userId);
                 console.log('[Settings] currentUser:', currentUser);
                 
@@ -1649,7 +1649,7 @@
         // 保存员工个人资料
         async function saveMyProfile() {
             try {
-                const userId = currentUser.user_id;
+                const userId = currentUser.userId || currentUser.user_id;
                 const data = {
                     hire_date: document.getElementById('myHireDate').value || null,
                     gender: document.getElementById('myGender').value || null,
