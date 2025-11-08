@@ -719,111 +719,90 @@
 
       <!-- 附件 Tab -->
       <div id="attachments-content" class="tab-content">
-        <div class="kb-layout" id="attachments-layout">
-          <!-- 左側：附件列表 -->
-          <div class="left-panel">
-            <div class="toggle-panel-btn" onclick="togglePanel('attachments')" title="收合/展開"></div>
-            <div class="panel-content">
-              <!-- 篩選區域 -->
-              <div style="padding:8px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:8px;">
-                <div style="margin-bottom:8px;">
-                  <input type="search" id="attachment-search" placeholder="🔍 搜尋標題..." 
-                         style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px;" />
-                </div>
-                <div style="margin-bottom:8px;">
-                  <select id="attachment-filter-type" 
-                          style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px;">
-                    <option value="">📁 全部附件</option>
-                    <option value="client">👤 客戶附件</option>
-                    <option value="task">📋 任務附件</option>
-                    <option value="receipt">🧾 收據附件</option>
-                  </select>
-                </div>
-                <div style="display:flex;gap:4px;">
-                  <button type="button" onclick="loadAttachments()" 
-                          class="btn btn-secondary" 
-                          style="flex:1;padding:4px 8px;font-size:11px;">搜尋</button>
-                  <button type="button" onclick="resetAttachmentFilters()" 
-                          class="btn btn-secondary" 
-                          style="flex:1;padding:4px 8px;font-size:11px;">重置</button>
-                </div>
-              </div>
-              
-              <!-- 列表頭部 -->
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:8px;">
-                <div style="font-weight:700;font-size:13px;color:var(--text-secondary);">📎 附件</div>
-                <div id="attachmentsListInfo" style="font-size:11px;color:#9ca3af;">—</div>
-              </div>
-              
-              <!-- 附件列表 -->
-              <div id="attachmentsList" style="max-height:calc(100vh - 380px);overflow-y:auto;overflow-x:hidden;">
-                <!-- 動態加載 -->
-              </div>
-              
-              <!-- 分頁 -->
-              <div class="pagination" style="display:none;gap:6px;justify-content:flex-end;margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0;">
-                <button id="attachments-prev" type="button" class="btn" style="font-size:11px;padding:4px 8px;">上一頁</button>
-                <button id="attachments-next" type="button" class="btn" style="font-size:11px;padding:4px 8px;">下一頁</button>
-              </div>
+        <!-- 主要內容區域 -->
+        <div style="padding:20px;max-width:1400px;margin:0 auto;">
+          <!-- 篩選和操作區域 -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:16px;">
+            <div style="flex:1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+              <input type="search" id="attachment-search" placeholder="🔍 搜尋標題..." 
+                     style="flex:1;min-width:240px;max-width:300px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;" />
+              <select id="attachment-filter-type" 
+                      style="padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;min-width:140px;">
+                <option value="">全部類型</option>
+                <option value="task">任務附件</option>
+                <option value="client">客戶附件</option>
+                <option value="receipt">收據附件</option>
+              </select>
+              <button onclick="resetAttachmentFilters()" 
+                      style="padding:10px 16px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;cursor:pointer;font-weight:500;color:#374151;">
+                🔄 重置
+              </button>
             </div>
+            <button onclick="openAttachmentUploadDrawer()" 
+                    style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;">
+              <span>➕</span><span>上傳附件</span>
+            </button>
           </div>
           
-          <!-- 右側：上傳和預覽 -->
-          <div class="right-panel">
-            <!-- 上傳區域 -->
-            <section class="resource-preview-card" style="margin-bottom:16px;padding:20px;">
-              <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:600;color:#1f2937;">📤 上傳附件</h3>
-              <form id="attachmentUploadForm">
-                <div class="form-group">
-                  <label>文件 *</label>
-                  <input type="file" id="attachment-file" required />
-                </div>
-                
-                <div class="form-group">
-                  <label>標題 *</label>
-                  <input type="text" id="attachment-title" required placeholder="請輸入文件標題" />
-                </div>
-                
-                <div class="form-group">
-                  <label>描述（選填）</label>
-                  <textarea id="attachment-description" rows="2" placeholder="請輸入文件描述"></textarea>
-                </div>
-                
-                <div style="padding:12px;background:#f0f9ff;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:16px;">
-                  <div style="font-size:13px;color:#1e40af;margin-bottom:8px;font-weight:600;">💡 關聯提示</div>
-                  <div style="font-size:12px;color:#1e40af;line-height:1.6;">
-                    • 從任務/客戶頁面上傳時，系統會自動關聯<br/>
-                    • 在此頁面上傳的附件為「未關聯」狀態<br/>
-                    • 建議直接在對應頁面（任務詳情等）上傳附件
-                  </div>
-                </div>
-                
-                <div style="display:flex;justify-content:flex-end;">
-                  <button type="submit" class="btn btn-primary">上傳附件</button>
-                </div>
-              </form>
-            </section>
-            
-            <!-- 說明區域 -->
-            <section class="resource-preview-card" style="padding:20px;">
-              <h3 style="margin:0 0 12px 0;font-size:15px;font-weight:600;color:#1f2937;">📌 使用說明</h3>
-              <div style="font-size:13px;color:#6b7280;line-height:1.8;">
-                <p style="margin:0 0 12px 0;"><strong>附件與資源中心的區別：</strong></p>
-                <ul style="margin:0;padding-left:20px;">
-                  <li style="margin-bottom:8px;"><strong>📎 附件</strong>：特定任務/客戶/收據的專屬文件</li>
-                  <li style="margin-bottom:8px;"><strong>📁 資源中心</strong>：可重複使用的範本、法規等</li>
-                </ul>
-                <p style="margin:16px 0 0 0;"><strong>推薦做法：</strong></p>
-                <ul style="margin:8px 0 0 0;padding-left:20px;">
-                  <li style="margin-bottom:8px;">直接在任務詳情頁面上傳附件</li>
-                  <li style="margin-bottom:8px;">範本檔案請上傳到資源中心</li>
-                </ul>
-              </div>
-            </section>
+          <!-- 統計資訊 -->
+          <div style="margin-bottom:16px;padding:12px 16px;background:#f9fafb;border-radius:8px;display:flex;align-items:center;gap:8px;">
+            <div style="font-weight:600;font-size:14px;color:#374151;">📎 附件</div>
+            <div id="attachmentsListInfo" style="font-size:13px;color:#6b7280;">—</div>
+          </div>
+          
+          <!-- 附件網格列表 -->
+          <div id="attachmentsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;min-height:400px;">
+            <!-- 動態加載 -->
+          </div>
+          
+          <!-- 分頁 -->
+          <div class="pagination" style="display:none;gap:8px;justify-content:center;margin-top:24px;padding-top:24px;border-top:1px solid #e5e7eb;">
+            <button id="attachments-prev" type="button" style="padding:8px 16px;border:1px solid #e5e7eb;border-radius:6px;background:white;cursor:pointer;font-size:14px;" disabled>← 上一頁</button>
+            <button id="attachments-next" type="button" style="padding:8px 16px;border:1px solid #e5e7eb;border-radius:6px;background:white;cursor:pointer;font-size:14px;">下一頁 →</button>
           </div>
         </div>
       </div>
     </main>
+
+    <!-- 附件上傳抽屜 -->
+    <div id="attachmentUploadDrawer" class="drawer-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;">
+      <div class="drawer-panel" style="background:white;width:90%;max-width:600px;border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);max-height:90vh;display:flex;flex-direction:column;">
+        <div class="drawer-header" style="padding:20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
+          <h2 style="margin:0;font-size:18px;font-weight:600;color:#1f2937;">📤 上傳附件</h2>
+          <button onclick="closeAttachmentUploadDrawer()" class="drawer-close-btn" style="background:none;border:none;font-size:28px;cursor:pointer;color:#6b7280;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">✕</button>
+        </div>
+        <div class="drawer-body" style="padding:24px;overflow-y:auto;flex:1;">
+          <form id="attachmentUploadForm">
+            <div class="form-group" style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">文件 *</label>
+              <input type="file" id="attachment-file" required style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:6px;" />
+              <small style="color:#6b7280;font-size:12px;">最大 25MB</small>
+            </div>
+            <div class="form-group" style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">標題</label>
+              <input type="text" id="attachment-title" placeholder="留空則自動使用檔名" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;" />
+              <small style="color:#6b7280;font-size:12px;">留空則使用檔名作為標題</small>
+            </div>
+            <div class="form-group" style="margin-bottom:16px;">
+              <label style="display:block;margin-bottom:8px;font-weight:500;color:#374151;">描述（選填）</label>
+              <textarea id="attachment-description" rows="3" placeholder="請輸入文件描述" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;"></textarea>
+            </div>
+            <div style="padding:16px;background:#f0f9ff;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:20px;">
+              <div style="font-size:14px;color:#1e40af;margin-bottom:8px;font-weight:600;">💡 關聯提示</div>
+              <div style="font-size:13px;color:#1e40af;line-height:1.6;">
+                • 從任務/客戶頁面上傳時，系統會自動關聯<br/>
+                • 在此頁面上傳的附件為「未關聯」狀態<br/>
+                • 建議直接在對應頁面（任務詳情等）上傳附件
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;">
+              <button type="button" onclick="closeAttachmentUploadDrawer()" style="padding:10px 20px;border:1px solid #e5e7eb;background:white;border-radius:8px;cursor:pointer;font-weight:500;">取消</button>
+              <button type="submit" style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">上傳</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
     <!-- 抽屜遮罩 -->
     <div id="drawerOverlay" class="drawer-overlay"></div>
@@ -3691,23 +3670,37 @@
         const attachmentState = {
           page: 1,
           perPage: 20,
-          total: 0,
-          search: '',
-          entityType: ''
+          total: 0
+        };
+        
+        // 打開上傳抽屜
+        window.openAttachmentUploadDrawer = function() {
+          document.getElementById('attachmentUploadDrawer').style.display = 'flex';
+          document.getElementById('attachment-file').value = '';
+          document.getElementById('attachment-title').value = '';
+          document.getElementById('attachment-description').value = '';
+        };
+        
+        // 關閉上傳抽屜
+        window.closeAttachmentUploadDrawer = function() {
+          document.getElementById('attachmentUploadDrawer').style.display = 'none';
         };
         
         // 載入附件列表
         async function loadAttachments() {
           try {
             const list = document.getElementById('attachmentsList');
-            list.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">載入中...</div>';
+            list.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:#9ca3af;">載入中...</div>';
+            
+            const search = document.getElementById('attachment-search').value.trim();
+            const entityType = document.getElementById('attachment-filter-type').value;
             
             const params = new URLSearchParams();
             params.append('page', attachmentState.page);
             params.append('perPage', attachmentState.perPage);
             params.append('category', 'attachment');
-            if (attachmentState.search) params.append('q', attachmentState.search);
-            if (attachmentState.entityType) params.append('related_entity_type', attachmentState.entityType);
+            if (search) params.append('q', search);
+            if (entityType) params.append('related_entity_type', entityType);
             
             const res = await fetch(`${apiBase}/documents?${params}`, { 
               credentials: 'include' 
@@ -3760,34 +3753,51 @@
           }
         }
         
-        // 創建附件卡片（類似資源中心樣式）
+        // 創建附件卡片（網格樣式）
         function createAttachmentCard(item) {
           const div = document.createElement('div');
-          div.className = 'doc-card';
-          div.style.cssText = 'padding:8px 10px;font-size:13px;cursor:pointer;';
+          div.style.cssText = 'background:white;border:1px solid #e5e7eb;border-radius:12px;padding:20px;transition:all 0.2s;cursor:default;';
+          div.onmouseenter = function() { this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor = '#3b82f6'; };
+          div.onmouseleave = function() { this.style.boxShadow = 'none'; this.style.borderColor = '#e5e7eb'; };
           
           const fileIcon = getFileIcon(item.fileType || item.file_type);
           const fileSize = formatFileSize(item.fileSize || item.file_size);
           const entityBadge = item.relatedEntityType || item.related_entity_type 
-            ? `<span style="background:#dbeafe;color:#1e40af;padding:1px 4px;border-radius:4px;font-size:10px;margin-left:4px;">${getEntityTypeLabel(item.relatedEntityType || item.related_entity_type)} #${item.relatedEntityId || item.related_entity_id}</span>`
-            : '<span style="background:#f3f4f6;color:#6b7280;padding:1px 4px;border-radius:4px;font-size:10px;margin-left:4px;">未關聯</span>';
+            ? `<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">${getEntityTypeLabel(item.relatedEntityType || item.related_entity_type)} #${item.relatedEntityId || item.related_entity_id}</span>`
+            : '<span style="background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:4px;font-size:11px;">未關聯</span>';
+          
+          const documentId = item.document_id || item.documentId;
+          const fileUrl = (item.fileUrl || item.file_url || '').replace(/'/g, "\\'");
+          const fileName = escapeHtml(item.fileName || item.file_name || 'file');
           
           div.innerHTML = `
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:16px;flex-shrink:0;">${fileIcon}</span>
+            <div style="display:flex;align-items:start;gap:12px;margin-bottom:16px;">
+              <div style="font-size:36px;flex-shrink:0;">${fileIcon}</div>
               <div style="flex:1;min-width:0;">
-                <div class="doc-title" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                  ${escapeHtml(item.title)} ${entityBadge}
-                </div>
-                <div style="font-size:10px;color:#9ca3af;margin-top:2px;">
+                <h4 style="margin:0 0 8px 0;font-size:15px;font-weight:600;color:#1f2937;word-break:break-word;line-height:1.4;">
+                  ${escapeHtml(item.title)}
+                </h4>
+                <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">
                   ${fileSize} • ${formatDateTime(item.createdAt || item.created_at)}
                 </div>
+                <div>${entityBadge}</div>
               </div>
             </div>
+            <div style="display:flex;gap:8px;padding-top:12px;border-top:1px solid #f0f0f0;">
+              <button onclick="downloadAttachment('${fileUrl}', '${fileName}')" 
+                      style="flex:1;padding:8px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;"
+                      onmouseover="this.style.background='#2563eb'" 
+                      onmouseout="this.style.background='#3b82f6'">
+                <span>📥</span> 下載
+              </button>
+              <button onclick="deleteAttachment(${documentId})" 
+                      style="flex:1;padding:8px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;"
+                      onmouseover="this.style.background='#dc2626'" 
+                      onmouseout="this.style.background='#ef4444'">
+                <span>🗑️</span> 刪除
+              </button>
+            </div>
           `;
-          
-          // 點擊卡片顯示詳情
-          div.addEventListener('click', () => viewAttachmentDetail(item));
           
           return div;
         }
@@ -3916,7 +3926,7 @@
         }
         
         // 下載附件
-        async function downloadAttachment(fileUrl, fileName) {
+        window.downloadAttachment = async function(fileUrl, fileName) {
           try {
             const res = await fetch(`${apiBase}/documents/download?file_url=${encodeURIComponent(fileUrl)}`, {
               credentials: 'include'
@@ -3939,7 +3949,7 @@
         }
         
         // 刪除附件
-        async function deleteAttachment(documentId) {
+        window.deleteAttachment = async function(documentId) {
           if (!confirm('確定要刪除此附件嗎？')) return;
           
           try {
@@ -3993,11 +4003,9 @@
         }
         
         // 重置篩選
-        function resetAttachmentFilters() {
+        window.resetAttachmentFilters = function() {
           document.getElementById('attachment-search').value = '';
           document.getElementById('attachment-filter-type').value = '';
-          attachmentState.search = '';
-          attachmentState.entityType = '';
           attachmentState.page = 1;
           loadAttachments();
         }
@@ -4037,9 +4045,15 @@
           document.body.appendChild(progressDiv);
           
           try {
+            // 標題為空時使用檔名
+            let title = document.getElementById('attachment-title').value.trim();
+            if (!title) {
+              title = file.name;
+            }
+            
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('title', document.getElementById('attachment-title').value);
+            formData.append('title', title);
             formData.append('description', document.getElementById('attachment-description').value || '');
             formData.append('category', 'attachment');
             formData.append('scope', 'task');
@@ -4085,10 +4099,8 @@
             });
             
             document.body.removeChild(progressDiv);
+            closeAttachmentUploadDrawer();
             alert('上傳成功！');
-            
-            // 重置表單
-            e.target.reset();
             
             // 重新載入列表
             attachmentState.page = 1;
@@ -4106,13 +4118,18 @@
           }
         });
         
-        // 搜尋輸入處理
-        document.getElementById('attachment-search').addEventListener('input', (e) => {
-          attachmentState.search = e.target.value;
+        // 搜尋輸入處理（Enter 鍵搜索）
+        document.getElementById('attachment-search').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            attachmentState.page = 1;
+            loadAttachments();
+          }
         });
         
-        document.getElementById('attachment-filter-type').addEventListener('change', (e) => {
-          attachmentState.entityType = e.target.value;
+        // 類型篩選變化時自動搜索
+        document.getElementById('attachment-filter-type').addEventListener('change', () => {
+          attachmentState.page = 1;
+          loadAttachments();
         });
         
       })();
