@@ -531,6 +531,7 @@
         <button class="tab-button active" data-tab="sop">📖 SOP 流程文檔</button>
         <button class="tab-button" data-tab="faq">❓ FAQ 常見問答</button>
         <button class="tab-button" data-tab="resources">📁 資源中心</button>
+        <button class="tab-button" data-tab="attachments">📎 附件</button>
       </div>
     </section>
 
@@ -712,6 +713,91 @@
                 </div>
               </div>
             </section>
+          </div>
+        </div>
+      </div>
+
+      <!-- 附件 Tab -->
+      <div id="attachments-content" class="tab-content">
+        <div style="max-width:1400px;margin:0 auto;">
+          <!-- 上傳區域 -->
+          <div class="resource-preview-card" style="margin-bottom:20px;padding:20px;">
+            <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:600;color:#1f2937;">📎 上傳附件</h3>
+            <form id="attachmentUploadForm" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:500;">文件 *</label>
+                <input type="file" id="attachment-file" required style="padding:8px;border:1px solid #e5e7eb;border-radius:6px;width:100%;" />
+              </div>
+              
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:500;">標題 *</label>
+                <input type="text" id="attachment-title" required placeholder="請輸入文件標題" style="padding:10px;border:1px solid #e5e7eb;border-radius:6px;width:100%;" />
+              </div>
+              
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:500;">關聯類型</label>
+                <select id="attachment-entity-type" style="padding:10px;border:1px solid #e5e7eb;border-radius:6px;width:100%;">
+                  <option value="">無關聯</option>
+                  <option value="client">客戶</option>
+                  <option value="task">任務</option>
+                  <option value="receipt">收據</option>
+                </select>
+              </div>
+              
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:500;">關聯 ID</label>
+                <input type="text" id="attachment-entity-id" placeholder="選填，關聯的實體 ID" style="padding:10px;border:1px solid #e5e7eb;border-radius:6px;width:100%;" />
+              </div>
+              
+              <div class="form-group" style="margin:0;grid-column:1/-1;">
+                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:500;">描述</label>
+                <textarea id="attachment-description" rows="2" placeholder="請輸入文件描述" style="padding:10px;border:1px solid #e5e7eb;border-radius:6px;width:100%;resize:vertical;"></textarea>
+              </div>
+              
+              <div style="grid-column:1/-1;display:flex;justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary" style="padding:10px 24px;">上傳附件</button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- 篩選區域 -->
+          <div class="resource-preview-card" style="margin-bottom:16px;padding:16px;">
+            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+              <div style="flex:1;min-width:200px;">
+                <label style="display:block;margin-bottom:6px;font-size:12px;color:#6b7280;">搜尋</label>
+                <input type="search" id="attachment-search" placeholder="搜尋標題或描述..." style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;width:100%;" />
+              </div>
+              
+              <div style="min-width:150px;">
+                <label style="display:block;margin-bottom:6px;font-size:12px;color:#6b7280;">關聯類型</label>
+                <select id="attachment-filter-type" style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;width:100%;">
+                  <option value="">全部</option>
+                  <option value="client">客戶</option>
+                  <option value="task">任務</option>
+                  <option value="receipt">收據</option>
+                </select>
+              </div>
+              
+              <button type="button" onclick="loadAttachments()" class="btn btn-secondary" style="padding:8px 16px;">🔍 搜尋</button>
+              <button type="button" onclick="resetAttachmentFilters()" class="btn btn-secondary" style="padding:8px 16px;">🔄 重置</button>
+            </div>
+          </div>
+          
+          <!-- 附件列表 -->
+          <div class="resource-preview-card" style="padding:0;">
+            <div style="padding:16px 20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
+              <h3 style="margin:0;font-size:15px;font-weight:600;color:#1f2937;">📂 附件列表</h3>
+              <div id="attachmentsListInfo" style="font-size:13px;color:#9ca3af;">—</div>
+            </div>
+            
+            <div id="attachmentsList" style="padding:16px 20px;min-height:300px;">
+              <!-- 動態加載附件列表 -->
+            </div>
+            
+            <div class="pagination" style="display:none;padding:12px 20px;border-top:1px solid #e5e7eb;gap:10px;justify-content:flex-end;">
+              <button id="attachments-prev" type="button" class="btn">上一頁</button>
+              <button id="attachments-next" type="button" class="btn">下一頁</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1938,6 +2024,13 @@
               tabLoaded.resources = true;
             } else {
               console.log(`[Knowledge] ⚡ 使用资源缓存内容`);
+            }
+          } else if (tabName === 'attachments') {
+            if (!tabLoaded.attachments || forceRefresh) {
+              loadAttachments();
+              tabLoaded.attachments = true;
+            } else {
+              console.log(`[Knowledge] ⚡ 使用附件缓存内容`);
             }
           }
         }
@@ -3518,6 +3611,330 @@
             switchTab('sop');
           }
         });
+        
+        // ==================== 附件管理功能 ====================
+        
+        // 附件狀態管理
+        const attachmentState = {
+          page: 1,
+          perPage: 20,
+          total: 0,
+          search: '',
+          entityType: ''
+        };
+        
+        // 載入附件列表
+        async function loadAttachments() {
+          try {
+            const list = document.getElementById('attachmentsList');
+            list.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">載入中...</div>';
+            
+            const params = new URLSearchParams();
+            params.append('page', attachmentState.page);
+            params.append('perPage', attachmentState.perPage);
+            params.append('category', 'attachment');
+            if (attachmentState.search) params.append('q', attachmentState.search);
+            if (attachmentState.entityType) params.append('related_entity_type', attachmentState.entityType);
+            
+            const res = await fetch(`${apiBase}/knowledge/documents?${params}`, { 
+              credentials: 'include' 
+            });
+            
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/knowledge');
+              return;
+            }
+            
+            const json = await res.json();
+            if (!res.ok || !json.ok) {
+              throw new Error(json.message || '載入失敗');
+            }
+            
+            const items = json.items || json.data || [];
+            attachmentState.total = json.meta?.total || 0;
+            
+            // 更新資訊
+            document.getElementById('attachmentsListInfo').textContent = `共 ${attachmentState.total} 個附件`;
+            
+            // 渲染列表
+            list.innerHTML = '';
+            if (items.length === 0) {
+              list.innerHTML = `
+                <div style="text-align:center;padding:60px 20px;color:#9ca3af;">
+                  <div style="font-size:48px;margin-bottom:12px;">📎</div>
+                  <div style="font-size:14px;margin-bottom:8px;">暫無附件</div>
+                  <div style="font-size:12px;">請使用上方表單上傳附件</div>
+                </div>
+              `;
+              return;
+            }
+            
+            items.forEach(item => {
+              const card = createAttachmentCard(item);
+              list.appendChild(card);
+            });
+            
+            // 更新分頁按鈕
+            updateAttachmentPagination();
+            
+          } catch (err) {
+            console.error('載入附件失敗:', err);
+            document.getElementById('attachmentsList').innerHTML = `
+              <div style="text-align:center;padding:40px;color:#c0392b;">
+                載入失敗：${err.message}
+              </div>
+            `;
+          }
+        }
+        
+        // 創建附件卡片
+        function createAttachmentCard(item) {
+          const div = document.createElement('div');
+          div.style.cssText = 'padding:16px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;background:#fafafa;';
+          
+          const fileIcon = getFileIcon(item.fileType || item.file_type);
+          const fileSize = formatFileSize(item.fileSize || item.file_size);
+          const entityBadge = item.relatedEntityType || item.related_entity_type 
+            ? `<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:8px;">${getEntityTypeLabel(item.relatedEntityType || item.related_entity_type)} #${item.relatedEntityId || item.related_entity_id}</span>`
+            : '';
+          
+          div.innerHTML = `
+            <div style="display:flex;align-items:start;gap:12px;">
+              <div style="font-size:32px;flex-shrink:0;">${fileIcon}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:14px;color:#1f2937;margin-bottom:4px;word-break:break-word;">
+                  ${escapeHtml(item.title)}
+                  ${entityBadge}
+                </div>
+                ${item.description ? `<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">${escapeHtml(item.description)}</div>` : ''}
+                <div style="display:flex;gap:16px;font-size:11px;color:#9ca3af;flex-wrap:wrap;">
+                  <span>📄 ${escapeHtml(item.fileName || item.file_name)}</span>
+                  <span>📦 ${fileSize}</span>
+                  <span>👤 ${escapeHtml(item.uploaderName || item.uploader_name || '未知')}</span>
+                  <span>🕐 ${formatDateTime(item.createdAt || item.created_at)}</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-shrink:0;">
+                <button onclick="downloadAttachment('${item.fileUrl || item.file_url}', '${escapeHtml(item.fileName || item.file_name)}')" 
+                        class="btn btn-secondary" 
+                        style="padding:6px 12px;font-size:12px;">
+                  下載
+                </button>
+                <button onclick="deleteAttachment(${item.document_id})" 
+                        class="btn btn-danger" 
+                        style="padding:6px 12px;font-size:12px;background:#dc2626;">
+                  刪除
+                </button>
+              </div>
+            </div>
+          `;
+          
+          return div;
+        }
+        
+        // 工具函數
+        function getFileIcon(fileType) {
+          if (!fileType) return '📄';
+          if (fileType.includes('pdf')) return '📕';
+          if (fileType.includes('image')) return '🖼️';
+          if (fileType.includes('word') || fileType.includes('document')) return '📘';
+          if (fileType.includes('excel') || fileType.includes('spreadsheet')) return '📗';
+          if (fileType.includes('zip') || fileType.includes('rar')) return '📦';
+          return '📄';
+        }
+        
+        function formatFileSize(bytes) {
+          if (!bytes) return '—';
+          if (bytes < 1024) return bytes + ' B';
+          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+          return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        function getEntityTypeLabel(type) {
+          const labels = {
+            'client': '客戶',
+            'task': '任務',
+            'receipt': '收據'
+          };
+          return labels[type] || type;
+        }
+        
+        function formatDateTime(isoString) {
+          if (!isoString) return '—';
+          try {
+            const date = new Date(isoString);
+            return date.toLocaleString('zh-TW', { 
+              year: 'numeric', 
+              month: '2-digit', 
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch {
+            return isoString;
+          }
+        }
+        
+        function escapeHtml(text) {
+          if (!text) return '';
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+        
+        // 下載附件
+        async function downloadAttachment(fileUrl, fileName) {
+          try {
+            const res = await fetch(`${apiBase}/knowledge/documents/download?file_url=${encodeURIComponent(fileUrl)}`, {
+              credentials: 'include'
+            });
+            
+            if (!res.ok) throw new Error('下載失敗');
+            
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          } catch (err) {
+            alert('下載失敗：' + err.message);
+          }
+        }
+        
+        // 刪除附件
+        async function deleteAttachment(documentId) {
+          if (!confirm('確定要刪除此附件嗎？')) return;
+          
+          try {
+            const res = await fetch(`${apiBase}/knowledge/documents/${documentId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            
+            const json = await res.json();
+            if (!res.ok || !json.ok) {
+              throw new Error(json.message || '刪除失敗');
+            }
+            
+            alert('刪除成功');
+            loadAttachments();
+          } catch (err) {
+            alert('刪除失敗：' + err.message);
+          }
+        }
+        
+        // 更新分頁
+        function updateAttachmentPagination() {
+          const pagination = document.querySelector('#attachments-content .pagination');
+          const prevBtn = document.getElementById('attachments-prev');
+          const nextBtn = document.getElementById('attachments-next');
+          
+          const totalPages = Math.ceil(attachmentState.total / attachmentState.perPage);
+          
+          if (totalPages <= 1) {
+            pagination.style.display = 'none';
+            return;
+          }
+          
+          pagination.style.display = 'flex';
+          prevBtn.disabled = attachmentState.page <= 1;
+          nextBtn.disabled = attachmentState.page >= totalPages;
+          
+          prevBtn.onclick = () => {
+            if (attachmentState.page > 1) {
+              attachmentState.page--;
+              loadAttachments();
+            }
+          };
+          
+          nextBtn.onclick = () => {
+            if (attachmentState.page < totalPages) {
+              attachmentState.page++;
+              loadAttachments();
+            }
+          };
+        }
+        
+        // 重置篩選
+        function resetAttachmentFilters() {
+          document.getElementById('attachment-search').value = '';
+          document.getElementById('attachment-filter-type').value = '';
+          attachmentState.search = '';
+          attachmentState.entityType = '';
+          attachmentState.page = 1;
+          loadAttachments();
+        }
+        
+        // 上傳表單處理
+        document.getElementById('attachmentUploadForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const file = document.getElementById('attachment-file').files[0];
+          if (!file) {
+            alert('請選擇文件');
+            return;
+          }
+          
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          const originalText = submitBtn.innerHTML;
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '⏳ 上傳中...';
+          
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('title', document.getElementById('attachment-title').value);
+            formData.append('description', document.getElementById('attachment-description').value || '');
+            formData.append('category', 'attachment');
+            formData.append('scope', 'task');
+            
+            const entityType = document.getElementById('attachment-entity-type').value;
+            const entityId = document.getElementById('attachment-entity-id').value;
+            
+            if (entityType) formData.append('related_entity_type', entityType);
+            if (entityId) formData.append('related_entity_id', entityId);
+            
+            const res = await fetch(`${apiBase}/knowledge/documents/upload`, {
+              method: 'POST',
+              credentials: 'include',
+              body: formData
+            });
+            
+            const json = await res.json();
+            if (!res.ok || !json.ok) {
+              throw new Error(json.message || '上傳失敗');
+            }
+            
+            alert('上傳成功！');
+            
+            // 重置表單
+            e.target.reset();
+            
+            // 重新載入列表
+            attachmentState.page = 1;
+            loadAttachments();
+            
+          } catch (err) {
+            alert('上傳失敗：' + err.message);
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+          }
+        });
+        
+        // 搜尋輸入處理
+        document.getElementById('attachment-search').addEventListener('input', (e) => {
+          attachmentState.search = e.target.value;
+        });
+        
+        document.getElementById('attachment-filter-type').addEventListener('change', (e) => {
+          attachmentState.entityType = e.target.value;
+        });
+        
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
