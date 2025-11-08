@@ -100,10 +100,45 @@
       if (!res.ok) return;
       const json = await res.json().catch(()=>null);
       if (!json || json.ok !== true) return;
-      const name = json.data?.name || json.data?.username || '—';
+      const userData = json.data;
+      const name = userData?.name || userData?.username || '—';
+      const isAdmin = userData?.is_admin === true || userData?.isAdmin === true;
+      
       const el = document.getElementById('internalUserName');
       if (el) el.textContent = name;
+      
+      // 根据权限隐藏导航链接
+      hideNavLinksForNonAdmin(isAdmin);
     } catch(_){}
+  }
+
+  function hideNavLinksForNonAdmin(isAdmin){
+    if (isAdmin) {
+      console.log('[Bootstrap] 管理員身份，顯示所有導航');
+      return; // 管理员显示所有链接
+    }
+    
+    console.log('[Bootstrap] 非管理員身份，隱藏管理員專用導航');
+    
+    // 管理员专用的页面路径
+    const adminOnlyPaths = [
+      '/internal/clients',      // 客戶管理
+      '/internal/receipts',     // 收據管理
+      '/internal/payroll',      // 薪資管理
+      '/internal/costs',        // 成本管理
+      '/internal/cms',          // 內容管理
+      '/internal/reports',      // 報表
+      '/internal/settings'      // 系統設定
+    ];
+    
+    // 隐藏管理员专用的导航链接
+    document.querySelectorAll('.internal-nav-link').forEach(link => {
+      const href = link.getAttribute('href');
+      if (adminOnlyPaths.includes(href)) {
+        link.style.display = 'none';
+        console.log('[Bootstrap] 隱藏導航:', href);
+      }
+    });
   }
 
   function bindMobileToggle(){
@@ -189,7 +224,7 @@
       console.warn('[Bootstrap] document.body 尚未就緒，等待...');
       return;
     }
-    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v5');
+    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v6');
     document.body.insertAdjacentHTML('afterbegin', html);
     markActiveNav();
     bindMobileToggle();
