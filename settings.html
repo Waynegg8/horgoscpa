@@ -154,10 +154,10 @@
         <div class="tab-panel" id="tab-users">
             <!-- 管理员专用：用户列表 -->
             <div id="adminUserSection" style="display:none;">
-                <div class="search-bar">
-                    <button class="btn btn-primary" onclick="showAddUserForm()">+ 新增</button>
-                </div>
-                
+            <div class="search-bar">
+                <button class="btn btn-primary" onclick="showAddUserForm()">+ 新增</button>
+            </div>
+            
                 <div class="card">
                     <div class="card-body">
                         <div class="data-table-container">
@@ -1580,31 +1580,31 @@
                 document.getElementById('adminUserSection').style.display = 'block';
                 document.getElementById('employeeProfileSection').style.display = 'none';
                 
-                const tbody = document.querySelector('#usersTable tbody');
-                try {
-                    const res = await fetch('/internal/api/v1/users', { credentials: 'include' });
-                    const json = await res.json();
-                    if (!json.data || json.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = json.data.map(u => `
-                        <tr>
-                            <td>${u.user_id}</td>
-                            <td>${u.name}</td>
-                            <td>${u.username}</td>
-                            <td>${u.is_admin ? '管理員' : '員工'}</td>
-                            <td><span class="status-badge status-active">啟用</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-secondary" onclick="window.location.href='/internal/profile?user_id=${u.user_id}'">檢視</button>
-                                <button class="btn btn-sm btn-primary" onclick="editUser(${JSON.stringify(u).replace(/"/g, '&quot;')})">編輯</button>
-                                <button class="btn btn-sm btn-warning" onclick="resetUserPassword(${u.user_id}, '${u.name}')">重置密碼</button>
-                                ${u.user_id !== 1 ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.user_id}, '${u.name}')">刪除</button>` : ''}
-                            </td>
-                        </tr>
-                    `).join('');
-                } catch (e) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+            const tbody = document.querySelector('#usersTable tbody');
+            try {
+                const res = await fetch('/internal/api/v1/users', { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(u => `
+                    <tr>
+                        <td>${u.user_id}</td>
+                        <td>${u.name}</td>
+                        <td>${u.username}</td>
+                        <td>${u.is_admin ? '管理員' : '員工'}</td>
+                        <td><span class="status-badge status-active">啟用</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="window.location.href='/internal/profile?user_id=${u.user_id}'">檢視</button>
+                            <button class="btn btn-sm btn-primary" onclick="editUser(${JSON.stringify(u).replace(/"/g, '&quot;')})">編輯</button>
+                            <button class="btn btn-sm btn-warning" onclick="resetUserPassword(${u.user_id}, '${u.name}')">重置密碼</button>
+                            ${u.user_id !== 1 ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.user_id}, '${u.name}')">刪除</button>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
                 }
             } else {
                 // 员工：显示个人资料
