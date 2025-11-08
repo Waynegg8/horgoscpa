@@ -175,11 +175,12 @@ textarea {
 .internal-nav-container {
     max-width: 100%;
     margin: 0 auto;
-    padding: 0 var(--space-6);
+    padding: 0 var(--space-4);
     display: flex;
     align-items: center;
     justify-content: space-between;
     height: 64px;
+    gap: var(--space-4);
 }
 
 .internal-nav-brand {
@@ -207,11 +208,13 @@ textarea {
 .internal-nav-links {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-1);
+    flex-wrap: nowrap;
+    flex-shrink: 0;
 }
 
 .internal-nav-link {
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-3);
     color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
     font-size: var(--text-sm);
@@ -221,6 +224,8 @@ textarea {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .internal-nav-link:hover {
