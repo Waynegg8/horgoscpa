@@ -121,7 +121,7 @@
       console.warn('[Bootstrap] document.body 尚未就緒，等待...');
       return;
     }
-    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v2');
+    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v3');
     document.body.insertAdjacentHTML('afterbegin', html);
     markActiveNav();
     bindMobileToggle();
