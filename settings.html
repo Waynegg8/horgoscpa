@@ -152,11 +152,109 @@
 
         <!-- 用户 -->
         <div class="tab-panel" id="tab-users">
-            <div class="search-bar">
-                <button class="btn btn-primary" onclick="showAddUserForm()">+ 新增</button>
+            <!-- 管理员专用：用户列表 -->
+            <div id="adminUserSection" style="display:none;">
+                <div class="search-bar">
+                    <button class="btn btn-primary" onclick="showAddUserForm()">+ 新增</button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="data-table-container">
+                            <table class="data-table" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>姓名</th>
+                                        <th>帳號</th>
+                                        <th>角色</th>
+                                        <th>狀態</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="6" class="loading">載入中...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <!-- 新增/编辑用户表单 -->
+            <!-- 员工专用：个人资料 -->
+            <div id="employeeProfileSection" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>我的個人資料</h3>
+                        <p style="color:#666;font-size:14px;margin:8px 0 0 0;">查看和修改您的個人資訊</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>姓名</label>
+                            <input type="text" id="myName" class="form-control" readonly style="background:#f5f5f5;">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>帳號</label>
+                            <input type="text" id="myUsername" class="form-control" readonly style="background:#f5f5f5;">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>到職日 *</label>
+                            <input type="date" id="myHireDate" class="form-control">
+                            <small style="color:#666;display:block;margin-top:4px;">用於計算特休假額度</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>性別</label>
+                            <select id="myGender" class="form-control">
+                                <option value="">請選擇</option>
+                                <option value="male">男</option>
+                                <option value="female">女</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="myEmail" class="form-control" placeholder="your@email.com">
+                        </div>
+                        
+                        <div class="action-btns">
+                            <button class="btn btn-primary" onclick="saveMyProfile()">儲存個人資料</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 修改密码 -->
+                <div class="card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <h3>修改密碼</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>目前密碼 *</label>
+                            <input type="password" id="currentPassword" class="form-control" placeholder="請輸入目前密碼">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>新密碼 *</label>
+                            <input type="password" id="newPassword" class="form-control" placeholder="至少6個字元">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>確認新密碼 *</label>
+                            <input type="password" id="confirmPassword" class="form-control" placeholder="請再次輸入新密碼">
+                        </div>
+                        
+                        <div class="action-btns">
+                            <button class="btn btn-primary" onclick="changeMyPassword()">修改密碼</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 新增/编辑用户表单（管理员专用） -->
             <div class="card hidden" id="userForm">
                 <div class="card-header">
                     <h3 id="userFormTitle">新增用戶</h3>
@@ -185,28 +283,6 @@
                     <div class="action-btns">
                         <button class="btn btn-primary" onclick="saveUser()">儲存</button>
                         <button class="btn btn-secondary" onclick="cancelUserForm()">取消</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-body">
-                    <div class="data-table-container">
-                        <table class="data-table" id="usersTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>姓名</th>
-                                    <th>帳號</th>
-                                    <th>角色</th>
-                                    <th>狀態</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="6" class="loading">載入中...</td></tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -1484,33 +1560,156 @@
             document.querySelector('#addTemplateForm .card-header h3').textContent = '新增任務模板';
         }
 
-        // 用户管理
+        // 用户管理 - 根据权限显示不同内容
+        let currentUser = null;
+        
         async function loadUsers() {
-            const tbody = document.querySelector('#usersTable tbody');
-            try {
-                const res = await fetch('/internal/api/v1/users', { credentials: 'include' });
-                const json = await res.json();
-                if (!json.data || json.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
-                    return;
+            // 获取当前用户信息
+            if (!currentUser) {
+                const meRes = await fetch('/internal/api/v1/auth/me', { credentials: 'include' });
+                const meJson = await meRes.json();
+                if (meJson.ok && meJson.data) {
+                    currentUser = meJson.data;
                 }
-                tbody.innerHTML = json.data.map(u => `
-                    <tr>
-                        <td>${u.user_id}</td>
-                        <td>${u.name}</td>
-                        <td>${u.username}</td>
-                        <td>${u.is_admin ? '管理員' : '員工'}</td>
-                        <td><span class="status-badge status-active">啟用</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-secondary" onclick="window.location.href='/internal/profile?user_id=${u.user_id}'">檢視</button>
-                            <button class="btn btn-sm btn-primary" onclick="editUser(${JSON.stringify(u).replace(/"/g, '&quot;')})">編輯</button>
-                            <button class="btn btn-sm btn-warning" onclick="resetUserPassword(${u.user_id}, '${u.name}')">重置密碼</button>
-                            ${u.user_id !== 1 ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.user_id}, '${u.name}')">刪除</button>` : ''}
-                        </td>
-                    </tr>
-                `).join('');
+            }
+            
+            const isAdmin = currentUser?.is_admin === true || currentUser?.isAdmin === true;
+            
+            if (isAdmin) {
+                // 管理员：显示用户列表
+                document.getElementById('adminUserSection').style.display = 'block';
+                document.getElementById('employeeProfileSection').style.display = 'none';
+                
+                const tbody = document.querySelector('#usersTable tbody');
+                try {
+                    const res = await fetch('/internal/api/v1/users', { credentials: 'include' });
+                    const json = await res.json();
+                    if (!json.data || json.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = json.data.map(u => `
+                        <tr>
+                            <td>${u.user_id}</td>
+                            <td>${u.name}</td>
+                            <td>${u.username}</td>
+                            <td>${u.is_admin ? '管理員' : '員工'}</td>
+                            <td><span class="status-badge status-active">啟用</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary" onclick="window.location.href='/internal/profile?user_id=${u.user_id}'">檢視</button>
+                                <button class="btn btn-sm btn-primary" onclick="editUser(${JSON.stringify(u).replace(/"/g, '&quot;')})">編輯</button>
+                                <button class="btn btn-sm btn-warning" onclick="resetUserPassword(${u.user_id}, '${u.name}')">重置密碼</button>
+                                ${u.user_id !== 1 ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.user_id}, '${u.name}')">刪除</button>` : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+                } catch (e) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+                }
+            } else {
+                // 员工：显示个人资料
+                document.getElementById('adminUserSection').style.display = 'none';
+                document.getElementById('employeeProfileSection').style.display = 'block';
+                
+                await loadMyProfile();
+            }
+        }
+        
+        // 加载员工自己的个人资料
+        async function loadMyProfile() {
+            try {
+                const userId = currentUser.user_id;
+                const res = await fetch(`/internal/api/v1/users/${userId}`, { credentials: 'include' });
+                const json = await res.json();
+                
+                if (json.ok && json.data) {
+                    const user = json.data;
+                    document.getElementById('myName').value = user.name || '';
+                    document.getElementById('myUsername').value = user.username || '';
+                    document.getElementById('myHireDate').value = user.hire_date || '';
+                    document.getElementById('myGender').value = user.gender || '';
+                    document.getElementById('myEmail').value = user.email || '';
+                }
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+                console.error('加载个人资料失败:', e);
+                alert('加载个人资料失败');
+            }
+        }
+        
+        // 保存员工个人资料
+        async function saveMyProfile() {
+            try {
+                const userId = currentUser.user_id;
+                const data = {
+                    hire_date: document.getElementById('myHireDate').value || null,
+                    gender: document.getElementById('myGender').value || null,
+                    email: document.getElementById('myEmail').value || null
+                };
+                
+                const res = await fetch(`/internal/api/v1/users/${userId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+                
+                const json = await res.json();
+                if (json.ok) {
+                    alert('✅ 儲存成功！');
+                } else {
+                    alert('❌ 儲存失敗: ' + (json.message || '未知錯誤'));
+                }
+            } catch (e) {
+                console.error('保存个人资料失败:', e);
+                alert('❌ 保存失败: ' + e.message);
+            }
+        }
+        
+        // 修改员工密码
+        async function changeMyPassword() {
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('請填寫所有欄位');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                alert('新密碼至少需要6個字元');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('新密碼與確認密碼不一致');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/internal/api/v1/auth/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                const json = await res.json();
+                if (json.ok) {
+                    alert('✅ 密碼修改成功！');
+                    // 清空表单
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                } else {
+                    alert('❌ 修改失敗: ' + (json.message || '未知錯誤'));
+                }
+            } catch (e) {
+                console.error('修改密码失败:', e);
+                alert('❌ 修改失败: ' + e.message);
             }
         }
         
