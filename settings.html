@@ -627,21 +627,40 @@
             }
         }
 
+        // 全局存儲 SOP 映射表
+        let sopMap = {};
+        
         // 加载服务
         async function loadServices() {
             const tbody = document.querySelector('#servicesTable tbody');
             try {
-                // ⚡ 添加時間戳參數繞過緩存，確保獲取最新數據
+                // ⚡ 同時加載服務和 SOP 列表
                 const timestamp = Date.now();
-                const res = await fetch(`/internal/api/v1/services?_t=${timestamp}`, { 
-                    credentials: 'include',
-                    cache: 'no-cache' // 禁用瀏覽器緩存
-                });
-                const json = await res.json();
+                const [servicesRes, sopsRes] = await Promise.all([
+                    fetch(`/internal/api/v1/services?_t=${timestamp}`, { 
+                        credentials: 'include',
+                        cache: 'no-cache'
+                    }),
+                    fetch(`/internal/api/v1/sop?scope=service&_t=${timestamp}`, {
+                        credentials: 'include',
+                        cache: 'no-cache'
+                    })
+                ]);
+                
+                const json = await servicesRes.json();
+                const sopsJson = await sopsRes.json();
                 
                 console.log('服務項目API響應:', json);
                 
-                if (!res.ok) {
+                // 建立 SOP ID -> 名稱的映射
+                if (sopsJson.ok && sopsJson.data) {
+                    sopMap = {};
+                    sopsJson.data.forEach(sop => {
+                        sopMap[sop.id] = sop.title;
+                    });
+                }
+                
+                if (!servicesRes.ok) {
                     console.error('API錯誤:', json);
                     tbody.innerHTML = `<tr><td colspan="4" class="loading">載入失敗: ${json.message || '未知錯誤'}</td></tr>`;
                     return;
@@ -653,7 +672,11 @@
                 }
                 
                 tbody.innerHTML = json.data.map(s => {
-                    const sopDisplay = s.service_sop_id ? `📖 SOP #${s.service_sop_id}` : '-';
+                    let sopDisplay = '-';
+                    if (s.service_sop_id) {
+                        const sopName = sopMap[s.service_sop_id];
+                        sopDisplay = sopName ? `📖 ${sopName}` : `📖 SOP #${s.service_sop_id}`;
+                    }
                     return `
                     <tr>
                         <td>${s.service_id}</td>
