@@ -44,14 +44,8 @@
     '/internal/reports': { key: 'reports', selector: '.reports-container' },
     '/reports': { key: 'reports', selector: '.reports-container' },
     
-    '/internal/rules': { key: 'rules', selector: '.rules-container' },
-    '/rules': { key: 'rules', selector: '.rules-container' },
-    
     '/internal/settings': { key: 'settings', selector: '.settings-container' },
     '/settings': { key: 'settings', selector: '.settings-container' },
-    
-    '/internal/lifecycle': { key: 'lifecycle', selector: '.lifecycle-container' },
-    '/lifecycle': { key: 'lifecycle', selector: '.lifecycle-container' },
     
     '/internal/cms': { key: 'cms', selector: '.cms-container' },
     '/cms': { key: 'cms', selector: '.cms-container' },

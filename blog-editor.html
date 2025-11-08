@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Blog 文章編輯器" />
+    <title>編輯文章｜CMS</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    
+    <!-- Quill Editor -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/vendor/quill-better-table.css" />
+    
+    <style>
+      * { box-sizing: border-box; }
+      
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+        background: #f5f7fa;
+      }
+      
+      /* 顶部工具栏 */
+      .top-toolbar {
+        background: white;
+        border-bottom: 2px solid #e5e7eb;
+        padding: 16px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      }
+      
+      .top-toolbar-left {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      
+      .top-toolbar-right {
+        display: flex;
+        gap: 12px;
+      }
+      
+      .btn {
+        padding: 10px 20px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+      
+      .btn.primary {
+        background: linear-gradient(135deg, #2c5f7c 0%, #1e4a63 100%);
+        color: white;
+        border-color: #2c5f7c;
+      }
+      
+      .btn.secondary {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-color: #10b981;
+      }
+      
+      /* 主编辑区 */
+      .editor-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: calc(100vh - 70px);
+        gap: 0;
+      }
+      
+      /* 左侧：编辑区 */
+      .editor-panel {
+        background: white;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-right: 2px solid #e5e7eb;
+      }
+      
+      .editor-header {
+        padding: 24px;
+        border-bottom: 2px solid #f0f0f0;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      }
+      
+      .editor-header h2 {
+        margin: 0 0 16px 0;
+        color: #2c5f7c;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .form-group {
+        margin-bottom: 16px;
+      }
+      
+      .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #374151;
+        font-size: 14px;
+      }
+      
+      .form-group input[type="text"],
+      .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.3s;
+      }
+      
+      .form-group input[type="text"]:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #2c5f7c;
+        box-shadow: 0 0 0 3px rgba(44, 95, 124, 0.1);
+      }
+      
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      
+      .tags-input-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        min-height: 44px;
+        align-items: center;
+      }
+      
+      .tag-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        color: #1e40af;
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      
+      .tag-remove {
+        cursor: pointer;
+        font-weight: bold;
+        opacity: 0.7;
+      }
+      
+      .tag-remove:hover {
+        opacity: 1;
+      }
+      
+      .tags-input {
+        border: none;
+        outline: none;
+        flex: 1;
+        min-width: 120px;
+        font-size: 14px;
+      }
+      
+      /* 图片上传区 */
+      .image-upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #f8fafc;
+      }
+      
+      .image-upload-area:hover {
+        border-color: #2c5f7c;
+        background: #f0f9ff;
+      }
+      
+      .image-upload-area.dragover {
+        border-color: #2c5f7c;
+        background: #dbeafe;
+      }
+      
+      .image-preview {
+        margin-top: 12px;
+        max-width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      
+      .image-preview img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+      
+      /* Quill 编辑器 */
+      .editor-content {
+        flex: 1;
+        overflow: auto;
+        padding: 24px;
+      }
+      
+      #quill-editor {
+        height: 100%;
+        background: white;
+      }
+      
+      .ql-container {
+        font-size: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+      }
+      
+      /* 右侧：完整预览 */
+      .preview-panel {
+        background: #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      
+      .preview-header {
+        padding: 16px 24px;
+        background: white;
+        border-bottom: 2px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .preview-header h2 {
+        margin: 0;
+        color: #2c5f7c;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .preview-mode-switch {
+        display: flex;
+        gap: 8px;
+        background: #f3f4f6;
+        padding: 4px;
+        border-radius: 8px;
+      }
+      
+      .preview-mode-btn {
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+      
+      .preview-mode-btn.active {
+        background: white;
+        color: #2c5f7c;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .preview-content {
+        flex: 1;
+        overflow: auto;
+        padding: 24px;
+        display: flex;
+        justify-content: center;
+      }
+      
+      .preview-iframe-wrapper {
+        width: 100%;
+        max-width: 100%;
+        background: white;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.5s;
+      }
+      
+      .preview-iframe-wrapper.mobile {
+        max-width: 375px;
+      }
+      
+      .preview-iframe-wrapper.tablet {
+        max-width: 768px;
+      }
+      
+      #preview-frame {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+        min-height: 800px;
+      }
+      
+      /* 响应式 */
+      @media (max-width: 1200px) {
+        .editor-layout {
+          grid-template-columns: 1fr;
+        }
+        
+        .preview-panel {
+          display: none;
+        }
+      }
+      
+      /* 加载提示 */
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      
+      .loading-spinner {
+        background: white;
+        padding: 32px 48px;
+        border-radius: 12px;
+        text-align: center;
+      }
+      
+      .spinner {
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #2c5f7c;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 加载提示 -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <div>處理中...</div>
+      </div>
+    </div>
+    
+    <!-- 顶部工具栏 -->
+    <div class="top-toolbar">
+      <div class="top-toolbar-left">
+        <button class="btn" onclick="goBack()">← 返回列表</button>
+        <span id="articleStatus" style="font-weight: 600; color: #6b7280;">草稿</span>
+      </div>
+      <div class="top-toolbar-right">
+        <button class="btn" id="btnSaveDraft">💾 保存草稿</button>
+        <button class="btn secondary" id="btnPublish">✓ 發布文章</button>
+      </div>
+    </div>
+    
+    <!-- 主编辑区 -->
+    <div class="editor-layout">
+      <!-- 左侧：编辑器 -->
+      <div class="editor-panel">
+        <div class="editor-header">
+          <h2>📝 內容編輯</h2>
+          
+          <!-- 标题 -->
+          <div class="form-group">
+            <label for="articleTitle">文章標題 *</label>
+            <input type="text" id="articleTitle" placeholder="輸入文章標題..." maxlength="100" required>
+          </div>
+          
+          <!-- 分类和标签 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="articleCategory">分類</label>
+              <select id="articleCategory">
+                <option value="">選擇分類</option>
+                <option value="創業指南">創業指南</option>
+                <option value="稅務知識">稅務知識</option>
+                <option value="會計實務">會計實務</option>
+                <option value="法規更新">法規更新</option>
+                <option value="經營管理">經營管理</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>標籤</label>
+              <div class="tags-input-wrapper" id="tagsWrapper">
+                <input type="text" class="tags-input" id="tagsInput" placeholder="輸入標籤後按 Enter...">
+              </div>
+            </div>
+          </div>
+          
+          <!-- 特色图片 -->
+          <div class="form-group">
+            <label>特色圖片</label>
+            <div class="image-upload-area" id="imageUploadArea">
+              <div>📷 點擊上傳或拖拽圖片到這裡</div>
+              <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">建議尺寸：1200x630px，最大 5MB</div>
+              <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            </div>
+            <div class="image-preview" id="imagePreview" style="display: none;"></div>
+          </div>
+          
+          <!-- 摘要 -->
+          <div class="form-group">
+            <label for="articleSummary">文章摘要</label>
+            <input type="text" id="articleSummary" placeholder="簡短描述文章內容（選填）" maxlength="200">
+          </div>
+        </div>
+        
+        <!-- Quill 编辑器 -->
+        <div class="editor-content">
+          <div id="quill-editor"></div>
+        </div>
+      </div>
+      
+      <!-- 右侧：完整预览 -->
+      <div class="preview-panel">
+        <div class="preview-header">
+          <h2>👁️ 實際網頁預覽</h2>
+          <div class="preview-mode-switch">
+            <button class="preview-mode-btn active" data-mode="desktop">🖥️ 桌面</button>
+            <button class="preview-mode-btn" data-mode="tablet">📱 平板</button>
+            <button class="preview-mode-btn" data-mode="mobile">📱 手機</button>
+          </div>
+        </div>
+        <div class="preview-content">
+          <div class="preview-iframe-wrapper" id="previewWrapper">
+            <iframe id="preview-frame" sandbox="allow-same-origin allow-scripts"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Quill 和相关库 -->
+    <script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
+    <script src="/assets/vendor/quill-better-table.js"></script>
+    
+    <script>
+      // 全局变量
+      const onProdHost = location.hostname.endsWith('horgoscpa.com');
+      const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+      
+      let quill = null;
+      let currentArticleId = null;
+      let featuredImageUrl = '';
+      let tags = [];
+      let previewUpdateTimer = null;
+      
+      // 从 URL 获取文章 ID（编辑模式）
+      const urlParams = new URLSearchParams(window.location.search);
+      currentArticleId = urlParams.get('id');
+      
+      // 初始化
+      document.addEventListener('DOMContentLoaded', async () => {
+        await checkAuth();
+        initQuillEditor();
+        initImageUpload();
+        initTagsInput();
+        initPreviewModeSwitch();
+        
+        if (currentArticleId) {
+          loadArticle(currentArticleId);
+        } else {
+          updatePreview();
+        }
+        
+        // 绑定保存和发布按钮
+        document.getElementById('btnSaveDraft').addEventListener('click', () => saveArticle(false));
+        document.getElementById('btnPublish').addEventListener('click', () => saveArticle(true));
+        
+        // 监听内容变化，实时更新预览
+        document.getElementById('articleTitle').addEventListener('input', schedulePreviewUpdate);
+        document.getElementById('articleCategory').addEventListener('change', schedulePreviewUpdate);
+        document.getElementById('articleSummary').addEventListener('input', schedulePreviewUpdate);
+        quill.on('text-change', schedulePreviewUpdate);
+      });
+      
+      // 检查认证
+      async function checkAuth() {
+        try {
+          const res = await fetch(`${apiBase}/auth/me`, { credentials: 'include' });
+          if (res.status === 401) {
+            location.assign('/login?redirect=' + encodeURIComponent(location.pathname + location.search));
+            return;
+          }
+          const json = await res.json();
+          if (!json?.ok || !json?.data?.isAdmin) {
+            alert('您沒有權限存取此頁面');
+            location.assign('/internal/cms');
+          }
+        } catch (err) {
+          alert('認證失敗，請重新登入');
+          location.assign('/login');
+        }
+      }
+      
+      // 初始化 Quill 编辑器
+      function initQuillEditor() {
+        quill = new Quill('#quill-editor', {
+          theme: 'snow',
+          modules: {
+            toolbar: [
+              [{ 'header': [1, 2, 3, false] }],
+              ['bold', 'italic', 'underline', 'strike'],
+              ['blockquote', 'code-block'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              [{ 'indent': '-1'}, { 'indent': '+1' }],
+              ['link', 'image', 'video'],
+              [{ 'color': [] }, { 'background': [] }],
+              [{ 'align': [] }],
+              ['clean']
+            ]
+          },
+          placeholder: '開始撰寫文章內容...'
+        });
+        
+        // 自定义图片处理器（支持上传到服务器）
+        const toolbar = quill.getModule('toolbar');
+        toolbar.addHandler('image', imageHandler);
+      }
+      
+      // 图片处理器
+      function imageHandler() {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+        
+        input.onchange = async () => {
+          const file = input.files[0];
+          if (!file) return;
+          
+          if (file.size > 5 * 1024 * 1024) {
+            alert('圖片大小不能超過 5MB');
+            return;
+          }
+          
+          // 暂时使用 Base64，后续可改为上传到服务器
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const range = quill.getSelection(true);
+            quill.insertEmbed(range.index, 'image', e.target.result);
+            quill.setSelection(range.index + 1);
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+      
+      // 初始化特色图片上传
+      function initImageUpload() {
+        const uploadArea = document.getElementById('imageUploadArea');
+        const input = document.getElementById('imageInput');
+        const preview = document.getElementById('imagePreview');
+        
+        uploadArea.addEventListener('click', () => input.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+          uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+          e.preventDefault();
+          uploadArea.classList.remove('dragover');
+          const file = e.dataTransfer.files[0];
+          if (file && file.type.startsWith('image/')) {
+            handleImageUpload(file);
+          }
+        });
+        
+        input.addEventListener('change', () => {
+          const file = input.files[0];
+          if (file) handleImageUpload(file);
+        });
+      }
+      
+      // 处理图片上传
+      function handleImageUpload(file) {
+        if (file.size > 5 * 1024 * 1024) {
+          alert('圖片大小不能超過 5MB');
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          featuredImageUrl = e.target.result;
+          const preview = document.getElementById('imagePreview');
+          preview.innerHTML = `<img src="${featuredImageUrl}" alt="特色圖片">`;
+          preview.style.display = 'block';
+          schedulePreviewUpdate();
+        };
+        reader.readAsDataURL(file);
+      }
+      
+      // 初始化标签输入
+      function initTagsInput() {
+        const wrapper = document.getElementById('tagsWrapper');
+        const input = document.getElementById('tagsInput');
+        
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const tag = input.value.trim();
+            if (tag && !tags.includes(tag)) {
+              tags.push(tag);
+              renderTags();
+              input.value = '';
+              schedulePreviewUpdate();
+            }
+          }
+        });
+      }
+      
+      // 渲染标签
+      function renderTags() {
+        const wrapper = document.getElementById('tagsWrapper');
+        const input = document.getElementById('tagsInput');
+        const existingTags = wrapper.querySelectorAll('.tag-item');
+        existingTags.forEach(tag => tag.remove());
+        
+        tags.forEach((tag, index) => {
+          const tagEl = document.createElement('span');
+          tagEl.className = 'tag-item';
+          tagEl.innerHTML = `${tag} <span class="tag-remove" onclick="removeTag(${index})">×</span>`;
+          wrapper.insertBefore(tagEl, input);
+        });
+      }
+      
+      // 移除标签
+      function removeTag(index) {
+        tags.splice(index, 1);
+        renderTags();
+        schedulePreviewUpdate();
+      }
+      
+      // 初始化预览模式切换
+      function initPreviewModeSwitch() {
+        document.querySelectorAll('.preview-mode-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.preview-mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const mode = btn.dataset.mode;
+            const wrapper = document.getElementById('previewWrapper');
+            wrapper.className = 'preview-iframe-wrapper';
+            if (mode !== 'desktop') {
+              wrapper.classList.add(mode);
+            }
+          });
+        });
+      }
+      
+      // 延迟更新预览（防抖）
+      function schedulePreviewUpdate() {
+        clearTimeout(previewUpdateTimer);
+        previewUpdateTimer = setTimeout(updatePreview, 500);
+      }
+      
+      // 更新预览
+      function updatePreview() {
+        const title = document.getElementById('articleTitle').value || '文章標題';
+        const category = document.getElementById('articleCategory').value || '未分類';
+        const summary = document.getElementById('articleSummary').value || '';
+        const content = quill.root.innerHTML;
+        
+        const previewHTML = `
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <link rel="stylesheet" href="/assets/css/common.css">
+  <link rel="stylesheet" href="/assets/css/blog-article-modern.css">
+  <style>
+    body { margin: 0; padding: 0; }
+    .preview-badge {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #f59e0b;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-badge">預覽模式</div>
+  
+  <!-- 导航栏 -->
+  <nav style="background: linear-gradient(135deg, #2c5f7c 0%, #1e4a63 100%); color: white; padding: 20px 0;">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 24px; font-weight: 700;">鴻閣會計師事務所</div>
+        <div style="display: flex; gap: 24px; font-size: 15px;">
+          <a href="/" style="color: white; text-decoration: none;">首頁</a>
+          <a href="/services.html" style="color: white; text-decoration: none;">服務項目</a>
+          <a href="/blog.html" style="color: white; text-decoration: none; border-bottom: 2px solid white;">部落格</a>
+          <a href="/team.html" style="color: white; text-decoration: none;">關於我們</a>
+          <a href="/contact.html" style="color: white; text-decoration: none;">聯絡我們</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- 文章内容 -->
+  <article style="max-width: 900px; margin: 40px auto; padding: 0 24px;">
+    ${featuredImageUrl ? `
+    <div style="margin-bottom: 32px; border-radius: 12px; overflow: hidden;">
+      <img src="${featuredImageUrl}" alt="${title}" style="width: 100%; height: auto; display: block;">
+    </div>
+    ` : ''}
+    
+    <header style="margin-bottom: 32px;">
+      <div style="color: #2c5f7c; font-weight: 600; margin-bottom: 12px;">📁 ${category}</div>
+      <h1 style="font-size: 36px; font-weight: 700; color: #1f2937; margin: 0 0 16px 0; line-height: 1.3;">${title}</h1>
+      ${summary ? `<p style="font-size: 18px; color: #6b7280; margin: 0 0 16px 0;">${summary}</p>` : ''}
+      <div style="display: flex; gap: 16px; color: #9ca3af; font-size: 14px;">
+        <span>📅 ${new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        <span>👤 編輯者</span>
+        ${tags.length > 0 ? `<span>🏷️ ${tags.map(t => `<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${t}</span>`).join(' ')}</span>` : ''}
+      </div>
+    </header>
+    
+    <div style="font-size: 18px; line-height: 1.8; color: #374151;">
+      ${content || '<p style="color: #9ca3af; text-align: center; padding: 60px 0;">開始撰寫內容...</p>'}
+    </div>
+  </article>
+  
+  <!-- 页脚 -->
+  <footer style="background: #1f2937; color: white; padding: 60px 0 30px; margin-top: 80px;">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 24px;">
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-bottom: 40px;">
+        <div>
+          <h3 style="margin: 0 0 16px 0;">鴻閣會計師事務所</h3>
+          <p style="color: #9ca3af; line-height: 1.6;">提供專業的會計、稅務、審計及商務諮詢服務。</p>
+        </div>
+        <div>
+          <h4 style="margin: 0 0 16px 0;">服務項目</h4>
+          <ul style="list-style: none; padding: 0; margin: 0; color: #9ca3af;">
+            <li style="margin-bottom: 8px;">記帳及稅務申報</li>
+            <li style="margin-bottom: 8px;">財務報表簽證</li>
+            <li style="margin-bottom: 8px;">稅務諮詢規劃</li>
+            <li>商務顧問服務</li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="margin: 0 0 16px 0;">聯絡我們</h4>
+          <p style="color: #9ca3af; line-height: 1.6; margin: 0;">
+            電話：(02) 1234-5678<br>
+            Email: info@horgoscpa.com<br>
+            地址：台北市信義區信義路五段7號
+          </p>
+        </div>
+      </div>
+      <div style="text-align: center; color: #6b7280; padding-top: 24px; border-top: 1px solid #374151;">
+        © ${new Date().getFullYear()} 鴻閣會計師事務所 版權所有
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
+        `;
+        
+        const iframe = document.getElementById('preview-frame');
+        iframe.srcdoc = previewHTML;
+      }
+      
+      // 加载文章（编辑模式）
+      async function loadArticle(id) {
+        try {
+          showLoading();
+          const res = await fetch(`${apiBase}/admin/articles/${id}`, { credentials: 'include' });
+          if (!res.ok) throw new Error('載入失敗');
+          
+          const json = await res.json();
+          if (!json.ok) throw new Error(json.message || '載入失敗');
+          
+          const article = json.data;
+          document.getElementById('articleTitle').value = article.title || '';
+          document.getElementById('articleCategory').value = article.category || '';
+          document.getElementById('articleSummary').value = article.summary || '';
+          quill.root.innerHTML = article.content || '';
+          
+          if (article.featuredImage) {
+            featuredImageUrl = article.featuredImage;
+            document.getElementById('imagePreview').innerHTML = `<img src="${featuredImageUrl}">`;
+            document.getElementById('imagePreview').style.display = 'block';
+          }
+          
+          if (article.tags) {
+            tags = Array.isArray(article.tags) ? article.tags : JSON.parse(article.tags || '[]');
+            renderTags();
+          }
+          
+          if (article.isPublished) {
+            document.getElementById('articleStatus').textContent = '已發布';
+            document.getElementById('articleStatus').style.color = '#10b981';
+          }
+          
+          updatePreview();
+        } catch (err) {
+          alert('載入文章失敗：' + err.message);
+          console.error(err);
+        } finally {
+          hideLoading();
+        }
+      }
+      
+      // 保存文章
+      async function saveArticle(publish = false) {
+        const title = document.getElementById('articleTitle').value.trim();
+        if (!title) {
+          alert('請輸入文章標題');
+          return;
+        }
+        
+        const content = quill.root.innerHTML;
+        if (!content || content === '<p><br></p>') {
+          alert('請輸入文章內容');
+          return;
+        }
+        
+        const data = {
+          title,
+          category: document.getElementById('articleCategory').value,
+          summary: document.getElementById('articleSummary').value.trim(),
+          content,
+          featuredImage: featuredImageUrl,
+          tags: JSON.stringify(tags),
+          isPublished: publish
+        };
+        
+        try {
+          showLoading();
+          const url = currentArticleId 
+            ? `${apiBase}/admin/articles/${currentArticleId}` 
+            : `${apiBase}/admin/articles`;
+          const method = currentArticleId ? 'PUT' : 'POST';
+          
+          const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
+          });
+          
+          const json = await res.json();
+          if (!res.ok || !json.ok) {
+            throw new Error(json.message || '保存失敗');
+          }
+          
+          alert(publish ? '文章已發布！' : '草稿已保存！');
+          
+          if (!currentArticleId && json.data?.id) {
+            currentArticleId = json.data.id;
+            history.replaceState(null, '', `?id=${currentArticleId}`);
+          }
+          
+          if (publish) {
+            document.getElementById('articleStatus').textContent = '已發布';
+            document.getElementById('articleStatus').style.color = '#10b981';
+          }
+        } catch (err) {
+          alert('保存失敗：' + err.message);
+          console.error(err);
+        } finally {
+          hideLoading();
+        }
+      }
+      
+      // 返回列表
+      function goBack() {
+        if (confirm('確定要離開？未保存的內容將會丟失。')) {
+          location.assign('/internal/cms');
+        }
+      }
+      
+      // 显示/隐藏加载提示
+      function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+      }
+      
+      function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }
+    </script>
+  </body>
+</html>
+

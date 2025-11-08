@@ -14200,6 +14200,424 @@ async function handleCMS(request, env, me, requestId, url, path) {
       return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
     }
   }
+  if (path.match(/^\/internal\/api\/v1\/admin\/articles\/\d+$/) && method === "GET") {
+    try {
+      const articleId = parseInt(path.split("/").pop());
+      const article = await env.DATABASE.prepare(
+        `SELECT article_id, title, slug, summary, content, featured_image, category, tags, 
+                is_published, published_at, view_count, seo_title, seo_description, seo_keywords,
+                created_at, updated_at
+         FROM ExternalArticles
+         WHERE article_id = ? AND is_deleted = 0`
+      ).bind(articleId).first();
+      if (!article) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u6587\u7AE0\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      const data = {
+        id: article.article_id,
+        title: article.title,
+        slug: article.slug,
+        summary: article.summary,
+        content: article.content,
+        featuredImage: article.featured_image,
+        category: article.category,
+        tags: (() => {
+          try {
+            return JSON.parse(article.tags || "[]");
+          } catch (_) {
+            return [];
+          }
+        })(),
+        isPublished: article.is_published === 1,
+        publishedAt: article.published_at,
+        viewCount: article.view_count,
+        seoTitle: article.seo_title,
+        seoDescription: article.seo_description,
+        seoKeywords: article.seo_keywords,
+        createdAt: article.created_at,
+        updatedAt: article.updated_at
+      };
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path === "/internal/api/v1/admin/articles" && method === "POST") {
+    try {
+      const body = await request.json();
+      const { title, slug, summary, content, featuredImage, category, tags, isPublished, seoTitle, seoDescription, seoKeywords } = body;
+      if (!title || !content) {
+        return jsonResponse(400, { ok: false, code: "INVALID_INPUT", message: "\u6A19\u984C\u548C\u5167\u5BB9\u70BA\u5FC5\u586B", meta: { requestId } }, corsHeaders);
+      }
+      const finalSlug = slug || title.toLowerCase().replace(/\s+/g, "-").replace(/[^\w\-\u4e00-\u9fa5]/g, "") + "-" + Date.now();
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const publishedAt = isPublished ? now : null;
+      const result = await env.DATABASE.prepare(
+        `INSERT INTO ExternalArticles 
+         (title, slug, summary, content, featured_image, category, tags, is_published, published_at, 
+          seo_title, seo_description, seo_keywords, created_by, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        title,
+        finalSlug,
+        summary || "",
+        content,
+        featuredImage || "",
+        category || "",
+        tags || "[]",
+        isPublished ? 1 : 0,
+        publishedAt,
+        seoTitle || "",
+        seoDescription || "",
+        seoKeywords || "",
+        me.user_id,
+        now,
+        now
+      ).run();
+      return jsonResponse(201, {
+        ok: true,
+        code: "CREATED",
+        message: "\u6587\u7AE0\u5DF2\u5275\u5EFA",
+        data: { id: result.meta.last_row_id },
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/articles\/\d+$/) && method === "PUT") {
+    try {
+      const articleId = parseInt(path.split("/").pop());
+      const body = await request.json();
+      const { title, slug, summary, content, featuredImage, category, tags, isPublished, seoTitle, seoDescription, seoKeywords } = body;
+      if (!title || !content) {
+        return jsonResponse(400, { ok: false, code: "INVALID_INPUT", message: "\u6A19\u984C\u548C\u5167\u5BB9\u70BA\u5FC5\u586B", meta: { requestId } }, corsHeaders);
+      }
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const existing = await env.DATABASE.prepare(
+        `SELECT article_id, is_published, published_at FROM ExternalArticles WHERE article_id = ? AND is_deleted = 0`
+      ).bind(articleId).first();
+      if (!existing) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u6587\u7AE0\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      let publishedAt = existing.published_at;
+      if (isPublished && existing.is_published === 0) {
+        publishedAt = now;
+      }
+      await env.DATABASE.prepare(
+        `UPDATE ExternalArticles 
+         SET title = ?, slug = ?, summary = ?, content = ?, featured_image = ?, category = ?, tags = ?,
+             is_published = ?, published_at = ?, seo_title = ?, seo_description = ?, seo_keywords = ?,
+             updated_at = ?
+         WHERE article_id = ?`
+      ).bind(
+        title,
+        slug || existing.slug,
+        summary || "",
+        content,
+        featuredImage || "",
+        category || "",
+        tags || "[]",
+        isPublished ? 1 : 0,
+        publishedAt,
+        seoTitle || "",
+        seoDescription || "",
+        seoKeywords || "",
+        now,
+        articleId
+      ).run();
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u6587\u7AE0\u5DF2\u66F4\u65B0", data: { id: articleId }, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/articles\/\d+$/) && method === "DELETE") {
+    try {
+      const articleId = parseInt(path.split("/").pop());
+      const existing = await env.DATABASE.prepare(
+        `SELECT article_id FROM ExternalArticles WHERE article_id = ? AND is_deleted = 0`
+      ).bind(articleId).first();
+      if (!existing) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u6587\u7AE0\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE ExternalArticles SET is_deleted = 1, updated_at = ? WHERE article_id = ?`
+      ).bind((/* @__PURE__ */ new Date()).toISOString(), articleId).run();
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u6587\u7AE0\u5DF2\u522A\u9664", meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path === "/internal/api/v1/admin/faq" && method === "POST") {
+    try {
+      const body = await request.json();
+      const { question, answer, category, sortOrder, isPublished } = body;
+      if (!question || !answer) {
+        return jsonResponse(400, { ok: false, code: "INVALID_INPUT", message: "\u554F\u984C\u548C\u7B54\u6848\u70BA\u5FC5\u586B", meta: { requestId } }, corsHeaders);
+      }
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const result = await env.DATABASE.prepare(
+        `INSERT INTO ExternalFAQ (question, answer, category, sort_order, is_published, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).bind(question, answer, category || "", sortOrder || 0, isPublished ? 1 : 0, now, now).run();
+      return jsonResponse(201, {
+        ok: true,
+        code: "CREATED",
+        message: "FAQ \u5DF2\u5275\u5EFA",
+        data: { id: result.meta.last_row_id },
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/faq\/\d+$/) && method === "GET") {
+    try {
+      const faqId = parseInt(path.split("/").pop());
+      const faq = await env.DATABASE.prepare(
+        `SELECT faq_id, question, answer, category, sort_order, is_published, created_at, updated_at
+         FROM ExternalFAQ WHERE faq_id = ? AND is_deleted = 0`
+      ).bind(faqId).first();
+      if (!faq) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "FAQ \u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      const data = {
+        id: faq.faq_id,
+        question: faq.question,
+        answer: faq.answer,
+        category: faq.category,
+        sortOrder: faq.sort_order,
+        isPublished: faq.is_published === 1,
+        createdAt: faq.created_at,
+        updatedAt: faq.updated_at
+      };
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/faq\/\d+$/) && method === "PUT") {
+    try {
+      const faqId = parseInt(path.split("/").pop());
+      const body = await request.json();
+      const { question, answer, category, sortOrder, isPublished } = body;
+      if (!question || !answer) {
+        return jsonResponse(400, { ok: false, code: "INVALID_INPUT", message: "\u554F\u984C\u548C\u7B54\u6848\u70BA\u5FC5\u586B", meta: { requestId } }, corsHeaders);
+      }
+      const existing = await env.DATABASE.prepare(
+        `SELECT faq_id FROM ExternalFAQ WHERE faq_id = ? AND is_deleted = 0`
+      ).bind(faqId).first();
+      if (!existing) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "FAQ \u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE ExternalFAQ 
+         SET question = ?, answer = ?, category = ?, sort_order = ?, is_published = ?, updated_at = ?
+         WHERE faq_id = ?`
+      ).bind(question, answer, category || "", sortOrder || 0, isPublished ? 1 : 0, (/* @__PURE__ */ new Date()).toISOString(), faqId).run();
+      return jsonResponse(200, { ok: true, code: "OK", message: "FAQ \u5DF2\u66F4\u65B0", data: { id: faqId }, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/faq\/\d+$/) && method === "DELETE") {
+    try {
+      const faqId = parseInt(path.split("/").pop());
+      const existing = await env.DATABASE.prepare(
+        `SELECT faq_id FROM ExternalFAQ WHERE faq_id = ? AND is_deleted = 0`
+      ).bind(faqId).first();
+      if (!existing) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "FAQ \u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE ExternalFAQ SET is_deleted = 1, updated_at = ? WHERE faq_id = ?`
+      ).bind((/* @__PURE__ */ new Date()).toISOString(), faqId).run();
+      return jsonResponse(200, { ok: true, code: "OK", message: "FAQ \u5DF2\u522A\u9664", meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/services\/\d+$/) && method === "GET") {
+    try {
+      const serviceId = parseInt(path.split("/").pop());
+      const service = await env.DATABASE.prepare(
+        `SELECT service_id, service_key, title, summary, content, hero_image, is_published, sort_order, updated_at
+         FROM ExternalServices WHERE service_id = ? AND is_deleted = 0`
+      ).bind(serviceId).first();
+      if (!service) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u670D\u52D9\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      const data = {
+        id: service.service_id,
+        key: service.service_key,
+        title: service.title,
+        summary: service.summary,
+        content: service.content,
+        heroImage: service.hero_image,
+        isPublished: service.is_published === 1,
+        sortOrder: service.sort_order,
+        updatedAt: service.updated_at
+      };
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/services\/\d+$/) && method === "PUT") {
+    try {
+      const serviceId = parseInt(path.split("/").pop());
+      const body = await request.json();
+      const { title, summary, content, heroImage, isPublished } = body;
+      if (!title || !content) {
+        return jsonResponse(400, { ok: false, code: "INVALID_INPUT", message: "\u6A19\u984C\u548C\u5167\u5BB9\u70BA\u5FC5\u586B", meta: { requestId } }, corsHeaders);
+      }
+      const existing = await env.DATABASE.prepare(
+        `SELECT service_id FROM ExternalServices WHERE service_id = ? AND is_deleted = 0`
+      ).bind(serviceId).first();
+      if (!existing) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u670D\u52D9\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE ExternalServices 
+         SET title = ?, summary = ?, content = ?, hero_image = ?, is_published = ?, updated_at = ?
+         WHERE service_id = ?`
+      ).bind(title, summary || "", content, heroImage || "", isPublished ? 1 : 0, (/* @__PURE__ */ new Date()).toISOString(), serviceId).run();
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u670D\u52D9\u5DF2\u66F4\u65B0", data: { id: serviceId }, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path === "/internal/api/v1/admin/resources" && method === "POST") {
+    try {
+      const body = await request.json();
+      const { title, description, fileUrl, fileType, fileSize, category, coverImage, isPublished } = body;
+      if (!title || !fileUrl) {
+        return jsonResponse(400, { ok: false, code: "INVALID_INPUT", message: "\u6A19\u984C\u548C\u6587\u4EF6 URL \u70BA\u5FC5\u586B", meta: { requestId } }, corsHeaders);
+      }
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const result = await env.DATABASE.prepare(
+        `INSERT INTO ResourceCenter 
+         (title, description, file_url, file_type, file_size, category, cover_image, is_published, created_by, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        title,
+        description || "",
+        fileUrl,
+        fileType || "",
+        fileSize || 0,
+        category || "",
+        coverImage || "",
+        isPublished !== false ? 1 : 0,
+        me.user_id,
+        now,
+        now
+      ).run();
+      return jsonResponse(201, {
+        ok: true,
+        code: "CREATED",
+        message: "\u8CC7\u6E90\u5DF2\u5275\u5EFA",
+        data: { id: result.meta.last_row_id },
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/resources\/\d+$/) && method === "GET") {
+    try {
+      const resourceId = parseInt(path.split("/").pop());
+      const resource = await env.DATABASE.prepare(
+        `SELECT resource_id, title, description, file_url, file_type, file_size, category, cover_image, is_published, download_count, created_at, updated_at
+         FROM ResourceCenter WHERE resource_id = ? AND is_deleted = 0`
+      ).bind(resourceId).first();
+      if (!resource) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u8CC7\u6E90\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      const data = {
+        id: resource.resource_id,
+        title: resource.title,
+        description: resource.description,
+        fileUrl: resource.file_url,
+        fileType: resource.file_type,
+        fileSize: resource.file_size,
+        category: resource.category,
+        coverImage: resource.cover_image,
+        isPublished: resource.is_published === 1,
+        downloadCount: resource.download_count,
+        createdAt: resource.created_at,
+        updatedAt: resource.updated_at
+      };
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/resources\/\d+$/) && method === "PUT") {
+    try {
+      const resourceId = parseInt(path.split("/").pop());
+      const body = await request.json();
+      const { title, description, fileUrl, fileType, fileSize, category, coverImage, isPublished } = body;
+      if (!title || !fileUrl) {
+        return jsonResponse(400, { ok: false, code: "INVALID_INPUT", message: "\u6A19\u984C\u548C\u6587\u4EF6 URL \u70BA\u5FC5\u586B", meta: { requestId } }, corsHeaders);
+      }
+      const existing = await env.DATABASE.prepare(
+        `SELECT resource_id FROM ResourceCenter WHERE resource_id = ? AND is_deleted = 0`
+      ).bind(resourceId).first();
+      if (!existing) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u8CC7\u6E90\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE ResourceCenter 
+         SET title = ?, description = ?, file_url = ?, file_type = ?, file_size = ?, category = ?, cover_image = ?, is_published = ?, updated_at = ?
+         WHERE resource_id = ?`
+      ).bind(
+        title,
+        description || "",
+        fileUrl,
+        fileType || "",
+        fileSize || 0,
+        category || "",
+        coverImage || "",
+        isPublished !== false ? 1 : 0,
+        (/* @__PURE__ */ new Date()).toISOString(),
+        resourceId
+      ).run();
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u8CC7\u6E90\u5DF2\u66F4\u65B0", data: { id: resourceId }, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path.match(/^\/internal\/api\/v1\/admin\/resources\/\d+$/) && method === "DELETE") {
+    try {
+      const resourceId = parseInt(path.split("/").pop());
+      const existing = await env.DATABASE.prepare(
+        `SELECT resource_id FROM ResourceCenter WHERE resource_id = ? AND is_deleted = 0`
+      ).bind(resourceId).first();
+      if (!existing) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u8CC7\u6E90\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE ResourceCenter SET is_deleted = 1, updated_at = ? WHERE resource_id = ?`
+      ).bind((/* @__PURE__ */ new Date()).toISOString(), resourceId).run();
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u8CC7\u6E90\u5DF2\u522A\u9664", meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
   return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
 }
 __name(handleCMS, "handleCMS");

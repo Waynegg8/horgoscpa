@@ -17,7 +17,6 @@
     if (path.includes('leaves')) return 'leaves';
     if (path.includes('payroll')) return 'payroll';
     if (path.includes('costs')) return 'costs';
-    if (path.includes('lifecycle')) return 'lifecycle';
     if (path.includes('knowledge')) return 'knowledge';
     if (path.includes('reports')) return 'reports';
     if (path.includes('settings')) return 'settings';

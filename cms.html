@@ -225,7 +225,11 @@
                 <td>${statusBadge}</td>
                 <td>${r.updatedAt||''}</td>
                 <td>${Number(r.viewCount||0)}</td>
-                <td><button class="btn" type="button">編輯</button> <button class="btn" type="button">發布</button> <button class="btn" type="button">刪除</button> <button class="btn" type="button">預覽</button></td>
+                <td>
+                  <button class="btn" type="button" onclick="editArticle(${r.id})">編輯</button>
+                  ${!r.isPublished ? `<button class="btn" type="button" onclick="publishArticle(${r.id})">發布</button>` : ''}
+                  <button class="btn" type="button" onclick="deleteArticle(${r.id})">刪除</button>
+                </td>
               `;
               tbody.appendChild(tr);
             });
@@ -233,8 +237,46 @@
             tbody.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
+        
+        function editArticle(id) {
+          location.assign(`/internal/blog-editor.html?id=${id}`);
+        }
+        
+        async function publishArticle(id) {
+          if (!confirm('確定要發布此文章嗎？')) return;
+          try {
+            const res = await fetch(`${apiBase}/admin/articles/${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ isPublished: true })
+            });
+            const json = await res.json();
+            if (!res.ok || !json.ok) throw new Error(json.message || '發布失敗');
+            alert('文章已發布！');
+            renderBlog();
+          } catch (err) {
+            alert('發布失敗：' + err.message);
+          }
+        }
+        
+        async function deleteArticle(id) {
+          if (!confirm('確定要刪除此文章嗎？此操作無法復原。')) return;
+          try {
+            const res = await fetch(`${apiBase}/admin/articles/${id}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            const json = await res.json();
+            if (!res.ok || !json.ok) throw new Error(json.message || '刪除失敗');
+            alert('文章已刪除');
+            renderBlog();
+          } catch (err) {
+            alert('刪除失敗：' + err.message);
+          }
+        }
 
-        // FAQ list
+        // FAQ actions
         async function renderFAQ(){
           const tbody = document.getElementById('faqTbody');
           tbody.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
@@ -262,7 +304,10 @@
                 <td>${Number(r.sortOrder||0)}</td>
                 <td>${statusTxt}</td>
                 <td>${r.updatedAt||''}</td>
-                <td><button class="btn" type="button">編輯</button> <button class="btn" type="button">刪除</button></td>
+                <td>
+                  <button class="btn" type="button" onclick="alert('FAQ 編輯器開發中...')">編輯</button>
+                  <button class="btn" type="button" onclick="deleteFAQ(${r.id})">刪除</button>
+                </td>
               `;
               tbody.appendChild(tr);
             });
@@ -270,8 +315,24 @@
             tbody.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
-
-        // Services (cards)
+        
+        async function deleteFAQ(id) {
+          if (!confirm('確定要刪除此 FAQ 嗎？')) return;
+          try {
+            const res = await fetch(`${apiBase}/admin/faq/${id}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            const json = await res.json();
+            if (!res.ok || !json.ok) throw new Error(json.message || '刪除失敗');
+            alert('FAQ 已刪除');
+            renderFAQ();
+          } catch (err) {
+            alert('刪除失敗：' + err.message);
+          }
+        }
+        
+        // Service actions
         async function renderServiceCards(){
           const wrap = document.getElementById('serviceCards');
           wrap.innerHTML = '<div class="muted">載入中…</div>';
@@ -290,7 +351,9 @@
               div.innerHTML = `
                 <div class="doc-title">${r.title||r.key} ${badge}</div>
                 <div class="doc-meta"><div class="doc-meta-item">最後更新：${r.updatedAt||''}</div></div>
-                <div class="doc-footer" style="justify-content:flex-end;"><button class="btn" type="button">編輯</button></div>
+                <div class="doc-footer" style="justify-content:flex-end;">
+                  <button class="btn" type="button" onclick="alert('服務編輯器開發中...')">編輯</button>
+                </div>
               `;
               wrap.appendChild(div);
             });
@@ -298,8 +361,8 @@
             wrap.innerHTML = '<div style="color:#c0392b;">載入失敗</div>';
           }
         }
-
-        // Resources list
+        
+        // Resource actions
         async function renderResources(){
           const tbody = document.getElementById('resTbody');
           tbody.innerHTML = '<tr><td colspan="7" class="muted">載入中…</td></tr>';
@@ -327,7 +390,11 @@
                 <td>${fmtBytes(r.fileSize)}</td>
                 <td>${Number(r.downloadCount||0)}</td>
                 <td>${r.updatedAt||''}</td>
-                <td><button class="btn" type="button">下載</button> <button class="btn" type="button">編輯</button> <button class="btn" type="button">刪除</button></td>
+                <td>
+                  <button class="btn" type="button" onclick="window.open('${r.fileUrl||''}', '_blank')">下載</button>
+                  <button class="btn" type="button" onclick="alert('資源編輯器開發中...')">編輯</button>
+                  <button class="btn" type="button" onclick="deleteResource(${r.id})">刪除</button>
+                </td>
               `;
               tbody.appendChild(tr);
             });
@@ -335,9 +402,29 @@
             tbody.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
+        
+        async function deleteResource(id) {
+          if (!confirm('確定要刪除此資源嗎？')) return;
+          try {
+            const res = await fetch(`${apiBase}/admin/resources/${id}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            const json = await res.json();
+            if (!res.ok || !json.ok) throw new Error(json.message || '刪除失敗');
+            alert('資源已刪除');
+            renderResources();
+          } catch (err) {
+            alert('刪除失敗：' + err.message);
+          }
+        }
 
-        // Events (skeleton only)
+        // Events
         let t1=null,t2=null,t3=null;
+        document.getElementById('btnNewPost').addEventListener('click', () => location.assign('/internal/blog-editor.html'));
+        document.getElementById('btnNewFAQ').addEventListener('click', () => alert('FAQ 編輯器開發中...'));
+        document.getElementById('btnUploadResource').addEventListener('click', () => alert('資源上傳功能開發中...'));
+        
         document.getElementById('blogSearch').addEventListener('input', ()=>{ clearTimeout(t1); t1=setTimeout(renderBlog, 300); });
         document.getElementById('faqSearch').addEventListener('input', ()=>{ clearTimeout(t2); t2=setTimeout(renderFAQ, 300); });
         document.getElementById('resSearch').addEventListener('input', ()=>{ clearTimeout(t3); t3=setTimeout(renderResources, 300); });
