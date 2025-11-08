@@ -120,13 +120,11 @@
     
     console.log('[Bootstrap] 非管理員身份，隱藏管理員專用導航');
     
-    // 管理员专用的页面路径（只隐藏真正敏感的管理功能）
+    // 管理员专用的页面路径
     const adminOnlyPaths = [
-      '/internal/payroll',      // 薪資管理（敏感）
-      '/internal/costs',        // 成本管理（财务敏感）
-      '/internal/cms',          // 內容管理（网站管理）
-      '/internal/reports',      // 報表（管理决策）
-      '/internal/settings'      // 系統設定（管理员配置）
+      '/internal/costs',        // 成本管理
+      '/internal/cms',          // CMS 內容管理
+      '/internal/reports'       // 報表
     ];
     
     // 隐藏管理员专用的导航链接
@@ -222,7 +220,7 @@
       console.warn('[Bootstrap] document.body 尚未就緒，等待...');
       return;
     }
-    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v7');
+    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v8');
     document.body.insertAdjacentHTML('afterbegin', html);
     markActiveNav();
     bindMobileToggle();
