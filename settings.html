@@ -1656,8 +1656,8 @@
                     email: document.getElementById('myEmail').value || null
                 };
                 
-                const res = await fetch(`/internal/api/v1/users/${userId}`, {
-                    method: 'PATCH',
+                const res = await fetch(`/internal/api/v1/users/${userId}/profile`, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify(data)

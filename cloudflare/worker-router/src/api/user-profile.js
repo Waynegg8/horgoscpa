@@ -8,9 +8,12 @@ export async function handleUserProfile(request, env, me, requestId, url, path) 
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
 
+	console.log(`[UserProfile] method=${method}, path=${path}`);
+
 	// GET /internal/api/v1/users/:id - 获取单个用户详情
 	if (method === "GET" && path.match(/^\/internal\/api\/v1\/users\/\d+$/)) {
 		const userId = parseInt(path.split("/")[5]);
+		console.log(`[UserProfile] 匹配 GET 路由, userId=${userId}`);
 		return await getUserProfile(env, me, userId, requestId, corsHeaders);
 	}
 
