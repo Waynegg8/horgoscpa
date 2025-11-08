@@ -353,26 +353,28 @@
             }
         }
         
-        // 初始化月份选择器（显示最近12个月）
+        // 初始化月份选择器（只显示本月和上月）
         function initMonthSelector() {
             const container = document.getElementById('monthSelector');
             const now = new Date();
-            const months = [];
             
-            // 生成最近12个月
-            for (let i = 11; i >= 0; i--) {
-                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                const displayText = `${date.getFullYear()}年${date.getMonth() + 1}月`;
-                months.push({ value: yearMonth, text: displayText });
-            }
+            // 本月
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const currentText = `${now.getFullYear()}年${now.getMonth() + 1}月`;
             
-            // 添加"更多月份"输入框
-            container.innerHTML = months.map(m => `
-                <button class="month-tag" data-month="${m.value}" onclick="toggleMonth('${m.value}')">
-                    ${m.text}
+            // 上月
+            const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+            const lastText = `${lastMonthDate.getFullYear()}年${lastMonthDate.getMonth() + 1}月`;
+            
+            // 添加月份按钮和输入框
+            container.innerHTML = `
+                <button class="month-tag" data-month="${lastMonth}" onclick="toggleMonth('${lastMonth}')">
+                    ${lastText}
                 </button>
-            `).join('') + `
+                <button class="month-tag" data-month="${currentMonth}" onclick="toggleMonth('${currentMonth}')">
+                    ${currentText}
+                </button>
                 <input type="month" id="customMonth" class="form-control" style="width:160px;" 
                        onchange="addCustomMonth(this.value)" placeholder="選擇其他月份">
             `;
@@ -633,10 +635,21 @@
             const completedCount = service.tasks.filter(t => t.status === 'completed').length;
             const inProgressCount = service.tasks.filter(t => t.status === 'in_progress').length;
             
+            const serviceKey = `${clientId}-${service.service_name}-${service.service_month}`;
+            const batchCheckbox = document.getElementById('enableBatchMode')?.checked ? 
+                `<input type="checkbox" class="service-batch-checkbox" value="${serviceKey}" 
+                        data-client-id="${clientId}"
+                        data-service-name="${service.service_name}"
+                        data-service-month="${service.service_month}"
+                        onchange="toggleServiceBatch('${clientId}', '${service.service_name}', '${service.service_month}')" 
+                        onclick="event.stopPropagation()" 
+                        style="margin-right:8px;width:18px;height:18px;">` : '';
+            
             return `
                 <div class="service-group">
                     <div class="service-header" onclick="toggleService('${clientId}', '${service.service_name}_${service.service_month}')">
-                        <div>
+                        <div style="display:flex;align-items:center;">
+                            ${batchCheckbox}
                             <span class="collapse-icon" id="icon-service-${clientId}-${service.service_name}_${service.service_month}">▶</span>
                             <strong style="margin-left:8px;">📦 ${service.service_name} · ${service.service_month}</strong>
                             <span style="color:#6b7280;font-size:13px;margin-left:12px;">
@@ -971,6 +984,74 @@
                 batchSelectedTasks = batchSelectedTasks.filter(id => id !== taskId);
             }
             
+            // 检查是否需要更新服务/客户级别的复选框状态
+            const task = allTasksData.find(t => t.task_id === taskId);
+            if (task) {
+                // 检查同一服务的所有任务是否都被选中
+                const serviceTasks = allTasksData.filter(t => 
+                    t.client_id === task.client_id && 
+                    t.service_name === task.service_name && 
+                    t.service_month === task.service_month
+                );
+                const allServiceTasksSelected = serviceTasks.every(t => batchSelectedTasks.includes(t.task_id));
+                const serviceKey = `${task.client_id}-${task.service_name}-${task.service_month}`;
+                const serviceCheckbox = document.querySelector(`.service-batch-checkbox[value="${serviceKey}"]`);
+                if (serviceCheckbox) {
+                    serviceCheckbox.checked = allServiceTasksSelected;
+                }
+                
+                // 检查同一客户的所有任务是否都被选中
+                const clientTasks = allTasksData.filter(t => t.client_id === task.client_id);
+                const allClientTasksSelected = clientTasks.every(t => batchSelectedTasks.includes(t.task_id));
+                const clientCheckbox = document.querySelector(`.client-batch-checkbox[value="${task.client_id}"]`);
+                if (clientCheckbox) {
+                    clientCheckbox.checked = allClientTasksSelected;
+                }
+            }
+            
+            updateBatchCount();
+        }
+        
+        // 切换服务级别的批量选择（选中该服务的所有任务）
+        function toggleServiceBatch(clientId, serviceName, serviceMonth) {
+            const serviceKey = `${clientId}-${serviceName}-${serviceMonth}`;
+            const serviceCheckbox = document.querySelector(`.service-batch-checkbox[value="${serviceKey}"]`);
+            const isChecked = serviceCheckbox.checked;
+            
+            // 获取该服务的所有任务ID
+            const serviceTasks = allTasksData.filter(task => 
+                task.client_id === clientId && 
+                task.service_name === serviceName && 
+                task.service_month === serviceMonth
+            );
+            
+            // 更新批量选择列表
+            serviceTasks.forEach(task => {
+                if (isChecked) {
+                    if (!batchSelectedTasks.includes(task.task_id)) {
+                        batchSelectedTasks.push(task.task_id);
+                    }
+                } else {
+                    batchSelectedTasks = batchSelectedTasks.filter(id => id !== task.task_id);
+                }
+            });
+            
+            // 更新任务复选框状态（如果任务可见）
+            serviceTasks.forEach(task => {
+                const taskCheckbox = document.querySelector(`.task-batch-checkbox[value="${task.task_id}"]`);
+                if (taskCheckbox) {
+                    taskCheckbox.checked = isChecked;
+                }
+            });
+            
+            // 检查是否需要更新客户级别的复选框状态
+            const clientTasks = allTasksData.filter(t => t.client_id === clientId);
+            const allClientTasksSelected = clientTasks.every(t => batchSelectedTasks.includes(t.task_id));
+            const clientCheckbox = document.querySelector(`.client-batch-checkbox[value="${clientId}"]`);
+            if (clientCheckbox) {
+                clientCheckbox.checked = allClientTasksSelected;
+            }
+            
             updateBatchCount();
         }
         
@@ -1001,6 +1082,23 @@
                 }
             });
             
+            // 同时更新服务复选框状态
+            const clientServices = {};
+            clientTasks.forEach(task => {
+                const serviceKey = `${task.client_id}-${task.service_name}-${task.service_month}`;
+                if (!clientServices[serviceKey]) {
+                    clientServices[serviceKey] = [];
+                }
+                clientServices[serviceKey].push(task.task_id);
+            });
+            
+            Object.keys(clientServices).forEach(serviceKey => {
+                const serviceCheckbox = document.querySelector(`.service-batch-checkbox[value="${serviceKey}"]`);
+                if (serviceCheckbox) {
+                    serviceCheckbox.checked = isChecked;
+                }
+            });
+            
             updateBatchCount();
         }
         
@@ -1010,6 +1108,7 @@
         
         function clearBatchSelection() {
             document.querySelectorAll('.task-batch-checkbox').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.service-batch-checkbox').forEach(cb => cb.checked = false);
             document.querySelectorAll('.client-batch-checkbox').forEach(cb => cb.checked = false);
             batchSelectedTasks = [];
             updateBatchCount();
