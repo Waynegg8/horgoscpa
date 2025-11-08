@@ -507,15 +507,18 @@
                 const sopRes = await fetch('/internal/api/v1/sop?scope=service', { credentials: 'include' });
                 const sops = await sopRes.json();
                 
+                console.log('📋 載入的 SOP 數據:', sops);
+                
                 const sopSelect = document.getElementById('newServiceSOP');
-                if (sops.data && sops.data.length > 0) {
+                if (sops.ok && sops.data && sops.data.length > 0) {
+                    // ⚡ 修復：API 返回的字段是 id，不是 sop_id
                     sopSelect.innerHTML = '<option value="">無</option>' + 
-                        sops.data.map(s => `<option value="${s.sop_id}">${s.title}</option>`).join('');
+                        sops.data.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
                 } else {
                     sopSelect.innerHTML = '<option value="">無</option>';
                 }
             } catch (e) {
-                console.error('加載SOP失敗:', e);
+                console.error('❌ 加載SOP失敗:', e);
             }
         }
 
