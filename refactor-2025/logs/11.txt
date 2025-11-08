@@ -1,0 +1,9 @@
+dashboard 601-700 完成
+组件创建和更新:
+  - ReceiptPendingItem.jsx (收据待完成项组件，包含列表组件)
+  - AdminDashboard.jsx (更新：添加financeYm/financeMode状态管理，集成收据提醒卡片)
+新代码: AdminDashboard右侧列完善（收据提醒+财务状况筛选）
+对比: ✓ 功能完整（10/10项）
+回溯: 无需回溯（DOM操作转React，核心函数将以hooks形式重构）
+注意: ensureUser/renderSkeleton/showLoadingIndicator将在主页面组件中以React hooks实现
+

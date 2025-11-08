@@ -1,0 +1,11 @@
+dashboard 401-500 完成
+组件提取:
+  - ActivityItem.jsx (活动项组件，包含4个子组件和列表组件)
+    - DueDateAdjustmentActivity (期限调整)
+    - StatusUpdateActivity (状态更新)
+    - LeaveApplicationActivity (假期申请)
+    - TimesheetReminderActivity (工时提醒)
+新代码: 最近动态功能完成
+对比: ✓ 功能完整（20/20项）
+回溯: 无需回溯（实现方式一致）
+

@@ -123,7 +123,6 @@
     // 管理员专用的页面路径
     const adminOnlyPaths = [
       '/internal/costs',        // 成本管理
-      '/internal/cms',          // CMS 內容管理
       '/internal/reports'       // 報表
     ];
     
