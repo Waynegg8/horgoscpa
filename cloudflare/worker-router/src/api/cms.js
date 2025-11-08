@@ -191,7 +191,7 @@ export async function handleCMS(request, env, me, requestId, url, path) {
       const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
       const totalRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS total FROM ResourceCenter ${whereSql}`).bind(...binds).first();
       const rows = await env.DATABASE.prepare(
-        `SELECT resource_id, title, category, file_type, file_size, download_count, updated_at
+        `SELECT resource_id, title, category, file_type, file_size, file_url, download_count, updated_at
          FROM ResourceCenter
          ${whereSql}
          ORDER BY updated_at DESC, resource_id DESC
@@ -203,6 +203,7 @@ export async function handleCMS(request, env, me, requestId, url, path) {
         category: r.category || '',
         fileType: r.file_type || '',
         fileSize: Number(r.file_size || 0),
+        fileUrl: r.file_url || '',
         downloadCount: Number(r.download_count || 0),
         updatedAt: r.updated_at,
       }));
