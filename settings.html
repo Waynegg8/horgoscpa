@@ -294,16 +294,16 @@
                 </div>
                 
                 <!-- 自动生成任务概览 -->
-                <div class="card">
+            <div class="card">
                     <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
                         <h3 style="margin:0;">已啟用自動生成任務的服務</h3>
                         <span id="autoTaskCount" style="font-size:14px;color:#6b7280;">載入中...</span>
                     </div>
-                    <div class="card-body">
-                        <div class="data-table-container">
+                <div class="card-body">
+                    <div class="data-table-container">
                             <table class="data-table" id="autoTasksTable">
-                                <thead>
-                                    <tr>
+                            <thead>
+                                <tr>
                                         <th style="width:180px;">客戶名稱</th>
                                         <th style="width:150px;">服務名稱</th>
                                         <th style="width:200px;">組成部分</th>
@@ -311,13 +311,13 @@
                                         <th style="width:120px;">生成規則</th>
                                         <th style="width:100px;">負責人</th>
                                         <th style="width:120px;">操作</th>
-                                    </tr>
-                                </thead>
+                                </tr>
+                            </thead>
                                 <tbody id="autoTasksBody">
                                     <tr><td colspan="7" class="loading">載入中...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                            </tbody>
+                        </table>
+                    </div>
                     </div>
                 </div>
                 
@@ -329,7 +329,7 @@
                         📊 前往任務總覽頁面
                     </a>
                 </div>
-            </div>
+          </div>
           </div>
 
         <!-- 国定假日 -->
@@ -629,7 +629,7 @@
 
         // 全局存儲 SOP 映射表
         let sopMap = {};
-        
+
         // 加载服务
         async function loadServices() {
             const tbody = document.querySelector('#servicesTable tbody');
@@ -1001,8 +1001,8 @@
                     
                     // 该服务下的所有模板
                     group.templates.forEach(t => {
-                        const service = allServices.find(s => s.service_id === t.service_id);
-                        const serviceSopId = service?.service_sop_id;
+                    const service = allServices.find(s => s.service_id === t.service_id);
+                    const serviceSopId = service?.service_sop_id;
                         const templateIndex = globalIndex++;
                         
                         html += `
@@ -1022,76 +1022,76 @@
                                     <div class="component-content">
                                         <div style="padding:20px;background:#f9fafb;border-radius:8px;">
                                             <div style="display:flex;justify-content:flex-end;margin-bottom:15px;">
-                                                <button class="btn btn-sm btn-primary" onclick="showAddTask(${t.template_id})">+ 新增任務</button>
-                                            </div>
-                                            
+                                <button class="btn btn-sm btn-primary" onclick="showAddTask(${t.template_id})">+ 新增任務</button>
+                            </div>
+                            
                                             <!-- 任務表單 -->
-                                            <div id="task-form-${t.template_id}" class="hidden" style="background:white;padding:20px;border-radius:8px;margin-bottom:15px;border:2px solid #3b82f6;">
-                                                <h5 style="margin-top:0;color:#1e40af;">📝 配置任務階段</h5>
-                                                
-                                                <div style="display:grid;grid-template-columns:3fr 1fr;gap:15px;margin-bottom:15px;">
-                                                    <div>
-                                                        <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">任務名稱 *</label>
-                                                        <input type="text" id="task-name-${t.template_id}" 
-                                                               style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px;"
-                                                               placeholder="請輸入任務名稱">
-                                                    </div>
-                                                    <div>
-                                                        <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">排序順序</label>
-                                                        <input type="number" id="task-order-${t.template_id}" 
-                                                               style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px;"
-                                                               value="1" min="1">
-                                                    </div>
-                                                </div>
-                                                
-                                                <div style="margin-bottom:15px;">
-                                                    <label style="display:block;margin-bottom:6px;font-size:13px;color:#374151;">
-                                                        📖 任務層級 SOP（可選，可多選）
-                                                        <small style="color:#6b7280;margin-left:8px;">僅顯示適用於此服務的SOP</small>
-                                                    </label>
-                                                    
-                                                    <div id="selected-sops-${t.template_id}" 
-                                                         style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:32px;padding:8px;background:#f9fafb;border:1px solid #d1d5db;border-radius:4px;">
-                                                        <span style="color:#9ca3af;font-size:11px;">尚未選擇SOP</span>
-                                                    </div>
-                                                    
-                                                    <input type="text" 
-                                                           id="sop-search-${t.template_id}"
-                                                           placeholder="🔍 搜尋SOP..." 
-                                                           style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;margin-bottom:6px;"
-                                                           onkeyup="filterTaskSOPs${t.template_id}(this.value)" />
-                                                    
-                                                    <div id="task-sop-list-${t.template_id}" 
-                                                         style="max-height:150px;overflow-y:auto;border:1px solid #d1d5db;border-radius:4px;padding:6px;background:white;">
-                                                        <div style="color:#9ca3af;text-align:center;padding:20px;font-size:12px;">載入中...</div>
-                                                    </div>
-                                                    <small style="display:block;margin-top:5px;color:#6b7280;font-size:11px;">💡 選擇SOP作為任務參考文件（可多選）</small>
-                                                </div>
-                                                
-                                                <div style="margin-bottom:15px;">
+                            <div id="task-form-${t.template_id}" class="hidden" style="background:white;padding:20px;border-radius:8px;margin-bottom:15px;border:2px solid #3b82f6;">
+                                <h5 style="margin-top:0;color:#1e40af;">📝 配置任務階段</h5>
+                                
+                                <div style="display:grid;grid-template-columns:3fr 1fr;gap:15px;margin-bottom:15px;">
+                                    <div>
+                                        <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">任務名稱 *</label>
+                                        <input type="text" id="task-name-${t.template_id}" 
+                                               style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px;"
+                                               placeholder="請輸入任務名稱">
+                                    </div>
+                                    <div>
+                                        <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">排序順序</label>
+                                        <input type="number" id="task-order-${t.template_id}" 
+                                               style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px;"
+                                               value="1" min="1">
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-bottom:15px;">
+                                    <label style="display:block;margin-bottom:6px;font-size:13px;color:#374151;">
+                                        📖 任務層級 SOP（可選，可多選）
+                                        <small style="color:#6b7280;margin-left:8px;">僅顯示適用於此服務的SOP</small>
+                                    </label>
+                                    
+                                    <div id="selected-sops-${t.template_id}" 
+                                         style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:32px;padding:8px;background:#f9fafb;border:1px solid #d1d5db;border-radius:4px;">
+                                        <span style="color:#9ca3af;font-size:11px;">尚未選擇SOP</span>
+                                    </div>
+                                    
+                                    <input type="text" 
+                                           id="sop-search-${t.template_id}"
+                                           placeholder="🔍 搜尋SOP..." 
+                                           style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;margin-bottom:6px;"
+                                           onkeyup="filterTaskSOPs${t.template_id}(this.value)" />
+                                    
+                                    <div id="task-sop-list-${t.template_id}" 
+                                         style="max-height:150px;overflow-y:auto;border:1px solid #d1d5db;border-radius:4px;padding:6px;background:white;">
+                                        <div style="color:#9ca3af;text-align:center;padding:20px;font-size:12px;">載入中...</div>
+                                    </div>
+                                    <small style="display:block;margin-top:5px;color:#6b7280;font-size:11px;">💡 選擇SOP作為任務參考文件（可多選）</small>
+                                </div>
+                                
+                                <div style="margin-bottom:15px;">
                                                     <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">📎 任務層級資源文檔（可選）</label>
-                                                    <select id="task-attachment-${t.template_id}" 
-                                                            style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;">
-                                                        <option value="">無</option>
-                                                    </select>
+                                    <select id="task-attachment-${t.template_id}" 
+                                            style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;">
+                                        <option value="">無</option>
+                                    </select>
                                                     <p style="font-size:11px;color:#6b7280;margin-top:4px;">💡 從知識庫資源中心選擇範本或參考文檔</p>
-                                                </div>
-                                                
-                                                <div style="display:flex;gap:10px;margin-top:20px;">
-                                                    <button class="btn btn-primary" onclick="saveTask(${t.template_id})">儲存</button>
-                                                    <button class="btn btn-secondary" onclick="cancelTask(${t.template_id})">取消</button>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- 任務列表 -->
+                                </div>
+                                
+                                <div style="display:flex;gap:10px;margin-top:20px;">
+                                    <button class="btn btn-primary" onclick="saveTask(${t.template_id})">儲存</button>
+                                    <button class="btn btn-secondary" onclick="cancelTask(${t.template_id})">取消</button>
+                                </div>
+                            </div>
+                            
+                            <!-- 任務列表 -->
                                             <div id="task-list-${t.template_id}">
                                                 <p class="loading-text">載入中...</p>
-                                            </div>
-                                        </div>
+                        </div>
+                    </div>
                                     </div>
                                 </td>
                             </tr>
-                        `;
+                    `;
                     });
                 });
                 
