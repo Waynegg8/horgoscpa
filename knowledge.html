@@ -725,20 +725,25 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:16px;">
             <div style="flex:1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
               <input type="search" id="attachment-search" placeholder="🔍 搜尋標題..." 
-                     style="flex:1;min-width:240px;max-width:300px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;" />
-              <select id="attachment-filter-type" 
+                     style="flex:1;min-width:200px;max-width:240px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;" />
+              <select id="attachment-filter-client" 
                       style="padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;min-width:140px;">
+                <option value="">全部客戶</option>
+                <!-- 動態加載客戶清單 -->
+              </select>
+              <select id="attachment-filter-type" 
+                      style="padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;min-width:120px;">
                 <option value="">全部類型</option>
                 <option value="task">任務附件</option>
                 <option value="client">客戶附件</option>
                 <option value="receipt">收據附件</option>
               </select>
-              <button onclick="resetAttachmentFilters()" 
+              <button onclick="window.resetAttachmentFilters()" 
                       style="padding:10px 16px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;cursor:pointer;font-weight:500;color:#374151;">
                 🔄 重置
               </button>
             </div>
-            <button onclick="openAttachmentUploadDrawer()" 
+            <button onclick="window.openAttachmentUploadDrawer()" 
                     style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;">
               <span>➕</span><span>上傳附件</span>
             </button>
@@ -2033,7 +2038,9 @@
               console.log(`[Knowledge] ⚡ 使用资源缓存内容`);
             }
           } else if (tabName === 'attachments') {
+            // 填充客戶下拉框（首次或強制刷新時）
             if (!tabLoaded.attachments || forceRefresh) {
+              populateAttachmentClientFilter();
               loadAttachments();
               tabLoaded.attachments = true;
             } else {
@@ -3676,7 +3683,8 @@
         const attachmentState = {
           page: 1,
           perPage: 20,
-          total: 0
+          total: 0,
+          clientId: ''
         };
         
         // 打開上傳抽屜
@@ -3700,6 +3708,7 @@
             
             const search = document.getElementById('attachment-search').value.trim();
             const entityType = document.getElementById('attachment-filter-type').value;
+            const clientId = document.getElementById('attachment-filter-client').value;
             
             const params = new URLSearchParams();
             params.append('page', attachmentState.page);
@@ -3707,6 +3716,7 @@
             params.append('category', 'attachment');
             if (search) params.append('q', search);
             if (entityType) params.append('related_entity_type', entityType);
+            if (clientId) params.append('related_entity_id', clientId);
             
             const res = await fetch(`${apiBase}/documents?${params}`, { 
               credentials: 'include' 
@@ -4012,17 +4022,40 @@
         window.resetAttachmentFilters = function() {
           document.getElementById('attachment-search').value = '';
           document.getElementById('attachment-filter-type').value = '';
+          document.getElementById('attachment-filter-client').value = '';
           attachmentState.page = 1;
           loadAttachments();
+        };
+        
+        // 填充客戶下拉框
+        async function populateAttachmentClientFilter() {
+          try {
+            const select = document.getElementById('attachment-filter-client');
+            if (!select || select.children.length > 1) return; // 已填充則跳過
+            
+            // 使用已載入的客戶列表 (allClients 全局變量)
+            if (window.allClients && window.allClients.length > 0) {
+              window.allClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.client_id;
+                option.textContent = client.client_name;
+                select.appendChild(option);
+              });
+              console.log('[Attachments] ✅ 客戶下拉框已填充:', window.allClients.length, '個客戶');
+            }
+          } catch (e) {
+            console.error('[Attachments] 填充客戶下拉框失敗:', e);
+          }
         }
         
         // 初始化附件事件監聽器
         function initAttachmentEventListeners() {
           const form = document.getElementById('attachmentUploadForm');
           const searchInput = document.getElementById('attachment-search');
-          const filterSelect = document.getElementById('attachment-filter-type');
+          const filterTypeSelect = document.getElementById('attachment-filter-type');
+          const filterClientSelect = document.getElementById('attachment-filter-client');
           
-          if (!form || !searchInput || !filterSelect) {
+          if (!form || !searchInput || !filterTypeSelect || !filterClientSelect) {
             console.warn('[Attachments] 元素未找到，延遲綁定事件');
             setTimeout(initAttachmentEventListeners, 100);
             return;
@@ -4145,7 +4178,13 @@
           });
           
           // 類型篩選變化時自動搜索
-          filterSelect.addEventListener('change', () => {
+          filterTypeSelect.addEventListener('change', () => {
+            attachmentState.page = 1;
+            loadAttachments();
+          });
+          
+          // 客戶篩選變化時自動搜索
+          filterClientSelect.addEventListener('change', () => {
             attachmentState.page = 1;
             loadAttachments();
           });
