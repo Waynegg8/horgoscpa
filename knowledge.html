@@ -774,7 +774,7 @@
       <div class="drawer-panel" style="background:white;width:90%;max-width:600px;border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);max-height:90vh;display:flex;flex-direction:column;">
         <div class="drawer-header" style="padding:20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
           <h2 style="margin:0;font-size:18px;font-weight:600;color:#1f2937;">📤 上傳附件</h2>
-          <button onclick="closeAttachmentUploadDrawer()" class="drawer-close-btn" style="background:none;border:none;font-size:28px;cursor:pointer;color:#6b7280;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">✕</button>
+          <button onclick="window.closeAttachmentUploadDrawer()" class="drawer-close-btn" style="background:none;border:none;font-size:28px;cursor:pointer;color:#6b7280;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">✕</button>
         </div>
         <div class="drawer-body" style="padding:24px;overflow-y:auto;flex:1;">
           <form id="attachmentUploadForm">
@@ -1953,7 +1953,14 @@
                 resourceClientModal.innerHTML = '<option value="">不指定（通用）</option>' + optionsHTML;
               }
               
+              // 設置全局客戶列表變量，供附件頁面使用
+              window.allClients = clients;
               console.log('✅ 客戶列表已載入:', clients.length, '個');
+              
+              // 通知附件頁面客戶列表已就緒
+              if (typeof window.populateAttachmentClientFilter === 'function') {
+                window.populateAttachmentClientFilter();
+              }
             }
           } catch (err) {
             console.error('載入客戶列表失敗:', err);
@@ -3695,7 +3702,21 @@
             console.error('[Attachments] ❌ 找不到上傳抽屜元素');
             return;
           }
+          
+          console.log('[Attachments] 📝 抽屜當前狀態:', {
+            display: drawer.style.display,
+            visibility: getComputedStyle(drawer).visibility,
+            zIndex: getComputedStyle(drawer).zIndex,
+            position: getComputedStyle(drawer).position
+          });
+          
           drawer.style.display = 'flex';
+          
+          console.log('[Attachments] ✅ 已設置 display=flex，新狀態:', {
+            display: drawer.style.display,
+            computedDisplay: getComputedStyle(drawer).display
+          });
+          
           document.getElementById('attachment-file').value = '';
           document.getElementById('attachment-title').value = '';
           document.getElementById('attachment-description').value = '';
@@ -4035,7 +4056,7 @@
         };
         
         // 填充客戶下拉框（帶重試機制）
-        async function populateAttachmentClientFilter(retryCount = 0) {
+        window.populateAttachmentClientFilter = async function(retryCount = 0) {
           try {
             const select = document.getElementById('attachment-filter-client');
             if (!select) {
@@ -4053,8 +4074,8 @@
             if (window.allClients && window.allClients.length > 0) {
               window.allClients.forEach(client => {
                 const option = document.createElement('option');
-                option.value = client.client_id;
-                option.textContent = client.client_name;
+                option.value = client.clientId;
+                option.textContent = client.companyName;
                 select.appendChild(option);
               });
               console.log('[Attachments] ✅ 客戶下拉框已填充:', window.allClients.length, '個客戶');
@@ -4062,7 +4083,7 @@
               // allClients 還沒準備好，重試最多 5 次
               if (retryCount < 5) {
                 console.log('[Attachments] ⏳ 客戶數據尚未載入，500ms 後重試...', retryCount + 1, '/5');
-                setTimeout(() => populateAttachmentClientFilter(retryCount + 1), 500);
+                setTimeout(() => window.populateAttachmentClientFilter(retryCount + 1), 500);
               } else {
                 console.warn('[Attachments] ⚠️ 無法載入客戶列表（重試次數已達上限）');
               }
@@ -4070,7 +4091,8 @@
           } catch (e) {
             console.error('[Attachments] ❌ 填充客戶下拉框失敗:', e);
           }
-        }
+        };
+        console.log('[Attachments] ✅ populateAttachmentClientFilter 已掛載到全局');
         
         // 初始化附件事件監聽器
         function initAttachmentEventListeners() {
