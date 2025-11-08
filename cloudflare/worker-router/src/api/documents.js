@@ -417,11 +417,11 @@ async function uploadDocument(request, env, me, corsHeaders) {
       });
     }
     
-    // 验证文件大小（最大 10MB）
-    if (file.size > 10 * 1024 * 1024) {
+    // 验证文件大小（最大 25MB）
+    if (file.size > 25 * 1024 * 1024) {
       return new Response(JSON.stringify({
         ok: false,
-        error: '文件大小不能超过 10MB'
+        error: '文件大小不能超过 25MB'
       }), {
         status: 413,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }

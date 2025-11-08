@@ -1001,11 +1001,25 @@
         
         const file = this.files[0];
         
-        // 驗證文件大小
-        if (file.size > 10 * 1024 * 1024) {
-          alert('文件大小不能超過 10MB');
+        // 驗證文件大小（最大 25MB）
+        if (file.size > 25 * 1024 * 1024) {
+          alert('文件大小不能超過 25MB');
           return;
         }
+        
+        // 創建進度提示
+        const progressDiv = document.createElement('div');
+        progressDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:24px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.2);z-index:10000;min-width:300px;';
+        progressDiv.innerHTML = `
+          <div style="text-align:center;">
+            <div style="font-size:16px;font-weight:600;margin-bottom:12px;color:#1f2937;">上傳中...</div>
+            <div style="background:#e5e7eb;height:8px;border-radius:4px;overflow:hidden;margin-bottom:8px;">
+              <div id="uploadProgressBar" style="background:#3b82f6;height:100%;width:0%;transition:width 0.3s;"></div>
+            </div>
+            <div id="uploadProgressText" style="font-size:13px;color:#6b7280;">準備上傳...</div>
+          </div>
+        `;
+        document.body.appendChild(progressDiv);
         
         try {
           // 使用知識庫 API 上傳
@@ -1017,30 +1031,55 @@
           formData.append('related_entity_type', 'task');
           formData.append('related_entity_id', currentTaskId);
           
-          const uploadRes = await fetch(`${apiBase}/knowledge/documents/upload`, {
-            method: 'POST',
-            credentials: 'include',
-            body: formData
+          // 使用 XMLHttpRequest 以支持進度條
+          await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (e) => {
+              if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                document.getElementById('uploadProgressBar').style.width = percent + '%';
+                document.getElementById('uploadProgressText').textContent = `已上傳 ${percent}%`;
+              }
+            });
+            
+            xhr.addEventListener('load', () => {
+              if (xhr.status === 401) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                reject(new Error('未授權'));
+                return;
+              }
+              
+              try {
+                const json = JSON.parse(xhr.responseText);
+                if (json.ok) {
+                  resolve(json);
+                } else {
+                  reject(new Error(json.message || '上傳失敗'));
+                }
+              } catch (e) {
+                reject(new Error('解析響應失敗'));
+              }
+            });
+            
+            xhr.addEventListener('error', () => reject(new Error('網路錯誤')));
+            xhr.addEventListener('abort', () => reject(new Error('上傳已取消')));
+            
+            xhr.open('POST', `${apiBase}/knowledge/documents/upload`);
+            xhr.withCredentials = true;
+            xhr.send(formData);
           });
           
-          if (uploadRes.status === 401) { 
-            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); 
-            return; 
-          }
-          
-          const json = await uploadRes.json();
-          
-          if (!json.ok) {
-            alert(json.message || '上傳失敗');
-            return;
-          }
-          
+          document.body.removeChild(progressDiv);
           alert('上傳成功');
           await loadTaskDocuments();
           
         } catch (err) {
+          if (document.body.contains(progressDiv)) {
+            document.body.removeChild(progressDiv);
+          }
           console.error('上傳文檔失敗:', err);
-          alert('上傳失敗');
+          alert('上傳失敗：' + err.message);
         } finally {
           this.value = ''; // 重置文件輸入
         }

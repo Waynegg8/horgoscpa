@@ -13435,10 +13435,10 @@ async function uploadDocument(request, env, me, corsHeaders) {
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     }
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 25 * 1024 * 1024) {
       return new Response(JSON.stringify({
         ok: false,
-        error: "\u6587\u4EF6\u5927\u5C0F\u4E0D\u80FD\u8D85\u8FC7 10MB"
+        error: "\u6587\u4EF6\u5927\u5C0F\u4E0D\u80FD\u8D85\u8FC7 25MB"
       }), {
         status: 413,
         headers: { "Content-Type": "application/json", ...corsHeaders }
