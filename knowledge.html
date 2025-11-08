@@ -3689,11 +3689,18 @@
         
         // 打開上傳抽屜
         window.openAttachmentUploadDrawer = function() {
-          document.getElementById('attachmentUploadDrawer').style.display = 'flex';
+          console.log('[Attachments] 🚀 打開上傳抽屜');
+          const drawer = document.getElementById('attachmentUploadDrawer');
+          if (!drawer) {
+            console.error('[Attachments] ❌ 找不到上傳抽屜元素');
+            return;
+          }
+          drawer.style.display = 'flex';
           document.getElementById('attachment-file').value = '';
           document.getElementById('attachment-title').value = '';
           document.getElementById('attachment-description').value = '';
         };
+        console.log('[Attachments] ✅ openAttachmentUploadDrawer 已掛載到全局');
         
         // 關閉上傳抽屜
         window.closeAttachmentUploadDrawer = function() {
@@ -4027,11 +4034,20 @@
           loadAttachments();
         };
         
-        // 填充客戶下拉框
-        async function populateAttachmentClientFilter() {
+        // 填充客戶下拉框（帶重試機制）
+        async function populateAttachmentClientFilter(retryCount = 0) {
           try {
             const select = document.getElementById('attachment-filter-client');
-            if (!select || select.children.length > 1) return; // 已填充則跳過
+            if (!select) {
+              console.warn('[Attachments] ⚠️ 找不到客戶下拉框');
+              return;
+            }
+            
+            // 已填充則跳過
+            if (select.children.length > 1) {
+              console.log('[Attachments] ℹ️ 客戶下拉框已填充，跳過');
+              return;
+            }
             
             // 使用已載入的客戶列表 (allClients 全局變量)
             if (window.allClients && window.allClients.length > 0) {
@@ -4042,9 +4058,17 @@
                 select.appendChild(option);
               });
               console.log('[Attachments] ✅ 客戶下拉框已填充:', window.allClients.length, '個客戶');
+            } else {
+              // allClients 還沒準備好，重試最多 5 次
+              if (retryCount < 5) {
+                console.log('[Attachments] ⏳ 客戶數據尚未載入，500ms 後重試...', retryCount + 1, '/5');
+                setTimeout(() => populateAttachmentClientFilter(retryCount + 1), 500);
+              } else {
+                console.warn('[Attachments] ⚠️ 無法載入客戶列表（重試次數已達上限）');
+              }
             }
           } catch (e) {
-            console.error('[Attachments] 填充客戶下拉框失敗:', e);
+            console.error('[Attachments] ❌ 填充客戶下拉框失敗:', e);
           }
         }
         
@@ -4194,6 +4218,16 @@
         
         // 調用初始化函數
         initAttachmentEventListeners();
+        
+        // 立即嘗試填充客戶下拉框（帶重試機制）
+        populateAttachmentClientFilter();
+        
+        // 測試全局函數是否可訪問（僅開發環境）
+        console.log('[Attachments] 🔍 測試全局函數:', {
+          openDrawer: typeof window.openAttachmentUploadDrawer,
+          closeDrawer: typeof window.closeAttachmentUploadDrawer,
+          resetFilters: typeof window.resetAttachmentFilters
+        });
         
       })();
     </script>
