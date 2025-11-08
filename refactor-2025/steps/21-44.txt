@@ -1,0 +1,18 @@
+批量创建步骤21-44
+
+每个步骤格式相同：
+# 步骤X: dashboard.html - 行Y-Z
+
+## 5个强制动作
+1. read_file dashboard.html Y Z
+2. 记录catalog/dashboard.md
+3. 重构new-code/pages/dashboard.html
+4. 对比验证
+5. 回溯检查
+
+## 输出
+✅ X/? → X+1
+
+步骤30、40 需要添加：
+⚠️ 建议换新对话
+
