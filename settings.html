@@ -715,9 +715,9 @@
             }
         }
 
-        // 全局存储SOP、附件和服务列表
+        // 全局存储SOP、資源文檔和服务列表
         let allSOPs = [];
-        let allAttachments = [];
+        let allResourceDocuments = [];
         let allServices = [];
 
         // 任务模板 - 加载服务、客户、SOP、附件下拉选项
@@ -725,24 +725,24 @@
             try {
                 // ⚡ 添加時間戳參數繞過緩存，確保獲取最新數據
                 const timestamp = Date.now();
-                const [servicesRes, clientsRes, sopRes, attachmentRes] = await Promise.all([
+                const [servicesRes, clientsRes, sopRes, resourcesRes] = await Promise.all([
                     fetch(`/internal/api/v1/services?_t=${timestamp}`, { 
                         credentials: 'include',
                         cache: 'no-cache'
                     }),
                     fetch('/internal/api/v1/clients?perPage=200', { credentials: 'include' }),
                     fetch('/internal/api/v1/sop?scope=task', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})})),
-                    fetch('/internal/api/v1/attachments', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})}))
+                    fetch('/internal/api/v1/knowledge/documents?category=resource&perPage=200', { credentials: 'include' }).catch(() => ({json: () => ({items:[]})}))
                 ]);
                 const services = await servicesRes.json();
                 const clients = await clientsRes.json();
                 const sops = await sopRes.json();
-                const attachments = await attachmentRes.json();
+                const resources = await resourcesRes.json();
                 
                 // 保存到全局
                 allServices = services.data || [];
                 allSOPs = sops.data || [];
-                allAttachments = attachments.data || [];
+                allResourceDocuments = resources.items || resources.data || [];
                 
                 const serviceSelect = document.getElementById('newTemplateService');
                 if (services.data) {
@@ -782,10 +782,10 @@
         // 存储每个模板任务表单的已选SOP
         const templateTaskSelectedSOPs = {};
         
-        // 填充SOP复选框列表和附件下拉选单（根据服务类型过滤）
+        // 填充SOP复选框列表和資源文檔下拉选单（根据服务类型过滤）
         function populateSOPAndAttachments(templateId, serviceId, existingSOPIds = []) {
             const sopListContainer = document.getElementById(`task-sop-list-${templateId}`);
-            const attachmentSelect = document.getElementById(`task-attachment-${templateId}`);
+            const resourceSelect = document.getElementById(`task-attachment-${templateId}`);
             
             // 初始化已选SOP
             if (!templateTaskSelectedSOPs[templateId]) {
@@ -834,9 +834,9 @@
                 }
             }
             
-            if (attachmentSelect && allAttachments.length > 0) {
-                attachmentSelect.innerHTML = '<option value="">無</option>' + 
-                    allAttachments.map(a => `<option value="${a.attachment_id}">${a.file_name || a.attachment_id}</option>`).join('');
+            if (resourceSelect && allResourceDocuments.length > 0) {
+                resourceSelect.innerHTML = '<option value="">無</option>' + 
+                    allResourceDocuments.map(doc => `<option value="${doc.document_id}">${doc.title || doc.fileName || doc.file_name}</option>`).join('');
             }
         }
         
@@ -1069,11 +1069,12 @@
                                                 </div>
                                                 
                                                 <div style="margin-bottom:15px;">
-                                                    <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">📎 任務層級附件（可選）</label>
+                                                    <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">📎 任務層級資源文檔（可選）</label>
                                                     <select id="task-attachment-${t.template_id}" 
                                                             style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;">
                                                         <option value="">無</option>
                                                     </select>
+                                                    <p style="font-size:11px;color:#6b7280;margin-top:4px;">💡 從知識庫資源中心選擇範本或參考文檔</p>
                                                 </div>
                                                 
                                                 <div style="display:flex;gap:10px;margin-top:20px;">
@@ -1229,10 +1230,10 @@
                                                                 }).join('')}
                                                             </div>
                                                         ` : ''}
-                                                        ${task.attachment_id ? `
+                                                        ${task.document_id || task.attachment_id ? `
                                                             <div style="margin-top:6px;padding:6px 8px;background:#f0f9ff;border-radius:4px;border-left:2px solid #3b82f6;">
                                                                 <div style="font-size:11px;color:#1e40af;">
-                                                                    📎 附件 #${task.attachment_id}
+                                                                    📎 資源文檔 #${task.document_id || task.attachment_id}
                                                                 </div>
                                                             </div>
                                                         ` : ''}
@@ -1298,10 +1299,10 @@
             
             populateSOPAndAttachments(templateId, serviceId, existingSOPIds);
             
-            // 设置附件的值
+            // 设置資源文檔的值
             setTimeout(() => {
-                const attachmentSelect = document.getElementById(`task-attachment-${templateId}`);
-                if (attachmentSelect) attachmentSelect.value = task.attachment_id || '';
+                const resourceSelect = document.getElementById(`task-attachment-${templateId}`);
+                if (resourceSelect) resourceSelect.value = task.document_id || task.attachment_id || '';
             }, 100);
             
             form.scrollIntoView({ behavior: 'smooth' });
@@ -1316,7 +1317,7 @@
         async function saveTask(templateId) {
             const name = document.getElementById(`task-name-${templateId}`).value;
             const order = document.getElementById(`task-order-${templateId}`).value;
-            const attachmentId = document.getElementById(`task-attachment-${templateId}`).value;
+            const documentId = document.getElementById(`task-attachment-${templateId}`).value;
             
             if (!name) return alert('請輸入任務名稱');
             
@@ -1332,7 +1333,7 @@
                 const payload = {
                     stage_name: name,
                     stage_order: parseInt(order) || 1,
-                    attachment_id: attachmentId ? parseInt(attachmentId) : null
+                    document_id: documentId ? parseInt(documentId) : null
                 };
                 
                 // 兼容后端：如果有多个SOP，使用sop_ids数组；如果只有一个，使用sop_id字段

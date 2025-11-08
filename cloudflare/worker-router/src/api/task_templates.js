@@ -384,7 +384,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     try {
       const stagesRows = await env.DATABASE.prepare(
         `SELECT stage_id, stage_name, stage_order, description, 
-                estimated_hours, sop_id, attachment_id,
+                estimated_hours, sop_id, attachment_id, document_id,
                 due_date_rule, due_date_value, due_date_offset_days, advance_days
          FROM TaskTemplateStages
          WHERE template_id = ?
@@ -399,6 +399,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         estimated_hours: Number(s.estimated_hours || 0),
         sop_id: s.sop_id || null,
         attachment_id: s.attachment_id || null,
+        document_id: s.document_id || null,
         due_date_rule: s.due_date_rule || 'end_of_month',
         due_date_value: s.due_date_value || null,
         due_date_offset_days: s.due_date_offset_days || 0,
@@ -442,6 +443,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     const estimatedHours = body?.estimated_hours ? parseFloat(body.estimated_hours) : null;
     const sopId = body?.sop_id ? parseInt(body.sop_id, 10) : null;
     const attachmentId = body?.attachment_id ? parseInt(body.attachment_id, 10) : null;
+    const documentId = body?.document_id ? parseInt(body.document_id, 10) : null;
 
     // 验证
     if (!stageName) {
@@ -465,11 +467,11 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "模板不存在", meta: { requestId } }, corsHeaders);
       }
 
-      // 插入阶段
+      // 插入阶段（優先使用 document_id，向後兼容 attachment_id）
       const result = await env.DATABASE.prepare(
-        `INSERT INTO TaskTemplateStages (template_id, stage_name, stage_order, description, estimated_hours, sop_id, attachment_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).bind(templateId, stageName, stageOrder, description, estimatedHours, sopId, attachmentId).run();
+        `INSERT INTO TaskTemplateStages (template_id, stage_name, stage_order, description, estimated_hours, sop_id, attachment_id, document_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(templateId, stageName, stageOrder, description, estimatedHours, sopId, attachmentId, documentId).run();
 
       return jsonResponse(201, {
         ok: true,
@@ -511,6 +513,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     const estimatedHours = body?.estimated_hours ? parseFloat(body.estimated_hours) : null;
     const sopId = body?.sop_id ? parseInt(body.sop_id, 10) : null;
     const attachmentId = body?.attachment_id ? parseInt(body.attachment_id, 10) : null;
+    const documentId = body?.document_id ? parseInt(body.document_id, 10) : null;
 
     // 验证
     if (!stageName) {
@@ -534,12 +537,12 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "任务不存在", meta: { requestId } }, corsHeaders);
       }
 
-      // 更新阶段
+      // 更新阶段（優先使用 document_id，向後兼容 attachment_id）
       await env.DATABASE.prepare(
         `UPDATE TaskTemplateStages 
-         SET stage_name = ?, stage_order = ?, description = ?, estimated_hours = ?, sop_id = ?, attachment_id = ?
+         SET stage_name = ?, stage_order = ?, description = ?, estimated_hours = ?, sop_id = ?, attachment_id = ?, document_id = ?
          WHERE stage_id = ? AND template_id = ?`
-      ).bind(stageName, stageOrder, description, estimatedHours, sopId, attachmentId, stageId, templateId).run();
+      ).bind(stageName, stageOrder, description, estimatedHours, sopId, attachmentId, documentId, stageId, templateId).run();
 
       return jsonResponse(200, {
         ok: true,
