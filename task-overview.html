@@ -14,6 +14,7 @@
     <script src="/assets/js/fetch-interceptor.js"></script>
     <script src="/assets/js/prerender.js"></script>
     <script src="/assets/js/page-prerender.js"></script>
+    <script src="/assets/js/components/bootstrap.js"></script>
     
     <style>
         .month-tag {
@@ -191,8 +192,6 @@
     </style>
 </head>
 <body>
-    <div id="internalNavbar"></div>
-    
     <main class="internal-container" style="padding: 24px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
             <div>
@@ -305,8 +304,6 @@
         </div>
     </main>
     
-    <div id="internalFooter"></div>
-    
     <script>
         // 全局变量
         let allTasksData = [];
@@ -316,9 +313,6 @@
         
         // 页面初始化
         document.addEventListener('DOMContentLoaded', async function() {
-            // 加载导航栏和页脚
-            await loadNavbarAndFooter();
-            
             // 初始化月份选择器
             initMonthSelector();
             
@@ -330,28 +324,6 @@
                 loadTaskOverview();
             }
         });
-        
-        async function loadNavbarAndFooter() {
-            try {
-                const [navbarRes, footerRes] = await Promise.all([
-                    fetch('/templates/partials/internal-navbar.html'),
-                    fetch('/templates/partials/internal-footer.html')
-                ]);
-                
-                document.getElementById('internalNavbar').innerHTML = await navbarRes.text();
-                document.getElementById('internalFooter').innerHTML = await footerRes.text();
-                
-                // 高亮当前导航项
-                const navLinks = document.querySelectorAll('.internal-nav-link');
-                navLinks.forEach(link => {
-                    if (link.getAttribute('href') === '/internal/task-overview') {
-                        link.classList.add('active');
-                    }
-                });
-            } catch (err) {
-                console.error('载入导航栏失败:', err);
-            }
-        }
         
         // 初始化月份选择器（只显示本月和上月）
         function initMonthSelector() {
@@ -1120,11 +1092,71 @@
                 return;
             }
             
-            const newStatus = prompt('請輸入新狀態（pending/in_progress/completed/cancelled）');
-            if (!newStatus) return;
+            // 创建状态选择对话框
+            const statusOptions = [
+                { value: 'pending', label: '⏰ 未開始' },
+                { value: 'in_progress', label: '🟡 進行中' },
+                { value: 'completed', label: '✅ 已完成' },
+                { value: 'cancelled', label: '❌ 已取消' }
+            ];
             
-            // TODO: 实现批量修改API
-            alert('批量修改功能開發中...');
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'background:white;padding:24px;border-radius:8px;min-width:300px;max-width:400px;';
+            
+            dialog.innerHTML = `
+                <h3 style="margin:0 0 16px 0;">批量修改狀態</h3>
+                <p style="margin:0 0 16px 0;color:#6b7280;">已選擇 ${batchSelectedTasks.length} 個任務</p>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:500;">選擇新狀態</label>
+                    <select id="batchStatusSelect" class="form-control" style="width:100%;">
+                        ${statusOptions.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
+                    </select>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button class="btn btn-secondary" id="cancelBatchStatus">取消</button>
+                    <button class="btn btn-primary" id="confirmBatchStatus">確定</button>
+                </div>
+            `;
+            
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            
+            // 绑定事件
+            document.getElementById('cancelBatchStatus').onclick = () => {
+                document.body.removeChild(overlay);
+            };
+            
+            document.getElementById('confirmBatchStatus').onclick = async () => {
+                const newStatus = document.getElementById('batchStatusSelect').value;
+                document.body.removeChild(overlay);
+                
+                try {
+                    // 批量修改所有选中的任务
+                    const promises = batchSelectedTasks.map(taskId => 
+                        fetch(`/internal/api/v1/tasks/${taskId}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ status: newStatus })
+                        })
+                    );
+                    
+                    await Promise.all(promises);
+                    alert('✅ 批量修改成功！');
+                    
+                    // 重新加载数据
+                    await loadTaskOverview();
+                    
+                    // 清除批量选择
+                    clearBatchSelection();
+                } catch (err) {
+                    console.error('批量修改失败:', err);
+                    alert('❌ 批量修改失败：' + err.message);
+                }
+            };
         }
         
         async function batchChangeDueDate() {
@@ -1133,17 +1165,81 @@
                 return;
             }
             
-            const newDate = prompt('請輸入新的到期日（YYYY-MM-DD）');
-            if (!newDate) return;
+            // 创建日期选择对话框
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
             
-            const reason = prompt('請說明調整原因');
-            if (!reason) {
-                alert('請輸入調整原因');
-                return;
-            }
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'background:white;padding:24px;border-radius:8px;min-width:300px;max-width:400px;';
             
-            // TODO: 实现批量修改API
-            alert('批量修改功能開發中...');
+            dialog.innerHTML = `
+                <h3 style="margin:0 0 16px 0;">批量修改到期日</h3>
+                <p style="margin:0 0 16px 0;color:#6b7280;">已選擇 ${batchSelectedTasks.length} 個任務</p>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:500;">新的到期日</label>
+                    <input type="date" id="batchDueDateInput" class="form-control" style="width:100%;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:500;">調整原因</label>
+                    <textarea id="batchDueDateReason" class="form-control" rows="3" placeholder="請說明調整原因" style="width:100%;resize:vertical;"></textarea>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button class="btn btn-secondary" id="cancelBatchDueDate">取消</button>
+                    <button class="btn btn-primary" id="confirmBatchDueDate">確定</button>
+                </div>
+            `;
+            
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            
+            // 绑定事件
+            document.getElementById('cancelBatchDueDate').onclick = () => {
+                document.body.removeChild(overlay);
+            };
+            
+            document.getElementById('confirmBatchDueDate').onclick = async () => {
+                const newDate = document.getElementById('batchDueDateInput').value;
+                const reason = document.getElementById('batchDueDateReason').value.trim();
+                
+                if (!newDate) {
+                    alert('請選擇新的到期日');
+                    return;
+                }
+                
+                if (!reason) {
+                    alert('請輸入調整原因');
+                    return;
+                }
+                
+                document.body.removeChild(overlay);
+                
+                try {
+                    // 批量修改所有选中的任务
+                    const promises = batchSelectedTasks.map(taskId => 
+                        fetch(`/internal/api/v1/tasks/${taskId}/adjust-due-date`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ 
+                                new_due_date: newDate,
+                                reason: reason
+                            })
+                        })
+                    );
+                    
+                    await Promise.all(promises);
+                    alert('✅ 批量修改成功！');
+                    
+                    // 重新加载数据
+                    await loadTaskOverview();
+                    
+                    // 清除批量选择
+                    clearBatchSelection();
+                } catch (err) {
+                    console.error('批量修改失败:', err);
+                    alert('❌ 批量修改失败：' + err.message);
+                }
+            };
         }
         
         async function batchChangeAssignee() {
@@ -1152,8 +1248,79 @@
                 return;
             }
             
-            // TODO: 实现批量修改API
-            alert('批量修改功能開發中...');
+            try {
+                // 获取用户列表
+                const usersRes = await fetch('/internal/api/v1/users', {
+                    credentials: 'include'
+                });
+                const usersData = await usersRes.json();
+                const users = usersData.data || [];
+                
+                // 创建负责人选择对话框
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+                
+                const dialog = document.createElement('div');
+                dialog.style.cssText = 'background:white;padding:24px;border-radius:8px;min-width:300px;max-width:400px;';
+                
+                dialog.innerHTML = `
+                    <h3 style="margin:0 0 16px 0;">批量修改負責人</h3>
+                    <p style="margin:0 0 16px 0;color:#6b7280;">已選擇 ${batchSelectedTasks.length} 個任務</p>
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;margin-bottom:8px;font-weight:500;">選擇新負責人</label>
+                        <select id="batchAssigneeSelect" class="form-control" style="width:100%;">
+                            <option value="">未指派</option>
+                            ${users.map(u => `<option value="${u.user_id}">${u.name || u.username}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                        <button class="btn btn-secondary" id="cancelBatchAssignee">取消</button>
+                        <button class="btn btn-primary" id="confirmBatchAssignee">確定</button>
+                    </div>
+                `;
+                
+                overlay.appendChild(dialog);
+                document.body.appendChild(overlay);
+                
+                // 绑定事件
+                document.getElementById('cancelBatchAssignee').onclick = () => {
+                    document.body.removeChild(overlay);
+                };
+                
+                document.getElementById('confirmBatchAssignee').onclick = async () => {
+                    const assigneeId = document.getElementById('batchAssigneeSelect').value;
+                    document.body.removeChild(overlay);
+                    
+                    try {
+                        // 批量修改所有选中的任务
+                        const promises = batchSelectedTasks.map(taskId => 
+                            fetch(`/internal/api/v1/tasks/${taskId}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ 
+                                    assignee_user_id: assigneeId || null
+                                })
+                            })
+                        );
+                        
+                        await Promise.all(promises);
+                        alert('✅ 批量修改成功！');
+                        
+                        // 重新加载数据
+                        await loadTaskOverview();
+                        
+                        // 清除批量选择
+                        clearBatchSelection();
+                    } catch (err) {
+                        console.error('批量修改失败:', err);
+                        alert('❌ 批量修改失败：' + err.message);
+                    }
+                };
+            } catch (err) {
+                console.error('加载用户列表失败:', err);
+                alert('❌ 加载用户列表失败');
+            }
         }
         
         // 筛选器持久化
