@@ -3703,19 +3703,10 @@
             return;
           }
           
-          console.log('[Attachments] 📝 抽屜當前狀態:', {
-            display: drawer.style.display,
-            visibility: getComputedStyle(drawer).visibility,
-            zIndex: getComputedStyle(drawer).zIndex,
-            position: getComputedStyle(drawer).position
-          });
-          
           drawer.style.display = 'flex';
+          drawer.classList.add('show'); // 添加 show 类以显示抽屉（visibility: visible）
           
-          console.log('[Attachments] ✅ 已設置 display=flex，新狀態:', {
-            display: drawer.style.display,
-            computedDisplay: getComputedStyle(drawer).display
-          });
+          console.log('[Attachments] ✅ 抽屜已打開');
           
           document.getElementById('attachment-file').value = '';
           document.getElementById('attachment-title').value = '';
@@ -3725,7 +3716,12 @@
         
         // 關閉上傳抽屜
         window.closeAttachmentUploadDrawer = function() {
-          document.getElementById('attachmentUploadDrawer').style.display = 'none';
+          const drawer = document.getElementById('attachmentUploadDrawer');
+          drawer.classList.remove('show'); // 移除 show 类
+          // 等待过渡动画完成后再隐藏
+          setTimeout(() => {
+            drawer.style.display = 'none';
+          }, 300);
         };
         
         // 載入附件列表
