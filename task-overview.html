@@ -353,25 +353,57 @@
             }
         }
         
-        // 初始化月份选择器（显示最近6个月）
+        // 初始化月份选择器（显示最近12个月）
         function initMonthSelector() {
             const container = document.getElementById('monthSelector');
             const now = new Date();
             const months = [];
             
-            // 生成最近6个月
-            for (let i = 5; i >= 0; i--) {
+            // 生成最近12个月
+            for (let i = 11; i >= 0; i--) {
                 const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
                 const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                 const displayText = `${date.getFullYear()}年${date.getMonth() + 1}月`;
                 months.push({ value: yearMonth, text: displayText });
             }
             
+            // 添加"更多月份"输入框
             container.innerHTML = months.map(m => `
                 <button class="month-tag" data-month="${m.value}" onclick="toggleMonth('${m.value}')">
                     ${m.text}
                 </button>
-            `).join('');
+            `).join('') + `
+                <input type="month" id="customMonth" class="form-control" style="width:160px;" 
+                       onchange="addCustomMonth(this.value)" placeholder="選擇其他月份">
+            `;
+        }
+        
+        // 添加自定义月份
+        function addCustomMonth(yearMonth) {
+            if (!yearMonth) return;
+            
+            // 如果该月份按钮不存在，添加它
+            if (!document.querySelector(`[data-month="${yearMonth}"]`)) {
+                const [year, month] = yearMonth.split('-');
+                const displayText = `${year}年${parseInt(month)}月`;
+                
+                const btn = document.createElement('button');
+                btn.className = 'month-tag selected';
+                btn.dataset.month = yearMonth;
+                btn.onclick = () => toggleMonth(yearMonth);
+                btn.textContent = displayText;
+                
+                const input = document.getElementById('customMonth');
+                input.parentNode.insertBefore(btn, input);
+                
+                selectedMonths.push(yearMonth);
+            } else {
+                // 如果已存在，直接选中
+                toggleMonth(yearMonth);
+            }
+            
+            document.getElementById('customMonth').value = '';
+            saveFilters();
         }
         
         // 切换月份选择
@@ -563,10 +595,16 @@
                     sum + svc.tasks.filter(t => t.is_overdue).length, 0
                 );
                 
+                const batchCheckbox = document.getElementById('enableBatchMode')?.checked ? 
+                    `<input type="checkbox" class="client-batch-checkbox" value="${client.client_id}" 
+                            onchange="toggleClientBatch('${client.client_id}')" onclick="event.stopPropagation()" 
+                            style="margin-right:8px;width:18px;height:18px;">` : '';
+                
                 return `
                     <div class="client-group" id="client-${client.client_id}">
                         <div class="client-header ${client.hasOverdue ? 'has-overdue' : ''}" onclick="toggleClient('${client.client_id}')">
-                            <div>
+                            <div style="display:flex;align-items:center;">
+                                ${batchCheckbox}
                                 <span class="collapse-icon" id="icon-${client.client_id}">▶</span>
                                 <strong style="font-size:16px;margin-left:8px;">🏢 ${client.company_name}</strong>
                                 <span style="color:#6b7280;font-size:13px;margin-left:12px;">${client.tax_id || ''}</span>
@@ -631,8 +669,13 @@
                 'cancelled': '已取消'
             }[task.status] || task.status;
             
+            const isTaskSelected = batchSelectedTasks.includes(task.task_id);
             const batchCheckbox = document.getElementById('enableBatchMode')?.checked ? 
-                `<input type="checkbox" class="task-batch-checkbox" value="${task.task_id}" onchange="updateBatchCount()" style="margin-right:8px;">` : '';
+                `<input type="checkbox" class="task-batch-checkbox" value="${task.task_id}" 
+                        ${isTaskSelected ? 'checked' : ''} 
+                        onchange="toggleTaskBatch(${task.task_id})" 
+                        onclick="event.stopPropagation()" 
+                        style="margin-right:8px;width:16px;height:16px;">` : '';
             
             return `
                 <div class="task-card ${cardClass}" data-task-id="${task.task_id}">
@@ -662,7 +705,7 @@
                                 <div class="task-meta-item">👤 負責人: <strong>${task.assignee_name || '未指派'}</strong></div>
                                 <div class="task-meta-item">📅 到期: <strong>${task.due_date || '-'}</strong></div>
                                 ${task.is_overdue ? `<div class="task-meta-item" style="color:#ef4444;">⏰ 逾期 ${calculateOverdueDays(task.due_date)} 天</div>` : ''}
-                                <div class="task-meta-item">📊 進度: <strong>${task.completed_stages || 0}/${task.total_stages || 0} 階段</strong></div>
+                                ${(task.total_stages && task.total_stages > 0) ? `<div class="task-meta-item">📊 進度: <strong>${task.completed_stages || 0}/${task.total_stages} 階段</strong></div>` : ''}
                                 <div class="task-meta-item">🆔 ${task.task_id}</div>
                             </div>
                             
@@ -773,12 +816,11 @@
             event.stopPropagation();
             
             try {
-                // 如果改为已完成，询问完成日期
+                // 如果改为已完成，使用日期选择器
                 let completedDate = null;
                 if (newStatus === 'completed') {
-                    const dateInput = prompt('請輸入完成日期（YYYY-MM-DD）', new Date().toISOString().split('T')[0]);
-                    if (!dateInput) return;
-                    completedDate = dateInput;
+                    const today = new Date().toISOString().split('T')[0];
+                    completedDate = today; // 默认使用今天
                 }
                 
                 const res = await fetch(`/internal/api/v1/tasks/${taskId}`, {
@@ -797,8 +839,8 @@
                     throw new Error(json.message || '更新失敗');
                 }
                 
-                alert('✅ 狀態已更新');
-                loadTaskOverview(); // 重新加载
+                // 直接更新页面上的状态，不重新加载整个列表
+                updateTaskStatusInUI(taskId, newStatus);
                 
             } catch (err) {
                 console.error('修改状态失败:', err);
@@ -807,6 +849,34 @@
             
             // 关闭菜单
             document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('show'));
+        }
+        
+        // 更新UI中的任务状态（避免重新加载）
+        function updateTaskStatusInUI(taskId, newStatus) {
+            const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (!taskCard) return;
+            
+            const statusIcon = {
+                'pending': '⏰',
+                'in_progress': '🟡',
+                'completed': '✅',
+                'cancelled': '❌'
+            }[newStatus] || '⚪';
+            
+            const statusText = {
+                'pending': '待處理',
+                'in_progress': '進行中',
+                'completed': '已完成',
+                'cancelled': '已取消'
+            }[newStatus] || newStatus;
+            
+            const statusButton = taskCard.querySelector('.status-button');
+            if (statusButton) {
+                statusButton.innerHTML = `${statusIcon} ${statusText} ▼`;
+            }
+            
+            // 更新统计
+            loadTaskOverview();
         }
         
         // 调整到期日
@@ -888,14 +958,60 @@
             }
         }
         
+        // 切换单个任务的批量选择
+        function toggleTaskBatch(taskId) {
+            const taskCheckbox = document.querySelector(`.task-batch-checkbox[value="${taskId}"]`);
+            const isChecked = taskCheckbox.checked;
+            
+            if (isChecked) {
+                if (!batchSelectedTasks.includes(taskId)) {
+                    batchSelectedTasks.push(taskId);
+                }
+            } else {
+                batchSelectedTasks = batchSelectedTasks.filter(id => id !== taskId);
+            }
+            
+            updateBatchCount();
+        }
+        
+        // 切换客户级别的批量选择（选中客户的所有任务）
+        function toggleClientBatch(clientId) {
+            const clientCheckbox = document.querySelector(`.client-batch-checkbox[value="${clientId}"]`);
+            const isChecked = clientCheckbox.checked;
+            
+            // 获取该客户的所有任务ID
+            const clientTasks = allTasksData.filter(task => task.client_id === clientId);
+            
+            // 更新批量选择列表
+            clientTasks.forEach(task => {
+                if (isChecked) {
+                    if (!batchSelectedTasks.includes(task.task_id)) {
+                        batchSelectedTasks.push(task.task_id);
+                    }
+                } else {
+                    batchSelectedTasks = batchSelectedTasks.filter(id => id !== task.task_id);
+                }
+            });
+            
+            // 更新任务复选框状态（如果任务可见）
+            clientTasks.forEach(task => {
+                const taskCheckbox = document.querySelector(`.task-batch-checkbox[value="${task.task_id}"]`);
+                if (taskCheckbox) {
+                    taskCheckbox.checked = isChecked;
+                }
+            });
+            
+            updateBatchCount();
+        }
+        
         function updateBatchCount() {
-            const checked = document.querySelectorAll('.task-batch-checkbox:checked');
-            document.getElementById('batchCount').textContent = checked.length;
-            batchSelectedTasks = Array.from(checked).map(cb => parseInt(cb.value));
+            document.getElementById('batchCount').textContent = batchSelectedTasks.length;
         }
         
         function clearBatchSelection() {
             document.querySelectorAll('.task-batch-checkbox').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.client-batch-checkbox').forEach(cb => cb.checked = false);
+            batchSelectedTasks = [];
             updateBatchCount();
         }
         
