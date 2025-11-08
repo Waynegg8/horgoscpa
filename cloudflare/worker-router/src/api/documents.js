@@ -66,6 +66,8 @@ async function getDocumentsList(request, env, me, corsHeaders) {
     const year = url.searchParams.get('year') || '';
     const month = url.searchParams.get('month') || '';
     const tags = url.searchParams.get('tags') || '';
+    const relatedEntityType = url.searchParams.get('related_entity_type') || '';
+    const relatedEntityId = url.searchParams.get('related_entity_id') || '';
     
     // ⚡ KV 缓存逻辑
     const cacheKey = generateCacheKey('documents_list', {
@@ -126,6 +128,16 @@ async function getDocumentsList(request, env, me, corsHeaders) {
         whereClauses.push('d.tags LIKE ?');
         params.push(`%${tag}%`);
       });
+    }
+    
+    if (relatedEntityType) {
+      whereClauses.push('d.related_entity_type = ?');
+      params.push(relatedEntityType);
+    }
+    
+    if (relatedEntityId) {
+      whereClauses.push('d.related_entity_id = ?');
+      params.push(relatedEntityId);
     }
     
     const whereSQL = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
@@ -377,6 +389,8 @@ async function uploadDocument(request, env, me, corsHeaders) {
     const docMonth = formData.get('doc_month') || '';
     const taskId = formData.get('task_id') || '';
     const tags = formData.get('tags') || '';
+    const relatedEntityType = formData.get('related_entity_type') || '';
+    const relatedEntityId = formData.get('related_entity_id') || '';
     
     // 验证必填字段
     if (!file || !title) {
@@ -457,11 +471,13 @@ async function uploadDocument(request, env, me, corsHeaders) {
         doc_month,
         task_id,
         tags,
+        related_entity_type,
+        related_entity_id,
         uploaded_by,
         created_at,
         updated_at,
         is_deleted
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).bind(
       title,
       description || null,
@@ -476,6 +492,8 @@ async function uploadDocument(request, env, me, corsHeaders) {
       docMonth ? parseInt(docMonth) : null,
       taskId ? parseInt(taskId) : null,
       tagsStr,
+      relatedEntityType || null,
+      relatedEntityId || null,
       me?.user_id || null,
       nowISO,
       nowISO
