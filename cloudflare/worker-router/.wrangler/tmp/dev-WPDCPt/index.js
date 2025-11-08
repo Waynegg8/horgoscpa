@@ -5476,6 +5476,9 @@ init_kv_cache_helper();
 async function handleTasks(request, env, me, requestId, url) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
   const method = request.method.toUpperCase();
+  if (method === "GET" && url.pathname === "/internal/api/v1/tasks/overview") {
+    return await getTasksOverview(env, corsHeaders, url.searchParams);
+  }
   if (method === "GET" && url.pathname === "/internal/api/v1/tasks/preview") {
     return await previewMonthTasks(env, corsHeaders, url.searchParams.get("target_month"));
   }
@@ -6208,6 +6211,87 @@ async function previewMonthTasks(env, corsHeaders, targetMonth) {
   }
 }
 __name(previewMonthTasks, "previewMonthTasks");
+async function getTasksOverview(env, corsHeaders, searchParams) {
+  try {
+    const months = searchParams.getAll("months");
+    const statuses = searchParams.getAll("statuses");
+    const sources = searchParams.getAll("sources");
+    const searchText = searchParams.get("search");
+    if (!months || months.length === 0) {
+      return jsonResponse(400, {
+        ok: false,
+        message: "\u8ACB\u81F3\u5C11\u9078\u64C7\u4E00\u500B\u6708\u4EFD"
+      }, corsHeaders);
+    }
+    console.log("[getTasksOverview] \u7B5B\u9009\u6761\u4EF6:", { months, statuses, sources, searchText });
+    const where = ["t.is_deleted = 0"];
+    const binds = [];
+    const monthPlaceholders = months.map(() => "?").join(",");
+    where.push(`t.service_month IN (${monthPlaceholders})`);
+    binds.push(...months);
+    if (statuses && statuses.length > 0 && statuses.length < 4) {
+      const statusPlaceholders = statuses.map(() => "?").join(",");
+      where.push(`t.status IN (${statusPlaceholders})`);
+      binds.push(...statuses);
+    }
+    if (sources && sources.length === 1) {
+      if (sources[0] === "auto") {
+        where.push("t.component_id IS NOT NULL");
+      } else if (sources[0] === "manual") {
+        where.push("t.component_id IS NULL");
+      }
+    }
+    if (searchText) {
+      where.push("c.company_name LIKE ?");
+      binds.push(`%${searchText}%`);
+    }
+    const whereSql = where.join(" AND ");
+    const tasks = await env.DATABASE.prepare(`
+			SELECT 
+				t.task_id,
+				t.task_name,
+				t.status,
+				t.due_date,
+				t.original_due_date,
+				t.completed_date,
+				t.service_month,
+				t.component_id,
+				t.notes,
+				t.is_overdue,
+				t.overdue_reason,
+				t.created_at,
+				cs.client_service_id,
+				cs.service_id,
+				c.client_id,
+				c.company_name,
+				c.tax_registration_number as client_tax_id,
+				s.service_name,
+				u.username as assignee_name,
+				(SELECT COUNT(1) FROM ActiveTaskStages ats WHERE ats.task_id = t.task_id) as total_stages,
+				(SELECT COUNT(1) FROM ActiveTaskStages ats WHERE ats.task_id = t.task_id AND ats.status = 'completed') as completed_stages
+			FROM ActiveTasks t
+			LEFT JOIN ClientServices cs ON t.client_service_id = cs.client_service_id
+			LEFT JOIN Clients c ON cs.client_id = c.client_id
+			LEFT JOIN Services s ON cs.service_id = s.service_id
+			LEFT JOIN Users u ON t.assignee_user_id = u.user_id
+			WHERE ${whereSql}
+			ORDER BY c.company_name, s.service_name, t.service_month DESC, t.due_date
+		`).bind(...binds).all();
+    console.log("[getTasksOverview] \u67E5\u8BE2\u5230\u4EFB\u52A1\u6570\u91CF:", tasks.results?.length);
+    return jsonResponse(200, {
+      ok: true,
+      data: tasks.results || []
+    }, corsHeaders);
+  } catch (err) {
+    console.error("\u83B7\u53D6\u4EFB\u52A1\u603B\u89C8\u5931\u8D25:", err);
+    return jsonResponse(500, {
+      ok: false,
+      message: "\u83B7\u53D6\u5931\u8D25",
+      error: String(err)
+    }, corsHeaders);
+  }
+}
+__name(getTasksOverview, "getTasksOverview");
 
 // src/api/timesheets.js
 init_modules_watch_stub();

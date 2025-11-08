@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>任務總覽｜內部系統</title>
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/assets/css/internal-system.css">
+    <link rel="stylesheet" href="/assets/css/internal-components.css">
+    <link rel="stylesheet" href="/assets/css/tasks-page.css">
+    
+    <!-- 预加载与缓存系统 -->
+    <script src="/assets/js/data-cache.js"></script>
+    <script src="/assets/js/fetch-interceptor.js"></script>
+    <script src="/assets/js/prerender.js"></script>
+    <script src="/assets/js/page-prerender.js"></script>
+    
+    <style>
+        .month-tag {
+            padding: 8px 16px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .month-tag:hover {
+            border-color: #3b82f6;
+        }
+        
+        .month-tag.selected {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .client-group {
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .client-header {
+            padding: 16px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .client-header:hover {
+            background: #f3f4f6;
+        }
+        
+        .client-header.has-overdue {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .service-group {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .service-header {
+            padding: 12px 16px;
+            background: #fafafa;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .service-header:hover {
+            background: #f5f5f5;
+        }
+        
+        .task-card {
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.2s;
+        }
+        
+        .task-card:last-child {
+            border-bottom: none;
+        }
+        
+        .task-card:hover {
+            background: #fafafa;
+        }
+        
+        .task-card.auto-generated {
+            border-left: 4px solid #3b82f6;
+            background: #f0f9ff;
+        }
+        
+        .task-card.manual-created {
+            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+        }
+        
+        .task-card.overdue {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .status-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .status-button {
+            padding: 4px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .status-button:hover {
+            border-color: #3b82f6;
+        }
+        
+        .status-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            z-index: 10;
+            min-width: 120px;
+            margin-top: 4px;
+        }
+        
+        .status-menu.show {
+            display: block;
+        }
+        
+        .status-menu-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        
+        .status-menu-item:hover {
+            background: #f3f4f6;
+        }
+        
+        .task-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        
+        .task-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .collapse-icon {
+            transition: transform 0.2s;
+        }
+        
+        .collapse-icon.expanded {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body>
+    <div id="internalNavbar"></div>
+    
+    <main class="internal-container" style="padding: 24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+            <div>
+                <h1 style="margin:0;font-size:28px;">📊 任務總覽</h1>
+                <p style="margin:8px 0 0 0;color:#6b7280;">按客戶和服務查看所有任務</p>
+            </div>
+            <div>
+                <span style="color:#6b7280;font-size:14px;margin-right:12px;">🔄 最後更新: <span id="lastUpdateTime">--</span></span>
+                <button class="btn btn-secondary" onclick="loadTaskOverview()">立即刷新</button>
+            </div>
+        </div>
+        
+        <!-- 筛选区域 -->
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-body">
+                <!-- 月份筛选 -->
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:600;">📅 服務月份</label>
+                    <div id="monthSelector" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+                        <!-- 动态生成月份标签 -->
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-sm btn-secondary" onclick="selectQuickMonths('current')">本月</button>
+                        <button class="btn btn-sm btn-secondary" onclick="selectQuickMonths('last')">上月</button>
+                        <button class="btn btn-sm btn-secondary" onclick="selectQuickMonths('recent3')">最近3個月</button>
+                        <button class="btn btn-sm btn-secondary" onclick="selectQuickMonths('currentAndLast')">本月+上月</button>
+                        <button class="btn btn-sm btn-secondary" onclick="selectQuickMonths('clear')">清除</button>
+                    </div>
+                </div>
+                
+                <!-- 搜索 + 状态 + 来源 -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div>
+                        <label style="display:block;margin-bottom:8px;font-weight:600;">🔍 搜索客戶</label>
+                        <input type="text" id="taskOverviewSearch" class="form-control" placeholder="輸入客戶名稱...">
+                    </div>
+                    
+                    <div>
+                        <label style="display:block;margin-bottom:8px;font-weight:600;">📊 任務狀態</label>
+                        <div id="statusCheckboxes" style="display:flex;flex-wrap:wrap;gap:8px;">
+                            <label style="cursor:pointer;"><input type="checkbox" class="status-filter" value="pending" checked> 待處理</label>
+                            <label style="cursor:pointer;"><input type="checkbox" class="status-filter" value="in_progress" checked> 進行中</label>
+                            <label style="cursor:pointer;"><input type="checkbox" class="status-filter" value="completed"> 已完成</label>
+                            <label style="cursor:pointer;"><input type="checkbox" class="status-filter" value="cancelled"> 已取消</label>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <button class="btn btn-sm btn-secondary" onclick="quickSelectStatus('unfinished')">未完成的</button>
+                            <button class="btn btn-sm btn-secondary" onclick="quickSelectStatus('all')">全部</button>
+                            <button class="btn btn-sm btn-secondary" onclick="quickSelectStatus('overdue')">只看逾期</button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label style="display:block;margin-bottom:8px;font-weight:600;">🏷️ 任務來源</label>
+                        <div style="display:flex;gap:12px;">
+                            <label style="cursor:pointer;"><input type="checkbox" class="source-filter" value="auto" checked> 自動生成</label>
+                            <label style="cursor:pointer;"><input type="checkbox" class="source-filter" value="manual" checked> 手動建立</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-primary" onclick="applyFiltersAndLoad()">🔄 套用篩選</button>
+                        <button class="btn btn-secondary" onclick="expandAllClients(true)">全部展開</button>
+                        <button class="btn btn-secondary" onclick="expandAllClients(false)">全部折疊</button>
+                        <button class="btn btn-secondary" onclick="expandOnlyOverdue()">只展開逾期</button>
+                    </div>
+                    <div>
+                        <label style="cursor:pointer;">
+                            <input type="checkbox" id="enableBatchMode" onchange="toggleBatchMode()"> 批量操作模式
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 批量操作栏 -->
+                <div id="batchActionsBar" style="display:none;margin-top:16px;padding:12px;background:#f0f9ff;border-radius:6px;border:1px solid #bfdbfe;">
+                    <span style="margin-right:12px;font-weight:600;">已選擇 <span id="batchCount">0</span> 個任務</span>
+                    <button class="btn btn-sm btn-primary" onclick="batchChangeStatus()">批量變更狀態</button>
+                    <button class="btn btn-sm btn-primary" onclick="batchChangeDueDate()">批量調整到期日</button>
+                    <button class="btn btn-sm btn-primary" onclick="batchChangeAssignee()">批量分配負責人</button>
+                    <button class="btn btn-sm btn-secondary" onclick="clearBatchSelection()">清除選擇</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 统计摘要 -->
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-body">
+                <div id="taskOverviewStats" style="display:flex;gap:24px;flex-wrap:wrap;font-size:14px;">
+                    <div>📊 共 <strong id="stat-total">0</strong> 個任務</div>
+                    <div>⏰ 未完成: <strong id="stat-unfinished">0</strong></div>
+                    <div>✅ 已完成: <strong id="stat-completed">0</strong></div>
+                    <div>🔴 逾期: <strong id="stat-overdue" style="color:#ef4444;">0</strong></div>
+                    <div>🤖 自動生成: <strong id="stat-auto">0</strong></div>
+                    <div>👤 手動建立: <strong id="stat-manual">0</strong></div>
+                    <div id="stat-months" style="color:#6b7280;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 任务列表 -->
+        <div id="taskOverviewList">
+            <div style="text-align:center;padding:60px 20px;color:#6b7280;">
+                <div style="font-size:48px;margin-bottom:16px;">📋</div>
+                <div style="font-size:16px;margin-bottom:8px;">請選擇篩選條件</div>
+                <div style="font-size:14px;">點擊「套用篩選」載入任務數據</div>
+            </div>
+        </div>
+    </main>
+    
+    <div id="internalFooter"></div>
+    
+    <script>
+        // 全局变量
+        let allTasksData = [];
+        let selectedMonths = [];
+        let batchSelectedTasks = [];
+        const FILTER_STORAGE_KEY = 'taskOverview_filters';
+        
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 加载导航栏和页脚
+            await loadNavbarAndFooter();
+            
+            // 初始化月份选择器
+            initMonthSelector();
+            
+            // 从localStorage恢复筛选条件
+            restoreFilters();
+            
+            // 如果有保存的筛选条件，自动加载
+            if (selectedMonths.length > 0) {
+                loadTaskOverview();
+            }
+        });
+        
+        async function loadNavbarAndFooter() {
+            try {
+                const [navbarRes, footerRes] = await Promise.all([
+                    fetch('/templates/partials/internal-navbar.html'),
+                    fetch('/templates/partials/internal-footer.html')
+                ]);
+                
+                document.getElementById('internalNavbar').innerHTML = await navbarRes.text();
+                document.getElementById('internalFooter').innerHTML = await footerRes.text();
+                
+                // 高亮当前导航项
+                const navLinks = document.querySelectorAll('.internal-nav-link');
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === '/internal/task-overview') {
+                        link.classList.add('active');
+                    }
+                });
+            } catch (err) {
+                console.error('载入导航栏失败:', err);
+            }
+        }
+        
+        // 初始化月份选择器（显示最近6个月）
+        function initMonthSelector() {
+            const container = document.getElementById('monthSelector');
+            const now = new Date();
+            const months = [];
+            
+            // 生成最近6个月
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                const displayText = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+                months.push({ value: yearMonth, text: displayText });
+            }
+            
+            container.innerHTML = months.map(m => `
+                <button class="month-tag" data-month="${m.value}" onclick="toggleMonth('${m.value}')">
+                    ${m.text}
+                </button>
+            `).join('');
+        }
+        
+        // 切换月份选择
+        function toggleMonth(month) {
+            const btn = document.querySelector(`[data-month="${month}"]`);
+            if (selectedMonths.includes(month)) {
+                selectedMonths = selectedMonths.filter(m => m !== month);
+                btn.classList.remove('selected');
+            } else {
+                selectedMonths.push(month);
+                btn.classList.add('selected');
+            }
+            saveFilters();
+        }
+        
+        // 快速选择月份
+        function selectQuickMonths(type) {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const lastMonth = `${now.getFullYear()}-${String(now.getMonth()).padStart(2, '0')}`;
+            
+            // 清除所有选择
+            document.querySelectorAll('.month-tag').forEach(btn => btn.classList.remove('selected'));
+            selectedMonths = [];
+            
+            if (type === 'current') {
+                selectedMonths = [currentMonth];
+            } else if (type === 'last') {
+                selectedMonths = [lastMonth];
+            } else if (type === 'currentAndLast') {
+                selectedMonths = [lastMonth, currentMonth];
+            } else if (type === 'recent3') {
+                for (let i = 0; i < 3; i++) {
+                    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    selectedMonths.push(month);
+                }
+            } else if (type === 'clear') {
+                // 已清除
+            }
+            
+            // 更新UI
+            selectedMonths.forEach(month => {
+                const btn = document.querySelector(`[data-month="${month}"]`);
+                if (btn) btn.classList.add('selected');
+            });
+            
+            saveFilters();
+        }
+        
+        // 快速选择状态
+        function quickSelectStatus(type) {
+            const checkboxes = document.querySelectorAll('.status-filter');
+            
+            if (type === 'unfinished') {
+                checkboxes.forEach(cb => {
+                    cb.checked = cb.value === 'pending' || cb.value === 'in_progress';
+                });
+            } else if (type === 'all') {
+                checkboxes.forEach(cb => cb.checked = true);
+            } else if (type === 'overdue') {
+                // 这个由后端筛选
+                checkboxes.forEach(cb => {
+                    cb.checked = cb.value === 'pending' || cb.value === 'in_progress';
+                });
+            }
+            
+            saveFilters();
+        }
+        
+        // 套用筛选并加载
+        function applyFiltersAndLoad() {
+            if (selectedMonths.length === 0) {
+                alert('請至少選擇一個月份');
+                return;
+            }
+            
+            saveFilters();
+            loadTaskOverview();
+        }
+        
+        // 加载任务总览
+        async function loadTaskOverview() {
+            const listContainer = document.getElementById('taskOverviewList');
+            listContainer.innerHTML = '<div style="text-align:center;padding:40px;"><div class="loading-spinner"></div><div style="margin-top:12px;color:#6b7280;">載入中...</div></div>';
+            
+            try {
+                // 获取筛选条件
+                const selectedStatuses = Array.from(document.querySelectorAll('.status-filter:checked')).map(cb => cb.value);
+                const selectedSources = Array.from(document.querySelectorAll('.source-filter:checked')).map(cb => cb.value);
+                const searchText = document.getElementById('taskOverviewSearch').value.trim();
+                
+                // 构建查询参数
+                const params = new URLSearchParams();
+                selectedMonths.forEach(m => params.append('months', m));
+                selectedStatuses.forEach(s => params.append('statuses', s));
+                selectedSources.forEach(s => params.append('sources', s));
+                if (searchText) params.append('search', searchText);
+                
+                // 调用API
+                const res = await fetch(`/internal/api/v1/tasks/overview?${params.toString()}`, {
+                    credentials: 'include'
+                });
+                
+                const json = await res.json();
+                
+                if (!json.ok) {
+                    throw new Error(json.message || '載入失敗');
+                }
+                
+                allTasksData = json.data || [];
+                
+                // 更新统计
+                updateStats(allTasksData);
+                
+                // 渲染任务列表
+                renderTaskList(allTasksData);
+                
+                // 更新时间
+                document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString('zh-TW');
+                
+            } catch (err) {
+                console.error('载入任务总览失败:', err);
+                listContainer.innerHTML = `
+                    <div style="text-align:center;padding:40px;color:#ef4444;">
+                        <div style="font-size:48px;margin-bottom:16px;">❌</div>
+                        <div style="font-size:16px;margin-bottom:8px;">載入失敗</div>
+                        <div style="font-size:14px;">${err.message}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        // 渲染任务列表
+        function renderTaskList(data) {
+            const listContainer = document.getElementById('taskOverviewList');
+            
+            if (!data || data.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align:center;padding:60px 20px;color:#6b7280;">
+                        <div style="font-size:48px;margin-bottom:16px;">📭</div>
+                        <div style="font-size:16px;margin-bottom:8px;">沒有找到符合條件的任務</div>
+                        <div style="font-size:14px;">請調整篩選條件後重試</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 按客户分组
+            const groupedByClient = {};
+            data.forEach(task => {
+                const clientKey = task.client_id;
+                if (!groupedByClient[clientKey]) {
+                    groupedByClient[clientKey] = {
+                        client_id: task.client_id,
+                        company_name: task.company_name,
+                        tax_id: task.client_tax_id,
+                        services: {},
+                        hasOverdue: false
+                    };
+                }
+                
+                // 按服务分组
+                const serviceKey = `${task.service_name || '未分類'}_${task.service_month}`;
+                if (!groupedByClient[clientKey].services[serviceKey]) {
+                    groupedByClient[clientKey].services[serviceKey] = {
+                        service_name: task.service_name || '未分類',
+                        service_month: task.service_month,
+                        tasks: []
+                    };
+                }
+                
+                groupedByClient[clientKey].services[serviceKey].tasks.push(task);
+                
+                // 检查是否有逾期
+                if (task.is_overdue) {
+                    groupedByClient[clientKey].hasOverdue = true;
+                }
+            });
+            
+            // 渲染HTML
+            const html = Object.values(groupedByClient).map(client => {
+                const serviceCount = Object.keys(client.services).length;
+                const taskCount = Object.values(client.services).reduce((sum, svc) => sum + svc.tasks.length, 0);
+                const unfinishedCount = Object.values(client.services).reduce((sum, svc) => 
+                    sum + svc.tasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length, 0
+                );
+                const overdueCount = Object.values(client.services).reduce((sum, svc) => 
+                    sum + svc.tasks.filter(t => t.is_overdue).length, 0
+                );
+                
+                return `
+                    <div class="client-group" id="client-${client.client_id}">
+                        <div class="client-header ${client.hasOverdue ? 'has-overdue' : ''}" onclick="toggleClient('${client.client_id}')">
+                            <div>
+                                <span class="collapse-icon" id="icon-${client.client_id}">▶</span>
+                                <strong style="font-size:16px;margin-left:8px;">🏢 ${client.company_name}</strong>
+                                <span style="color:#6b7280;font-size:13px;margin-left:12px;">${client.tax_id || ''}</span>
+                                <span style="margin-left:16px;font-size:14px;">
+                                    ${taskCount} 個任務 | ${unfinishedCount} 未完成
+                                    ${overdueCount > 0 ? `| <span style="color:#ef4444;font-weight:600;">⚠️ ${overdueCount} 逾期</span>` : ''}
+                                </span>
+                            </div>
+                            <div>
+                                ${client.hasOverdue ? '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); viewOverdueTasks(\''+client.client_id+'\')">查看逾期</button>' : ''}
+                            </div>
+                        </div>
+                        <div id="services-${client.client_id}" style="display:none;">
+                            ${Object.values(client.services).map(service => renderService(client.client_id, service)).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            listContainer.innerHTML = html || '<div style="text-align:center;padding:40px;">暫無數據</div>';
+        }
+        
+        // 渲染服务组
+        function renderService(clientId, service) {
+            const taskCount = service.tasks.length;
+            const completedCount = service.tasks.filter(t => t.status === 'completed').length;
+            const inProgressCount = service.tasks.filter(t => t.status === 'in_progress').length;
+            
+            return `
+                <div class="service-group">
+                    <div class="service-header" onclick="toggleService('${clientId}', '${service.service_name}_${service.service_month}')">
+                        <div>
+                            <span class="collapse-icon" id="icon-service-${clientId}-${service.service_name}_${service.service_month}">▶</span>
+                            <strong style="margin-left:8px;">📦 ${service.service_name} · ${service.service_month}</strong>
+                            <span style="color:#6b7280;font-size:13px;margin-left:12px;">
+                                ${taskCount} 個任務: ${completedCount} 已完成, ${inProgressCount} 進行中
+                            </span>
+                        </div>
+                    </div>
+                    <div id="tasks-${clientId}-${service.service_name}_${service.service_month}" style="display:none;">
+                        ${service.tasks.map(task => renderTaskCard(task)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 渲染任务卡片
+        function renderTaskCard(task) {
+            const isAuto = task.component_id ? true : false;
+            const cardClass = task.is_overdue ? 'overdue' : (isAuto ? 'auto-generated' : 'manual-created');
+            const statusIcon = {
+                'pending': '⏰',
+                'in_progress': '🟡',
+                'completed': '✅',
+                'cancelled': '❌'
+            }[task.status] || '⚪';
+            
+            const statusText = {
+                'pending': '待處理',
+                'in_progress': '進行中',
+                'completed': '已完成',
+                'cancelled': '已取消'
+            }[task.status] || task.status;
+            
+            const batchCheckbox = document.getElementById('enableBatchMode')?.checked ? 
+                `<input type="checkbox" class="task-batch-checkbox" value="${task.task_id}" onchange="updateBatchCount()" style="margin-right:8px;">` : '';
+            
+            return `
+                <div class="task-card ${cardClass}" data-task-id="${task.task_id}">
+                    <div style="display:flex;justify-content:space-between;align-items:start;">
+                        <div style="flex:1;">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                ${batchCheckbox}
+                                <div class="status-dropdown">
+                                    <button class="status-button" onclick="toggleStatusMenu(${task.task_id}, event)">
+                                        ${statusIcon} ${statusText} ▼
+                                    </button>
+                                    <div class="status-menu" id="status-menu-${task.task_id}">
+                                        <div class="status-menu-item" onclick="changeTaskStatus(${task.task_id}, 'pending', event)">⏰ 待處理</div>
+                                        <div class="status-menu-item" onclick="changeTaskStatus(${task.task_id}, 'in_progress', event)">🟡 進行中</div>
+                                        <div class="status-menu-item" onclick="changeTaskStatus(${task.task_id}, 'completed', event)">✅ 已完成</div>
+                                        <div class="status-menu-item" onclick="changeTaskStatus(${task.task_id}, 'cancelled', event)">❌ 已取消</div>
+                                    </div>
+                                </div>
+                                <strong style="font-size:15px;">${task.task_name}</strong>
+                                <span style="font-size:12px;padding:2px 8px;background:#f3f4f6;border-radius:4px;">
+                                    ${isAuto ? '🤖 自動生成' : '👤 手動建立'}
+                                </span>
+                                ${task.is_overdue ? '<span style="color:#ef4444;font-weight:600;font-size:13px;">⚠️ 已逾期</span>' : ''}
+                            </div>
+                            
+                            <div class="task-meta">
+                                <div class="task-meta-item">👤 負責人: <strong>${task.assignee_name || '未指派'}</strong></div>
+                                <div class="task-meta-item">📅 到期: <strong>${task.due_date || '-'}</strong></div>
+                                ${task.is_overdue ? `<div class="task-meta-item" style="color:#ef4444;">⏰ 逾期 ${calculateOverdueDays(task.due_date)} 天</div>` : ''}
+                                <div class="task-meta-item">📊 進度: <strong>${task.completed_stages || 0}/${task.total_stages || 0} 階段</strong></div>
+                                <div class="task-meta-item">🆔 ${task.task_id}</div>
+                            </div>
+                            
+                            ${task.notes ? `<div style="margin-top:8px;font-size:13px;color:#6b7280;">📝 ${task.notes}</div>` : ''}
+                            
+                            <div class="task-actions">
+                                <a href="/internal/task-detail?id=${task.task_id}" class="btn btn-sm btn-primary">查看詳情</a>
+                                <button class="btn btn-sm btn-secondary" onclick="adjustDueDate(${task.task_id})">調整到期日</button>
+                                ${task.is_overdue ? `<button class="btn btn-sm btn-danger" onclick="recordOverdueReason(${task.task_id})">記錄逾期原因</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 更新统计
+        function updateStats(tasks) {
+            const total = tasks.length;
+            const unfinished = tasks.filter(t => t.status === 'pending' || t.status === 'in_progress').length;
+            const completed = tasks.filter(t => t.status === 'completed').length;
+            const overdue = tasks.filter(t => t.is_overdue).length;
+            const auto = tasks.filter(t => t.component_id).length;
+            const manual = total - auto;
+            
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-unfinished').textContent = unfinished;
+            document.getElementById('stat-completed').textContent = completed;
+            document.getElementById('stat-overdue').textContent = overdue;
+            document.getElementById('stat-auto').textContent = auto;
+            document.getElementById('stat-manual').textContent = manual;
+            document.getElementById('stat-months').textContent = `選中月份: ${selectedMonths.join(', ')}`;
+        }
+        
+        // 折叠/展开控制
+        function toggleClient(clientId) {
+            const content = document.getElementById(`services-${clientId}`);
+            const icon = document.getElementById(`icon-${clientId}`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.classList.add('expanded');
+            } else {
+                content.style.display = 'none';
+                icon.classList.remove('expanded');
+            }
+        }
+        
+        function toggleService(clientId, serviceKey) {
+            const content = document.getElementById(`tasks-${clientId}-${serviceKey}`);
+            const icon = document.getElementById(`icon-service-${clientId}-${serviceKey}`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.classList.add('expanded');
+            } else {
+                content.style.display = 'none';
+                icon.classList.remove('expanded');
+            }
+        }
+        
+        function expandAllClients(expand) {
+            document.querySelectorAll('.client-group').forEach(group => {
+                const clientId = group.id.replace('client-', '');
+                const content = document.getElementById(`services-${clientId}`);
+                const icon = document.getElementById(`icon-${clientId}`);
+                
+                if (expand) {
+                    content.style.display = 'block';
+                    icon.classList.add('expanded');
+                } else {
+                    content.style.display = 'none';
+                    icon.classList.remove('expanded');
+                }
+            });
+        }
+        
+        function expandOnlyOverdue() {
+            // 先全部折叠
+            expandAllClients(false);
+            
+            // 只展开有逾期任务的客户
+            document.querySelectorAll('.client-header.has-overdue').forEach(header => {
+                const clientId = header.parentElement.id.replace('client-', '');
+                const content = document.getElementById(`services-${clientId}`);
+                const icon = document.getElementById(`icon-${clientId}`);
+                content.style.display = 'block';
+                icon.classList.add('expanded');
+            });
+        }
+        
+        // 状态修改
+        function toggleStatusMenu(taskId, event) {
+            event.stopPropagation();
+            const menu = document.getElementById(`status-menu-${taskId}`);
+            
+            // 关闭所有其他菜单
+            document.querySelectorAll('.status-menu').forEach(m => {
+                if (m.id !== `status-menu-${taskId}`) {
+                    m.classList.remove('show');
+                }
+            });
+            
+            menu.classList.toggle('show');
+        }
+        
+        async function changeTaskStatus(taskId, newStatus, event) {
+            event.stopPropagation();
+            
+            try {
+                // 如果改为已完成，询问完成日期
+                let completedDate = null;
+                if (newStatus === 'completed') {
+                    const dateInput = prompt('請輸入完成日期（YYYY-MM-DD）', new Date().toISOString().split('T')[0]);
+                    if (!dateInput) return;
+                    completedDate = dateInput;
+                }
+                
+                const res = await fetch(`/internal/api/v1/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        status: newStatus,
+                        completed_date: completedDate
+                    })
+                });
+                
+                const json = await res.json();
+                
+                if (!json.ok) {
+                    throw new Error(json.message || '更新失敗');
+                }
+                
+                alert('✅ 狀態已更新');
+                loadTaskOverview(); // 重新加载
+                
+            } catch (err) {
+                console.error('修改状态失败:', err);
+                alert('❌ 修改失敗: ' + err.message);
+            }
+            
+            // 关闭菜单
+            document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('show'));
+        }
+        
+        // 调整到期日
+        async function adjustDueDate(taskId) {
+            const newDate = prompt('請輸入新的到期日（YYYY-MM-DD）');
+            if (!newDate) return;
+            
+            const reason = prompt('請說明調整原因');
+            if (!reason) {
+                alert('請輸入調整原因');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/internal/api/v1/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        due_date: newDate,
+                        adjustment_reason: reason
+                    })
+                });
+                
+                const json = await res.json();
+                
+                if (!json.ok) {
+                    throw new Error(json.message || '調整失敗');
+                }
+                
+                alert('✅ 到期日已調整');
+                loadTaskOverview();
+                
+            } catch (err) {
+                console.error('调整到期日失败:', err);
+                alert('❌ 調整失敗: ' + err.message);
+            }
+        }
+        
+        // 记录逾期原因
+        async function recordOverdueReason(taskId) {
+            const reason = prompt('請說明此任務逾期的原因');
+            if (!reason) return;
+            
+            try {
+                const res = await fetch(`/internal/api/v1/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        overdue_reason: reason
+                    })
+                });
+                
+                const json = await res.json();
+                
+                if (!json.ok) {
+                    throw new Error(json.message || '記錄失敗');
+                }
+                
+                alert('✅ 逾期原因已記錄');
+                
+            } catch (err) {
+                console.error('记录逾期原因失败:', err);
+                alert('❌ 記錄失敗: ' + err.message);
+            }
+        }
+        
+        // 批量操作
+        function toggleBatchMode() {
+            const enabled = document.getElementById('enableBatchMode').checked;
+            document.getElementById('batchActionsBar').style.display = enabled ? 'block' : 'none';
+            
+            if (!enabled) {
+                clearBatchSelection();
+            } else {
+                // 重新渲染以显示复选框
+                renderTaskList(allTasksData);
+            }
+        }
+        
+        function updateBatchCount() {
+            const checked = document.querySelectorAll('.task-batch-checkbox:checked');
+            document.getElementById('batchCount').textContent = checked.length;
+            batchSelectedTasks = Array.from(checked).map(cb => parseInt(cb.value));
+        }
+        
+        function clearBatchSelection() {
+            document.querySelectorAll('.task-batch-checkbox').forEach(cb => cb.checked = false);
+            updateBatchCount();
+        }
+        
+        async function batchChangeStatus() {
+            if (batchSelectedTasks.length === 0) {
+                alert('請先選擇任務');
+                return;
+            }
+            
+            const newStatus = prompt('請輸入新狀態（pending/in_progress/completed/cancelled）');
+            if (!newStatus) return;
+            
+            // TODO: 实现批量修改API
+            alert('批量修改功能開發中...');
+        }
+        
+        async function batchChangeDueDate() {
+            if (batchSelectedTasks.length === 0) {
+                alert('請先選擇任務');
+                return;
+            }
+            
+            const newDate = prompt('請輸入新的到期日（YYYY-MM-DD）');
+            if (!newDate) return;
+            
+            const reason = prompt('請說明調整原因');
+            if (!reason) {
+                alert('請輸入調整原因');
+                return;
+            }
+            
+            // TODO: 实现批量修改API
+            alert('批量修改功能開發中...');
+        }
+        
+        async function batchChangeAssignee() {
+            if (batchSelectedTasks.length === 0) {
+                alert('請先選擇任務');
+                return;
+            }
+            
+            // TODO: 实现批量修改API
+            alert('批量修改功能開發中...');
+        }
+        
+        // 筛选器持久化
+        function saveFilters() {
+            const filters = {
+                months: selectedMonths,
+                statuses: Array.from(document.querySelectorAll('.status-filter:checked')).map(cb => cb.value),
+                sources: Array.from(document.querySelectorAll('.source-filter:checked')).map(cb => cb.value),
+                search: document.getElementById('taskOverviewSearch').value
+            };
+            localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters));
+        }
+        
+        function restoreFilters() {
+            try {
+                const saved = localStorage.getItem(FILTER_STORAGE_KEY);
+                if (!saved) {
+                    // 默认选择本月+上月
+                    selectQuickMonths('currentAndLast');
+                    return;
+                }
+                
+                const filters = JSON.parse(saved);
+                
+                // 恢复月份
+                selectedMonths = filters.months || [];
+                selectedMonths.forEach(month => {
+                    const btn = document.querySelector(`[data-month="${month}"]`);
+                    if (btn) btn.classList.add('selected');
+                });
+                
+                // 恢复状态
+                document.querySelectorAll('.status-filter').forEach(cb => {
+                    cb.checked = filters.statuses?.includes(cb.value) || false;
+                });
+                
+                // 恢复来源
+                document.querySelectorAll('.source-filter').forEach(cb => {
+                    cb.checked = filters.sources?.includes(cb.value) || false;
+                });
+                
+                // 恢复搜索
+                if (filters.search) {
+                    document.getElementById('taskOverviewSearch').value = filters.search;
+                }
+                
+            } catch (err) {
+                console.error('恢复筛选条件失败:', err);
+                selectQuickMonths('currentAndLast');
+            }
+        }
+        
+        // 工具函数
+        function calculateOverdueDays(dueDate) {
+            if (!dueDate) return 0;
+            const due = new Date(dueDate);
+            const now = new Date();
+            const diff = Math.floor((now - due) / (1000 * 60 * 60 * 24));
+            return diff > 0 ? diff : 0;
+        }
+        
+        // 点击外部关闭状态菜单
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('show'));
+        });
+    </script>
+</body>
+</html>
+

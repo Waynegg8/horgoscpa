@@ -7,6 +7,11 @@ export async function handleTasks(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
 	
+	// GET /api/v1/tasks/overview - 获取任务总览（按客户+服务分组）
+	if (method === "GET" && url.pathname === "/internal/api/v1/tasks/overview") {
+		return await getTasksOverview(env, corsHeaders, url.searchParams);
+	}
+	
 	// GET /api/v1/tasks/preview?target_month=YYYY-MM - 預覽指定月份的任務
 	if (method === "GET" && url.pathname === "/internal/api/v1/tasks/preview") {
 		return await previewMonthTasks(env, corsHeaders, url.searchParams.get('target_month'));
@@ -868,5 +873,106 @@ async function previewMonthTasks(env, corsHeaders, targetMonth) {
 	}
 }
 
+// 获取任务总览（按客户+服务分组）
+async function getTasksOverview(env, corsHeaders, searchParams) {
+	try {
+		// 解析筛选参数
+		const months = searchParams.getAll('months'); // 可多选
+		const statuses = searchParams.getAll('statuses');
+		const sources = searchParams.getAll('sources'); // auto, manual
+		const searchText = searchParams.get('search');
+		
+		if (!months || months.length === 0) {
+			return jsonResponse(400, {
+				ok: false,
+				message: '請至少選擇一個月份'
+			}, corsHeaders);
+		}
+		
+		console.log('[getTasksOverview] 筛选条件:', { months, statuses, sources, searchText });
+		
+		// 构建WHERE条件
+		const where = ['t.is_deleted = 0'];
+		const binds = [];
+		
+		// 月份条件（多选）
+		const monthPlaceholders = months.map(() => '?').join(',');
+		where.push(`t.service_month IN (${monthPlaceholders})`);
+		binds.push(...months);
+		
+		// 状态条件
+		if (statuses && statuses.length > 0 && statuses.length < 4) { // 小于4表示不是全选
+			const statusPlaceholders = statuses.map(() => '?').join(',');
+			where.push(`t.status IN (${statusPlaceholders})`);
+			binds.push(...statuses);
+		}
+		
+		// 来源条件
+		if (sources && sources.length === 1) {
+			if (sources[0] === 'auto') {
+				where.push('t.component_id IS NOT NULL');
+			} else if (sources[0] === 'manual') {
+				where.push('t.component_id IS NULL');
+			}
+		}
+		
+		// 客户搜索
+		if (searchText) {
+			where.push('c.company_name LIKE ?');
+			binds.push(`%${searchText}%`);
+		}
+		
+		const whereSql = where.join(' AND ');
+		
+		// 查询任务
+		const tasks = await env.DATABASE.prepare(`
+			SELECT 
+				t.task_id,
+				t.task_name,
+				t.status,
+				t.due_date,
+				t.original_due_date,
+				t.completed_date,
+				t.service_month,
+				t.component_id,
+				t.notes,
+				t.is_overdue,
+				t.overdue_reason,
+				t.created_at,
+				cs.client_service_id,
+				cs.service_id,
+				c.client_id,
+				c.company_name,
+				c.tax_registration_number as client_tax_id,
+				s.service_name,
+				u.username as assignee_name,
+				(SELECT COUNT(1) FROM ActiveTaskStages ats WHERE ats.task_id = t.task_id) as total_stages,
+				(SELECT COUNT(1) FROM ActiveTaskStages ats WHERE ats.task_id = t.task_id AND ats.status = 'completed') as completed_stages
+			FROM ActiveTasks t
+			LEFT JOIN ClientServices cs ON t.client_service_id = cs.client_service_id
+			LEFT JOIN Clients c ON cs.client_id = c.client_id
+			LEFT JOIN Services s ON cs.service_id = s.service_id
+			LEFT JOIN Users u ON t.assignee_user_id = u.user_id
+			WHERE ${whereSql}
+			ORDER BY c.company_name, s.service_name, t.service_month DESC, t.due_date
+		`).bind(...binds).all();
+		
+		console.log('[getTasksOverview] 查询到任务数量:', tasks.results?.length);
+		
+		// 返回数据
+		return jsonResponse(200, {
+			ok: true,
+			data: tasks.results || []
+		}, corsHeaders);
+		
+	} catch (err) {
+		console.error('获取任务总览失败:', err);
+		return jsonResponse(500, { 
+			ok: false, 
+			message: '获取失败', 
+			error: String(err)
+		}, corsHeaders);
+	}
+}
 
 
