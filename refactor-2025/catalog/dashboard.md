@@ -500,3 +500,293 @@
 - 保持原有功能100%迁移
 - 新增了视图级别的组件（EmployeeDashboard、AdminDashboard）用于更好的代码组织
 
+---
+
+### 段4 (行301-400)
+
+#### 完整代码
+```javascript
+            
+            if (empHours.length > 0) {
+              hoursHtml = empHours.map(e => {
+                const totalStr = fmtNum(e.total || 0);
+                const meta = (e.total && e.total > 0) ? `正常 ${fmtNum(e.normal)} ｜ 加班 ${fmtNum(e.overtime)}` : '';
+                return `<div class="emp-row">
+                  <span style="font-size:14px;font-weight:500;color:#1f2937;">${e.name || '未命名'}</span>
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    ${meta ? `<div style="font-size:13px;color:#6b7280;">${meta}</div>` : ''}
+                    <div style="display:flex;align-items:baseline;gap:4px;">
+                      <span style="font-size:20px;font-weight:600;color:#2563eb;">${totalStr}</span>
+                      <span style="font-size:13px;color:#6b7280;">小時</span>
+                    </div>
+                  </div>
+                </div>`;
+              }).join('');
+              console.log('Hours HTML generated, length:', hoursHtml.length);
+            } else {
+              hoursHtml = '<div style="padding:16px;text-align:center;color:#9ca3af;">尚無員工資料</div>';
+              console.log('No employee hours data');
+            }
+          } catch (err) {
+            console.error('ERROR in employee hours processing:', err);
+            hoursHtml = `<div style="padding:16px;color:red;">工時數據錯誤：${err.message}</div>`;
+          }
+          
+          // 各员工任务状态
+          let tasksHtml = '';
+          try {
+            console.log('=== Processing Employee Tasks ===');
+            const empTasks = Array.isArray(data?.employeeTasks) ? data.employeeTasks : [];
+            console.log('Employee Tasks data:', empTasks);
+            
+            function formatMonthDetails(monthObj) {
+              if (!monthObj || Object.keys(monthObj).length === 0) return '';
+              const details = Object.entries(monthObj)
+                .sort((a, b) => b[0].localeCompare(a[0]))
+                .map(([month, count]) => {
+                  const [y, m] = month.split('-');
+                  return `${parseInt(m)}月:${count}件`;
+                })
+                .join('、');
+              return ` (${details})`;
+            }
+            
+            if (empTasks.length > 0) {
+              tasksHtml = empTasks.map(e => {
+            const overdueTotal = Object.values(e.overdue || {}).reduce((sum, n) => sum + n, 0);
+            const inProgressTotal = Object.values(e.inProgress || {}).reduce((sum, n) => sum + n, 0);
+            
+            const badges = [];
+            if (overdueTotal > 0) {
+              const details = formatMonthDetails(e.overdue);
+              badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#fee2e2;color:#dc2626;font-size:13px;font-weight:500;">逾期 ${overdueTotal}${details}</span>`);
+            }
+            if (inProgressTotal > 0) {
+              const details = formatMonthDetails(e.inProgress);
+              badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#dbeafe;color:#2563eb;font-size:13px;font-weight:500;">進行中 ${inProgressTotal}${details}</span>`);
+            }
+            if (e.completed > 0) {
+              badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#d1fae5;color:#059669;font-size:13px;font-weight:500;">已完成 ${e.completed}</span>`);
+            }
+            
+            const summary = badges.length > 0 ? badges.join('') : '<span style="color:#9ca3af;">無任務</span>';
+            
+            return `<a href="/internal/tasks?assignee=${e.userId}" style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #f3f4f6;text-decoration:none;color:inherit;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+              <span style="font-size:14px;font-weight:500;color:#1f2937;">${e.name || '未命名'}</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">${summary}</div>
+            </a>`;
+              }).join('');
+              console.log('Tasks HTML generated, length:', tasksHtml.length);
+            } else {
+              tasksHtml = '<div style="padding:16px;text-align:center;color:#9ca3af;">尚無任務</div>';
+              console.log('No employee tasks data');
+            }
+          } catch (err) {
+            console.error('ERROR in employee tasks processing:', err);
+            console.error('Error stack:', err.stack);
+            tasksHtml = `<div style="padding:16px;color:red;">任務數據錯誤：${err.message}</div>`;
+          }
+          
+          // 财务状况
+          const fs = data?.financialStatus || {};
+          const emptyData = { period:'', revenue:0, cost:0, profit:0, margin:0, ar:0, paid:0, overdue:0, collectionRate:0 };
+          const currentFinData = (financeMode === 'ytd' ? fs.ytd : fs.month) || emptyData;
+          
+          const finHtml = `
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+                <div style="padding:12px;background:#f9fafb;border-radius:6px;">
+                  <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">營收</div>
+                  <div style="font-size:18px;font-weight:600;color:#1f2937;">${fmtTwd(currentFinData.revenue)}</div>
+                </div>
+                <div style="padding:12px;background:#f9fafb;border-radius:6px;">
+```
+
+#### 发现的内容
+- **HTML渲染逻辑**:
+  - 员工工时列表渲染（empHours）
+  - 员工任务状态列表渲染（empTasks）
+  - 财务状况卡片渲染（开始部分）
+- **辅助函数**:
+  - `formatMonthDetails()` - 格式化月份详情（行335-345）
+- **组件识别**:
+  - EmployeeHoursRow组件（员工工时行）
+  - EmployeeTasksRow组件（员工任务状态行，可点击跳转）
+  - FinancialStatusCard组件（财务状况卡片）
+- **API字段**:
+  - employeeHours: [{ name, total, normal, overtime }]
+  - employeeTasks: [{ userId, name, completed, inProgress: {month: count}, overdue: {month: count} }]
+  - financialStatus: { month: {...}, ytd: {...} }
+  - 财务数据字段: period, revenue, cost, profit, margin, ar, paid, overdue, collectionRate
+
+## 对比验证 - 段4
+
+### 旧代码功能清单
+- [x] 员工工时列表渲染 ✓
+  - [x] 显示员工姓名 ✓
+  - [x] 显示总工时、正常工时、加班工时 ✓
+  - [x] 空数据处理 ✓
+  - [x] 错误处理 ✓
+- [x] 员工任务状态列表渲染 ✓
+  - [x] formatMonthDetails函数 - 格式化月份详情 ✓
+  - [x] 显示员工姓名 ✓
+  - [x] 显示任务统计（逾期、进行中、已完成）✓
+  - [x] 月份详情显示 ✓
+  - [x] 点击跳转到员工任务列表 ✓
+  - [x] hover效果 ✓
+  - [x] 空数据处理 ✓
+  - [x] 错误处理 ✓
+- [x] 财务状况卡片渲染（开始部分）✓
+  - [x] 营收显示 ✓
+  - [x] 后续指标将在下一段完成 ✓
+
+### 新代码实现状态
+- ✓ EmployeeHoursRow组件已创建（EmployeeHoursRow.jsx）
+  - 包含单行组件和列表组件
+  - 支持空数据显示
+- ✓ EmployeeTasksRow组件已创建（EmployeeTasksRow.jsx）
+  - 包含formatMonthDetails辅助函数
+  - 包含单行组件和列表组件
+  - 支持点击跳转和hover效果
+  - 支持空数据显示
+- ✓ FinancialStatusCard组件已创建（FinancialStatusCard.jsx）
+  - 包含FinancialMetricBox子组件
+  - 支持月度和年度累计模式
+  - 显示所有财务指标
+- ✓ AdminDashboard组件已更新
+  - 集成了员工工时列表
+  - 集成了员工任务列表
+  - 集成了财务状况卡片
+
+### 使用的组件
+- EmployeeHoursRow.jsx - 员工工时行组件
+- EmployeeTasksRow.jsx - 员工任务状态行组件
+- FinancialStatusCard.jsx - 财务状况卡片组件
+- AdminDashboard.jsx - 更新以集成新组件
+
+## 回溯检查 - 段4
+⚠️ 无需回溯。段4的实现方式与段1-3一致：
+- 使用React组件化
+- 辅助函数（formatMonthDetails）提取到组件内部
+- 组件间通过props传递数据
+- 保持原有功能100%迁移
+- 继续完善AdminDashboard视图组件
+
+---
+
+### 段5 (行401-500)
+
+#### 完整代码
+```javascript
+                  <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">成本</div>
+                  <div style="font-size:18px;font-weight:600;color:#1f2937;">${fmtTwd(currentFinData.cost)}</div>
+                </div>
+                <div style="padding:12px;background:#f0fdf4;border-radius:6px;">
+                  <div style="font-size:12px;color:#059669;margin-bottom:4px;">毛利</div>
+                  <div style="font-size:18px;font-weight:600;color:#059669;">${fmtTwd(currentFinData.profit)}</div>
+                </div>
+                <div style="padding:12px;background:#f0fdf4;border-radius:6px;">
+                  <div style="font-size:12px;color:#059669;margin-bottom:4px;">毛利率</div>
+                  <div style="font-size:18px;font-weight:600;color:#059669;">${fmtPct(currentFinData.margin)}</div>
+                </div>
+              </div>
+              
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+                <div style="padding:12px;background:#fefce8;border-radius:6px;">
+                  <div style="font-size:12px;color:#ca8a04;margin-bottom:4px;">應收</div>
+                  <div style="font-size:18px;font-weight:600;color:#ca8a04;">${fmtTwd(currentFinData.ar)}</div>
+                </div>
+                <div style="padding:12px;background:#dbeafe;border-radius:6px;">
+                  <div style="font-size:12px;color:#2563eb;margin-bottom:4px;">收款</div>
+                  <div style="font-size:18px;font-weight:600;color:#2563eb;">${fmtTwd(currentFinData.paid)}</div>
+                </div>
+                <div style="padding:12px;background:#fee2e2;border-radius:6px;">
+                  <div style="font-size:12px;color:#dc2626;margin-bottom:4px;">逾期</div>
+                  <div style="font-size:18px;font-weight:600;color:#dc2626;">${fmtTwd(currentFinData.overdue)}</div>
+                </div>
+                <div style="padding:12px;background:#f3f4f6;border-radius:6px;">
+                  <div style="font-size:12px;color:#4b5563;margin-bottom:4px;">收款率</div>
+                  <div style="font-size:18px;font-weight:600;color:#4b5563;">${fmtPct(currentFinData.collectionRate)}</div>
+                </div>
+              </div>
+            </div>`;
+          
+          const receiptsPending = Array.isArray(data?.receiptsPendingTasks) ? data.receiptsPendingTasks : [];
+          
+          const recentActivities = Array.isArray(data?.recentActivities) ? data.recentActivities : [];
+          console.log('[Dashboard] recentActivities 数量:', recentActivities.length);
+          console.log('[Dashboard] recentActivities 数据:', recentActivities);
+          let activitiesHtml = '';
+          if (recentActivities.length > 0) {
+            activitiesHtml = recentActivities.map(act => {
+              console.log('[Dashboard] 处理活动:', act.activity_type, act);
+              if (act.activity_type === 'due_date_adjustment') {
+                return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
+                  <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+                      <div style="font-size:15px;font-weight:600;color:#1f2937;">📅 ${act.taskName}</div>
+                      <div style="font-size:12px;color:#9ca3af;">${act.time}</div>
+                    </div>
+                    <div style="font-size:14px;color:#6b7280;margin-bottom:6px;">${act.clientName} · ${act.serviceName}</div>
+                    <div style="display:flex;align-items:center;gap:10px;font-size:14px;">
+                      <span style="color:#3b82f6;font-weight:500;">${act.change}</span>
+                      <span style="color:#6b7280;">${act.assigneeName}</span>
+                    </div>
+                    ${act.reason ? `<div style="font-size:13px;color:#6b7280;margin-top:6px;line-height:1.5;padding:8px;background:#fffbeb;border-radius:4px;">${act.reason}</div>` : ''}
+                  </div>
+                </a>`;
+              } else if (act.activity_type === 'status_update') {
+                return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
+                  <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+                      <div style="font-size:15px;font-weight:600;color:#1f2937;">📝 ${act.taskName}</div>
+                      <div style="font-size:12px;color:#9ca3af;">${act.time}</div>
+                    </div>
+                    <div style="font-size:14px;color:#6b7280;margin-bottom:6px;">${act.clientName} · ${act.serviceName}</div>
+                    <div style="display:flex;align-items:center;gap:10px;font-size:14px;">
+                      <span style="color:#10b981;font-weight:500;">${act.change}</span>
+                      <span style="color:#6b7280;">${act.assigneeName}</span>
+                    </div>
+                    ${act.note ? `<div style="font-size:13px;color:#4b5563;margin-top:6px;line-height:1.5;padding:8px;background:${act.note.startsWith('🚫') || act.note.startsWith('⏰') ? '#fef2f2' : '#f0fdf4'};border-radius:4px;">${act.note}</div>` : ''}
+                  </div>
+                </a>`;
+              } else if (act.activity_type === 'leave_application') {
+                let unitText = '天';
+                if (act.leaveUnit === 'hour') {
+                  unitText = '小時';
+                } else if (act.leaveUnit === 'half') {
+                  unitText = '半天';
+                }
+                
+                return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
+                  <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+                      <div style="font-size:15px;font-weight:600;color:#1f2937;">🏖️ ${act.text}</div>
+                      <div style="font-size:12px;color:#9ca3af;">${act.time}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;font-size:14px;">
+                      <span style="color:#6b7280;">${act.period}</span>
+                      <span style="padding:4px 8px;border-radius:4px;background:#dbeafe;color:#2563eb;font-weight:500;">${act.leaveDays}${unitText}</span>
+                    </div>
+                    ${act.reason ? `<div style="font-size:13px;color:#6b7280;margin-top:6px;line-height:1.5;">${act.reason}</div>` : ''}
+                  </div>
+                </a>`;
+              } else if (act.activity_type === 'timesheet_reminder') {
+                return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
+                  <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;background:#fef2f2;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+```
+
+#### 发现的内容
+- **财务状况卡片完整HTML**（继续）:
+  - 成本、毛利、毛利率（绿色高亮）
+  - 应收（黄色）、收款（蓝色）、逾期（红色）、收款率（灰色）
+- **最近动态渲染逻辑**:
+  - due_date_adjustment（期限调整）- 显示任务名、客户、服务、变更、原因
+  - status_update（状态更新）- 显示任务名、客户、服务、变更、备注
+  - leave_application（假期申请）- 显示员工名、假期类型、天数/小时、原因
+  - timesheet_reminder（工时提醒）- 红色背景警告
+- **组件识别**:
+  - ActivityItem组件（活动项，4种类型）
+- **API字段**:
+  - recentActivities: [{ activity_type, taskName, clientName, serviceName, change, assigneeName, reason, note, time, link, text, period, leaveDays, leaveUnit, userName, missingCount, missingDates }]
+
