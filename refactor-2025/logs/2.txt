@@ -1,3 +1,0 @@
-db-schema.json 完成
-表: Users sessions Clients CustomerTags ClientTagAssignments ClientServices ActiveTasks ActiveTaskStages Timesheets LeaveRequests LeaveBalances Receipts PayrollRuns MonthlyPayroll OverheadCostTypes MonthlyOverheadCosts
-
