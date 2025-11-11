@@ -49,9 +49,9 @@ alwaysApply: true
 
 3.3. 檔案與編碼 (Files & Encoding) 繁體中文編碼 (Traditional Chinese Encoding): 你在「工地」資料夾中建立或修改的所有檔案（.vue, .js, .css, .json 等），必須使用 UTF-8 編碼儲存，以確保繁體中文的正確顯示。
 
-3.4. 使用者介面 (UI/UX) 限制 禁用確認框 (No Confirmation Dialogs): 在整個專案的任何地方，嚴禁使用任何形式的確認框（例如 JavaScript 的 alert, confirm, prompt 或任何 UI 庫的 Modal 確認框）。你必須尋找不需要中斷使用者流程的替代方案（例如非侵入式提示、Toast 或復原 (Undo) 機制）來處理操作。
+3.4. 使用者介面 (UI/UX)統一使用ant design並禁用確認框 (No Confirmation Dialogs): 在整個專案的任何地方，嚴禁使用任何形式的確認框（例如 JavaScript 的 alert, confirm, prompt 或任何 UI 庫的 Modal 確認框）。你必須尋找不需要中斷使用者流程的替代方案（例如非侵入式提示、Toast 或復原 (Undo) 機制）來處理操作。
 
-3.5. 部署優先 (Deployment-First) (已新增) 嚴禁本地開發 (No Local Development): 你的工作流程不是「本地開發、本地測試、然後部署」。 直接部署 (Deploy Directly): 你的所有代碼修改應被視為已準備好部署。完成修改後，你必須立即觸發自動化部署流程 (4.1)，而不是在本地環境中運行或測試。
+3.5. 部署優先 (Deployment-First) (已新增) 嚴禁本地開發 (No Local Development): 你的工作流程不是「本地開發、本地測試、然後部署」。 直接部署 (Deploy Directly): 你的所有代碼修改應被視為已準備好部署。完成修改後，你必須立即觸發自動化部署流程 (4.1)，而不是在本地環境中運行或測試並且現使用有的 Cloudflare Pages 專案。
 
 全自動化 AI 工作流 (CI/CD & Auto-Remediation) 一切操作都必須透過 AI 自動化進行。 你必須遵循以下自動化流程：
 
