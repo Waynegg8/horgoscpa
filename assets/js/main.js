@@ -87,11 +87,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 navLinks.style.borderBottom = '1px solid #EEE';
 
                 nav.classList.add('scrolled'); // Force solid bg
-                mobileToggle.textContent = 'Close';
+                mobileToggle.textContent = '關閉';
             } else {
                 // Close Menu logic
                 navLinks.style.display = ''; // Reset to css default
-                mobileToggle.textContent = 'Menu';
+                mobileToggle.textContent = '選單';
                 handleScroll(); // Reset scroll state
             }
         });
@@ -341,7 +341,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 const randomArticles = availableArticles.slice(0, 3);
 
                 if (randomArticles.length === 0) {
-                    relatedList.innerHTML = '<li style="color:#999; font-size:0.9rem;">尚無相關文章</li>';
+                    relatedList.innerHTML = `
+                        <li style="margin-bottom: 15px;">
+                            <a href="/services.html" style="text-decoration: none; display: block;">
+                                <span style="font-size: 0.8rem; color: #b48e55; text-transform: uppercase; display: block; margin-bottom: 2px;">服務項目</span>
+                                <h5 style="font-size: 0.95rem; color: #1a1a1a; margin: 0; line-height: 1.4;">了解我們的專業服務</h5>
+                            </a>
+                        </li>
+                        <li style="margin-bottom: 15px;">
+                            <a href="/booking.html" style="text-decoration: none; display: block;">
+                                <span style="font-size: 0.8rem; color: #b48e55; text-transform: uppercase; display: block; margin-bottom: 2px;">預約諮詢</span>
+                                <h5 style="font-size: 0.95rem; color: #1a1a1a; margin: 0; line-height: 1.4;">立即預約免費諮詢</h5>
+                            </a>
+                        </li>
+                    `;
                     return;
                 }
 
@@ -438,9 +451,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     const bgStyle = `background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;`;
 
                     // Simple Icon Overlay (CSS Shapes or SVG)
-                    // Using a simple abstract "H" letter or just text
+                    // Using a simple abstract letter
                     const iconOverlay = `
-                        <div style="font-family: 'Cinzel', serif; font-size: 3rem; color: rgba(180, 142, 85, 0.2); font-weight: 700;">
+                        <div style="font-family: var(--font-serif); font-size: 3rem; color: rgba(180, 142, 85, 0.2); font-weight: 700;">
                             ${res.category ? res.category[0].toUpperCase() : 'H'}
                         </div>
                         <div style="position: absolute; bottom: 10px; right: 10px; width: 40px; height: 1px; background: rgba(180, 142, 85, 0.5);"></div>

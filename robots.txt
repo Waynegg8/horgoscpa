@@ -10,12 +10,12 @@ Disallow: /.github/
 Disallow: /.git/
 
 # 只允許圖片目錄的圖片文件被爬取
-Allow: /assets/images/*.jpg$
-Allow: /assets/images/*.jpeg$
-Allow: /assets/images/*.png$
-Allow: /assets/images/*.gif$
-Allow: /assets/images/*.svg$
-Allow: /assets/images/*.webp$
+Allow: /assets/images/*.jpg
+Allow: /assets/images/*.jpeg
+Allow: /assets/images/*.png
+Allow: /assets/images/*.gif
+Allow: /assets/images/*.svg
+Allow: /assets/images/*.webp
 
 # sitemap 位置
 Sitemap: https://www.horgoscpa.com/sitemap.xml
