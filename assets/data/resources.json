@@ -1,7 +1,15 @@
 {
+<<<<<<< HEAD
   "title": "公司設立成本試算",
   "category": "tool",
   "description": "線上試算工具，協助您快速估算公司設立所需的規費與代辦成本。",
   "type": "tool",
   "link": "tools/incorporation-calculator.html"
+=======
+  "type": "tool",
+  "link": "tools/incorporation-calculator.html",
+  "description": "線上試算工具，協助您快速估算公司設立所需的規費與代辦成本。",
+  "title": "公司設立成本試算",
+  "category": "tool"
+>>>>>>> 6d40c0473b59d9571d3ce8be69d24f82b037c1c1
 }
