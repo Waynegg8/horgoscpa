@@ -237,13 +237,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-    // --- Dynamic Articles List (Main Page) ---
+    // --- Dynamic Articles List (Main Page & Articles Page) ---
     const articlesGrid = document.getElementById('articles-grid');
     if (articlesGrid) {
         fetch('/assets/data/articles.json')
             .then(response => response.json())
             .then(articles => {
                 articlesGrid.innerHTML = '';
+
+                // --- Dynamic Category Generation (Articles) ---
+                const filterGroup = document.querySelector('.filter-group');
+                if (filterGroup && articles.length > 0) {
+                    // 1. Extract unique categories (Capitalized)
+                    const categories = ['All', ...new Set(articles.map(item => item.category || 'Insight'))];
+
+                    // 2. Clear hardcoded buttons
+                    filterGroup.innerHTML = '';
+
+                    // 3. Generate Buttons
+                    categories.forEach(cat => {
+                        const btn = document.createElement('button');
+                        btn.className = 'filter-btn';
+                        if (cat === 'All') btn.classList.add('active');
+                        btn.dataset.category = cat.toLowerCase(); // dataset uses lowercase for matching
+                        btn.textContent = cat; // Display Name
+
+                        // Inline Styles (copied from previous HTML to maintain look)
+                        btn.style.cssText = 'padding: 6px 16px; background: transparent; border: 1px solid transparent; color: var(--text-muted); cursor: pointer; font-family: var(--font-sans); font-size: 0.9rem; transition: all 0.3s ease;';
+
+                        filterGroup.appendChild(btn);
+
+                        // 4. Attach Click Event (Re-using logic from below or defining here)
+                        btn.addEventListener('click', () => {
+                            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+
+                            // Trigger Filter Logic
+                            if (typeof filterResources === 'function') {
+                                filterResources();
+                            } else {
+                                // Fallback if function scope issue, but filterResources is defined below. 
+                                // Actually filterResources is defined inside a block below. 
+                                // We might need to move filterResources to global or dispatch event.
+                                // Solution: Dispatch event or duplicate logic? 
+                                // Better: Dispatch a custom event or 'input' on searchInput to trigger the listener.
+                                const searchInput = document.getElementById('resourceSearch');
+                                if (searchInput) searchInput.dispatchEvent(new Event('input'));
+                            }
+                        });
+                    });
+                }
+
+
                 if (articles.length === 0) {
                     articlesGrid.innerHTML = '<p class="text-muted" style="text-align:center;">尚無文章</p>';
                     return;
@@ -251,6 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 articles.forEach(article => {
                     const card = document.createElement('a');
                     card.className = 'book-card';
+                    card.dataset.category = (article.category || 'insight').toLowerCase();
                     // Link is already absolute in JSON or needs to be treated as such
                     card.href = article.link;
                     const bgImage = article.image || 'assets/images/hero.jpg';
