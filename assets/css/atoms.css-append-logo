@@ -1,0 +1,39 @@
+/* --- Bilingual Logo Lockup --- */
+.logo-container {
+    display: flex;
+    flex-direction: column; /* Stack them */
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.logo-img {
+    height: 32px !important; /* Slightly smaller to make room */
+    width: auto;
+    margin-bottom: 2px;
+}
+
+.logo-text-en {
+    font-family: var(--font-sans);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: #FFFFFF; /* Default for transparent nav */
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-left: 2px;
+    opacity: 0.8;
+    transition: color 0.3s ease;
+}
+
+/* Scrolled State adjustments (defined in organisms.css but overridden here for safety) */
+.site-nav.scrolled .logo-text-en {
+    color: #FFFFFF; /* Keep white on dark scrolled bg */
+}
+
+@media (max-width: 768px) {
+    .logo-img {
+        height: 28px !important;
+    }
+    .logo-text-en {
+        font-size: 0.55rem;
+    }
+}

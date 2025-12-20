@@ -1,388 +1,162 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="霍爾果斯會計師事務所提供專業稅務、會計記帳與企業顧問服務，為您打造最全面的財務規劃方案。" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>首頁 | 霍爾果斯會計師事務所</title>
+  <meta name="description" content="霍爾果斯會計師事務所 - 為講究細節的創業者，策展您的財務版圖。">
 
-<!-- hreflang 標籤 -->
-  <link rel="alternate" hreflang="zh-TW" href="https://www.horgoscpa.com/index.html" />
-  
+  <!-- CSS System -->
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/organisms.css">
+
   <!-- Favicon -->
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
-  
-  <!-- Material Symbols 圖示庫 -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  
-  <!-- 引用全站共用樣式 -->
-  <link rel="stylesheet" href="/assets/css/common.css" />
-  <link rel="stylesheet" href="/assets/css/navbar.css" />
-  <link rel="stylesheet" href="/assets/css/footer.css" />
-  
-  <!-- 新增: 首頁特定樣式 - 用於流動式設計 -->
-  <link rel="stylesheet" href="/assets/css/index-style.css" />
-
-  <!-- 移動版導航欄樣式 -->
-<link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
-
-<!-- 必須確保在頁面底部加載此JavaScript -->
-<script src="/assets/js/mobile-navbar.js" defer></script>
-  <!-- Google 分析 -->
+  <link rel="icon" href="favicon.ico">
+  <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
   </script>
-  
-  <!-- 結構化資料 -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "AccountingService",
-    "name": "霍爾果斯會計師事務所",
-    "url": "https://www.horgoscpa.com",
-    "logo": "https://www.horgoscpa.com/assets/images/logo.png",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "建國路21號3樓之1",
-      "addressLocality": "台中市",
-      "addressRegion": "西區",
-      "postalCode": "403",
-      "addressCountry": "TW"
-    },
-    "telephone": "+886-4-2220-5606",
-    "openingHoursSpecification": {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": [
-        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"
-      ],
-      "opens": "08:30",
-      "closes": "17:30"
-    }
-  }
-</script>
 </head>
+
 <body>
 
-<!-- 導航欄 -->
-<nav class="site-nav">
-  <div class="nav-container">
-    <div class="logo">
-  <a href="/index.html">
-    <div class="logo-container">
-      <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
-      <div class="logo-sub">HorgosCPA</div>
-    </div>
-  </a>
-</div>
-
-    <input type="checkbox" id="nav-toggle" class="nav-toggle">
-    <label for="nav-toggle" class="nav-toggle-label">
-      <span></span>
-    </label>
-    <ul class="nav-menu">
-      <li><a href="/services.html">專業服務</a></li>
-      <li><a href="/team.html">專業團隊</a></li>
-      <li><a href="/blog.html">專欄文章</a></li>
-      <li><a href="/faq.html">常見問題</a></li>
-      <li><a href="/resources.html">資源中心</a></li>
-      <li><a href="/contact.html">聯繫我們</a></li>
-      <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
+  <!-- Navigation -->
+  <nav class="site-nav">
+    <a href="index.html" class="logo">
+      <div class="logo-container">
+        <img src="assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 40px; width: auto;">
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="services.html">專業服務</a></li>
+      <li><a href="team.html">專業團隊</a></li>
+      <li><a href="articles.html">文章專區</a></li>
+      <li><a href="resources.html">資源專區</a></li>
+      <li><a href="faq.html">常見問題</a></li>
+      <li><a href="contact.html">聯絡我們</a></li>
     </ul>
-  </div>
-</nav>
+    <a href="booking.html" class="btn-solid-gold">預約諮詢</a>
+    <div class="mobile-toggle" style="display:none;">選單</div>
+  </nav>
 
-<!-- 在這裡添加移動版導航欄 -->
-<div class="mobile-navbar" style="display: none;">
-  <div class="mobile-nav-container">
-    <div class="mobile-menu-btn" id="mobileMenuBtn">
-      <span class="material-symbols-rounded">menu</span>
-    </div>
-   <div class="logo">
-  <a href="/index.html">
-    <div class="logo-container">
-      <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
-      <div class="logo-sub">HorgosCPA</div>
-    </div>
-  </a>
-</div>
-    <div class="mobile-nav-spacer"></div>
-  </div>
-  
-  <div class="mobile-menu" id="mobileMenu">
-    <ul class="mobile-menu-links">
-      <li><a href="/services.html" class="mobile-nav-link">專業服務</a></li>
-      <li><a href="/team.html" class="mobile-nav-link">專業團隊</a></li>
-      <li><a href="/blog.html" class="mobile-nav-link">專欄文章</a></li>
-      <li><a href="/faq.html" class="mobile-nav-link">常見問題</a></li>
-      <li><a href="/resources.html" class="mobile-nav-link">資源中心</a></li>
-      <li><a href="/contact.html" class="mobile-nav-link">聯繫我們</a></li>
-      <li><a href="/booking.html" class="mobile-consult-btn">免費諮詢</a></li>
-    </ul>
-  </div>
-</div>
-
-<!-- 英雄區塊 -->
-<div class="home-hero" style="background-image: url('/assets/images/hero.jpg');">
-  <div class="container">
-    <div class="hero-content">
-      <h1>專業財稅顧問<br>助您事業成長</h1>
-      <p>霍爾果斯會計師事務所為企業與個人提供完整專業的財務方案，從稅務申報到企業諮詢，讓您的財務管理更有效率。</p>
-    </div>
-  </div>
-</div>
-
-<!-- 關於我們區塊 -->
-<section class="about-section">
-  <div class="container">
-    <div class="section-title">
-      <h2>關於我們</h2>
-      <p>我們以全面且個性化的顧問服務，協助客戶達成財務目標</p>
-    </div>
-    <div class="about-content">
-      <p>霍爾果斯會計師事務所成立於2022年，由具備豐富實務經驗的會計師與專業顧問組成，致力於為企業與個人提供最優質的財務與稅務解決方案。</p>
-      <p>我們深信，優秀的財務規劃不僅是數字的計算，更是對客戶需求的理解。我們秉持「專業、誠信、創新」的理念，為每位客戶量身打造符合需求的財務方案，協助您在變動的稅務環境中穩健前行。</p>
-      <p>無論您是創業初期的新創企業，或是穩定發展的成熟公司，我們都能提供適合的專業服務，讓您專注於業務拓展，無需為財稅問題煩惱。</p>
-      <div class="text-center">
-        <a href="/team.html" class="btn btn-outline">認識我們的團隊</a>
+  <!-- Hero Section -->
+  <section class="hero-split">
+    <div class="text-col">
+      <span class="eyebrow text-gold">COMPLIANCE & RISK MANAGEMENT</span>
+      <h1 class="display-text">漏報、錯報？<br>別讓法規風險吃掉您的獲利</h1>
+      <p style="font-size: 1.1rem; line-height: 1.8; color: var(--text-body); margin-bottom: 40px;">
+        在法規日益繁雜的時代，稍有不慎即面臨罰則與補稅壓力。<br>
+        我們專注為創業者築起最堅實的財務防火牆，<br>確保您的每一筆營收，都無需擔憂法規追償。
+      </p>
+      <div class="cta-group">
+        <a href="booking.html" class="btn-solid-gold">預約合規諮詢</a>
       </div>
     </div>
-  </div>
-</section>
 
-<!-- 服務項目區塊 -->
-<section class="services-section">
-  <div class="container">
-    <div class="section-title">
+    <div class="visual-col">
+      <img src="assets/images/hero.jpg" alt="霍爾果斯事務所" loading="lazy">
+    </div>
+  </section>
+
+  <!-- Pain Point Solutions -->
+  <section class="container philosophy-section">
+    <div class="philosophy-grid">
+      <div class="philosophy-item">
+        <hr class="deco-line">
+        <h3>拒絕補稅風險</h3>
+        <p>法規細節繁多，錯一處可能導致整年利潤付諸流水。我們提供精密的稅務計算，確保您無需繳納任何不必要的罰款。</p>
+      </div>
+      <div class="philosophy-item">
+        <hr class="deco-line">
+        <h3>精準合規申報</h3>
+        <p>漏報是創業者最大的隱形炸彈。我們建立多重審核機制，確保每一筆申報都絕對合規，讓您睡得安穩。</p>
+      </div>
+      <div class="philosophy-item">
+        <hr class="deco-line">
+        <h3>主動風險預警</h3>
+        <p>不只是被動記帳，我們主動監控您的財務指標。在國稅局找上門前，我們已經幫您化解了潛在危機。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Editorial Service Menu -->
+  <section class="container section-gap">
+    <div class="text-center" style="margin-bottom: 80px;">
+      <span class="eyebrow text-gold">OUR EXPERTISE</span>
       <h2>專業服務</h2>
-      <p>我們提供全方位的財務與稅務服務，滿足您的各種需求</p>
     </div>
-    <div class="services-grid">
-      <!-- 工商登記 -->
-      <div class="service-card">
-        <!-- 添加整个卡片可点击链接 -->
-        <a href="/services/consulting.html" class="service-card-link">访问工商登记详情页</a>
-        <div class="service-icon">
-          <svg viewBox="0 0 24 24" width="45" height="45">
-            <path d="M22 19H20V3H7L10 7H17V19H12V21H22V19ZM2 19V17H10V19H2ZM14 9V7H2V9H14ZM14 13V11H2V13H14Z"/>
-          </svg>
-        </div>
-        <h3>工商登記</h3>
-        <p>提供公司、商號設立登記服務，包含營業項目設定、資本結構規劃、股權架構設計等，協助您順利完成設立程序。</p>
-        <a href="/services/consulting.html" class="read-more">了解更多</a>
-      </div>
-      
-      <!-- 帳務處理 -->
-      <div class="service-card">
-        <!-- 添加整个卡片可点击链接 -->
-        <a href="/services/accounting.html" class="service-card-link">访问帐务处理详情页</a>
-        <div class="service-icon">
-          <svg viewBox="0 0 24 24" width="45" height="45">
-            <path d="M5 3C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H5ZM7 5H9V7H7V5ZM7 9H9V11H7V9ZM7 13H9V15H7V13ZM7 17H9V19H7V17ZM11 5H13V7H11V5ZM11 9H13V11H11V9ZM11 13H13V15H11V13ZM11 17H13V19H11V17ZM15 5H17V7H15V5ZM15 9H17V11H15V9ZM15 13H17V15H15V13ZM15 17H17V19H15V17Z"/>
-          </svg>
-        </div>
-        <h3>帳務處理</h3>
-        <p>提供日常記帳、傳票整理、帳務處理、財務報表編製等服務，確保您的財務記錄準確無誤且符合法規要求，降低營運風險。</p>
-        <a href="/services/accounting.html" class="read-more">了解更多</a>
-      </div>
-      
-      <!-- 稅務申報 -->
-      <div class="service-card">
-        <!-- 添加整个卡片可点击链接 -->
-        <a href="/services/tax.html" class="service-card-link">访问税务申报详情页</a>
-        <div class="service-icon">
-          <svg viewBox="0 0 24 24" width="45" height="45">
-            <path d="M9.5 2C9.5 1.44772 9.05229 1 8.5 1H3.5C2.94772 1 2.5 1.44772 2.5 2V22C2.5 22.5523 2.94772 23 3.5 23H20.5C21.0523 23 21.5 22.5523 21.5 22V8L15.5 2H14.5V7C14.5 7.55228 14.0523 8 13.5 8H8.5C7.94772 8 7.5 7.55228 7.5 7V2H3.5V22H20.5V8H15.5V2H9.5ZM6 15H18V17H6V15ZM6 19H18V21H6V19ZM13 11H16V13H13V11ZM12 11V13H8V11H12ZM9 15H11V17H9V15ZM12 15H15V17H12V15ZM16 15H18V17H16V15Z"/>
-          </svg>
-        </div>
-        <h3>稅務申報</h3>
-        <p>提供營業稅、營所稅、綜所稅、扣繳等各項稅務申報服務，協助您合法節稅並降低稅務風險，讓您專心拓展業務與生活。</p>
-        <a href="/services/tax.html" class="read-more">了解更多</a>
-      </div>
-      
-      <!-- 財稅簽證 -->
-<div class="service-card">
-  <!-- 添加整个卡片可点击链接 -->
-  <a href="/services/audit.html" class="service-card-link">访问财税签证详情页</a>
-  <div class="service-icon">
-    <svg viewBox="0 0 24 24" width="45" height="45">
-      <path d="M21 9V7C21 4.79086 19.2091 3 17 3H7C4.79086 3 3 4.79086 3 7V17C3 19.2091 4.79086 21 7 21H17C19.2091 21 21 19.2091 21 17V15H17V17H7V7H17V9H21ZM21 13V11H11V13H21ZM19 12C19 12.5523 18.5523 13 18 13C17.4477 13 17 12.5523 17 12C17 11.4477 17.4477 11 18 11C18.5523 11 19 11.4477 19 12Z"/>
-    </svg>
-  </div>
-  <h3>財稅簽證</h3>
-  <p>提供會計師簽證、財務報表查核等專業簽證服務，確保企業財務資訊公開透明，提升企業信用與形象。</p>
-  <a href="/services/audit.html" class="read-more">了解更多</a>
-  </div>
-</section>
 
-<!-- 最新文章區塊 -->
-<section class="blog-section">
-  <div class="container">
-    <div class="section-title">
-      <h2>最新文章</h2>
-      <p>分享實用的財稅知識與觀點，讓您掌握最新趨勢</p>
+    <div class="editorial-list">
+      <a href="service-registration.html" class="list-item">
+        <span class="num">01</span>
+        <h3 class="title">工商登記</h3>
+        <span class="desc">公司設立與資本簽證</span>
+        <span class="arrow">→</span>
+      </a>
+      <a href="service-accounting.html" class="list-item">
+        <span class="num">02</span>
+        <h3 class="title">帳務處理</h3>
+        <span class="desc">日常帳務 / 財務報表</span>
+        <span class="arrow">→</span>
+      </a>
+      <a href="service-tax.html" class="list-item">
+        <span class="num">03</span>
+        <h3 class="title">稅務申報</h3>
+        <span class="desc">營業稅 / 營所稅 / 扣繳</span>
+        <span class="arrow">→</span>
+      </a>
+      <a href="service-audit.html" class="list-item">
+        <span class="num">04</span>
+        <h3 class="title">財稅簽證</h3>
+        <span class="desc">財務報表查核與稅務簽證</span>
+        <span class="arrow">→</span>
+      </a>
     </div>
-    <div class="blog-grid" id="latest-posts-container">
-      <!-- 加載中提示 -->
-      <div class="loading-container">
-        <div class="loading-spinner"></div>
-        <p>正在加載最新文章...</p>
-      </div>
-    </div>
-    <div class="text-center" style="margin-top: 50px;">
-      <a href="/blog.html" class="btn">查看所有文章</a>
-    </div>
-  </div>
-</section>
 
-<!-- 頁尾區域 -->
-<footer class="site-footer">
-  <div class="footer-container">
-    <div class="footer-content">
-      <!-- Logo與簡介 -->
-      <div class="footer-logo">
-  <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="footer-logo-img">
-  <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
-  <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
-        <!-- 新增LINE按鈕 -->
-        <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="footer-line-btn">
-          <span class="line-icon"></span>
-          <span>加入LINE好友</span>
-        </a>
+    <div class="text-center" style="margin-top: 60px;">
+      <a href="services.html" class="btn-ghost">查看完整服務</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer-dark">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <img src="assets/images/logo-white.png" alt="霍爾果斯會計師事務所"
+          style="height: 48px; width: auto; margin-bottom: 20px;">
+        <p>每一筆數字背後，<br>都有一個值得被守護的夢想。</p>
       </div>
-      
-      <!-- 聯絡資訊 -->
-      <div class="footer-contact">
-        <h3>聯絡我們</h3>
-        <ul class="contact-info">
-          <li>
-            <i class="icon-contact"><span class="material-symbols-rounded">location_on</span></i>
-            <span>台中市西區建國路21號3樓之1</span>
-          </li>
-          <li>
-            <i class="icon-contact"><span class="material-symbols-rounded">call</span></i>
-            <a href="tel:+886422205606">04-2220-5606</a>
-          </li>
-          <li>
-            <i class="icon-contact"><span class="material-symbols-rounded">schedule</span></i>
-            <span>週一至週五 8:30-17:30</span>
-          </li>
-          <li>
-            <i class="icon-contact"><span class="material-symbols-rounded">mail</span></i>
-            <a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a>
-          </li>
-        </ul>
-      </div>
-      
-      <!-- 快速連結 -->
+
       <div class="footer-links">
-        <h3>快速連結</h3>
-        <ul class="quick-links">
-          <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
-          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 專業團隊</a></li>
-          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 專欄文章</a></li>
-          <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
-          <li><a href="/resources.html"><span class="material-symbols-rounded icon-link">inventory_2</span> 資源中心</a></li>
-          <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
-        </ul>
+        <h4>網站地圖</h4>
+        <a href="services.html">專業服務</a>
+        <a href="team.html">專業團隊</a>
+        <a href="articles.html">文章專區</a>
+        <a href="resources.html">資源專區</a>
+        <a href="faq.html">常見問題</a>
       </div>
-      
-      <!-- 服務項目 - 更新為與首頁一致 -->
-      <div class="footer-services">
-        <h3>服務項目</h3>
-        <ul class="services-list">
-          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">store</span> 工商登記</a></li>
-          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance_wallet</span> 帳務處理</a></li>
-          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">payments</span> 稅務申報</a></li>
-          <li><a href="/services/audit.html"><span class="material-symbols-rounded icon-link">verified</span> 財稅簽證</a></li>
-          <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
-        </ul>
+
+      <div class="footer-links">
+        <h4>聯絡資訊</h4>
+        <p>台中市西區建國路21號3樓之1</p>
+        <p><a href="tel:0422205606">04-2220-5606</a></p>
+        <p>週一至週五 8:30-17:30</p>
+        <p><a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a></p>
+      </div>
+
+      <div class="footer-links">
+        <h4>社群媒體</h4>
+        <a href="https://line.me/R/ti/p/@208ihted" target="_blank">Line 官方帳號</a>
       </div>
     </div>
-    
-    <!-- 版權資訊 -->
-    <div class="footer-bottom">
-      <div class="footer-text">
-        <p>&copy; 2025 霍爾果斯會計師事務所</p>
-      </div>
-    </div>
-  </div>
-  
-  <!-- 返回頂部按鈕 -->
-  <div class="back-to-top">
-    <span class="material-symbols-rounded">arrow_upward</span>
-  </div>
-</footer>
+  </footer>
 
-<!-- 返回頂部按鈕功能 - 腳本 -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // 返回頂部按鈕功能
-    const backToTopButton = document.querySelector('.back-to-top');
-    
-    // 初始隱藏按鈕
-    backToTopButton.classList.remove('visible');
-    
-    // 監聽滾動事件
-    window.addEventListener('scroll', function() {
-      if (window.pageYOffset > 300) {
-        backToTopButton.classList.add('visible');
-      } else {
-        backToTopButton.classList.remove('visible');
-      }
-    });
-    
-    // 點擊事件
-    backToTopButton.addEventListener('click', function() {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    });
-    
-    // 服务卡片整体点击功能
-    const serviceCards = document.querySelectorAll('.service-card');
-    serviceCards.forEach(card => {
-      card.addEventListener('click', function(e) {
-        // 如果点击的不是卡片内的按钮或链接，就触发卡片链接的点击
-        if (!e.target.closest('a') && !e.target.closest('button')) {
-          const link = this.querySelector('.service-card-link');
-          if (link) {
-            window.location.href = link.href;
-          }
-        }
-      });
-    });
-  });
-</script>
-
-<!-- 導航欄功能腳本 -->
-<script src="/assets/js/navbar.js"></script>
-
-<!-- 確認導航欄logo連結正確指向首頁 -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // 確認logo連結
-    const logoLink = document.querySelector('.logo a');
-    if (logoLink && logoLink.getAttribute('href') !== '/index.html') {
-      logoLink.setAttribute('href', '/index.html');
-      console.log('已修正logo連結指向首頁');
-    }
-  });
-</script>
-
-<!-- 首頁動畫效果 -->
-<script src="/assets/js/index-animation.js"></script>
-
-<!-- 最新文章載入腳本 -->
-<script src="/assets/js/index.js"></script>
-
+  <script src="assets/js/main.js"></script>
 </body>
+
 </html>

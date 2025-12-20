@@ -1,921 +1,198 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="霍爾果斯會計師事務所專業團隊介紹 - 由專業會計師與財務專家組成，擁有豐富的稅務與財務規劃經驗。" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>專業團隊 | 霍爾果斯會計師事務所</title>
+  <meta name="description" content="認識霍爾果斯的專業團隊。由具備四大會計師事務所經驗的會計師與財務顧問組成，更是您值得信賴的商業夥伴。">
+  <link rel="stylesheet" href="assets/css/common.css">
+  <link rel="stylesheet" href="assets/css/organisms.css">
+  <!-- Inline override for specific bio text spacing -->
+  <style>
+    .bio-text {
+      font-size: 0.95rem;
+      color: var(--text-body);
+      line-height: 1.8;
+      margin-bottom: 20px;
+      text-align: justify;
+    }
 
-<!-- hreflang 標籤 -->
-  <link rel="alternate" hreflang="zh-TW" href="https://www.horgoscpa.com/team.html" />
-  
-  <!-- Favicon -->
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
-  
-  <!-- Material Symbols 圖示庫 -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  
-  <!-- 引用全站共用樣式 -->
-  <link rel="stylesheet" href="/assets/css/common.css" />
-  <link rel="stylesheet" href="/assets/css/navbar.css" />
-  <link rel="stylesheet" href="/assets/css/footer.css" />
-  
-  <!-- 新增: 首頁特定樣式 - 用於保持一致的設計風格 -->
-  <link rel="stylesheet" href="/assets/css/index-style.css" />
-  
-  <!-- 移動版導航欄樣式 -->
-  <link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
+    .credential-list {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+      border-top: 1px solid var(--border-line);
+      padding-top: 15px;
+    }
 
-  <!-- 確保Material Icons可用 -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  
-  <!-- Google 分析 -->
+    .credential-list li {
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: baseline;
+    }
+
+    .credential-list li::before {
+      content: '•';
+      color: var(--color-brand);
+      margin-right: 10px;
+    }
+
+    .skill-tag {
+      display: inline-block;
+      background: rgba(180, 142, 85, 0.1);
+      color: #8A6D3B;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+  </style>
+  <link rel="icon" href="favicon.ico">
+  <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
   </script>
-  
-  <!-- 結構化資料 -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "AccountingService",
-    "name": "霍爾果斯會計師事務所",
-    "url": "https://www.horgoscpa.com",
-    "logo": "https://www.horgoscpa.com/assets/images/logo.png",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "建國路21號3樓之1",
-      "addressLocality": "台中市",
-      "addressRegion": "西區",
-      "postalCode": "403",
-      "addressCountry": "TW"
-    },
-    "telephone": "+886-4-2220-5606",
-    "openingHoursSpecification": {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": [
-        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"
-      ],
-      "opens": "08:30",
-      "closes": "17:30"
-    }
-  }
-  </script>
-  
-  <!-- 團隊頁面特定樣式 -->
-  <style>
-    /* 頁面標題樣式調整 */
-    .page-header {
-      text-align: left;
-      padding: 40px 0 20px;
-      margin-bottom: 0;
-      position: relative;
-      background: linear-gradient(135deg, var(--bg-light), #ffffff);
-      border-bottom: none;
-    }
-    
-    .page-header h1 {
-      font-size: 2.8rem;
-      color: var(--primary-color);
-      margin-bottom: 15px;
-      position: relative;
-      display: inline-block;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      padding-left: 20px;
-    }
-    
-    .page-header h1::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 20px;
-      width: var(--title-accent-width);
-      height: 4px;
-      background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
-      border-radius: 2px;
-    }
-    
-    .page-header p {
-      font-size: 1.2rem;
-      color: var(--text-medium);
-      max-width: 800px;
-      margin: 0 0 10px 40px;
-      line-height: 1.6;
-    }
-    
-    /* 團隊頁面主區塊 */
-    .team-section {
-      background-color: #ffffff;
-      background-image: 
-        radial-gradient(circle at 90% 10%, rgba(0, 102, 204, 0.03), transparent 400px),
-        radial-gradient(circle at 10% 90%, rgba(0, 102, 204, 0.03), transparent 400px),
-        linear-gradient(rgba(0, 0, 0, 0.01) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 0, 0, 0.01) 1px, transparent 1px);
-      background-size: auto, auto, 20px 20px, 20px 20px;
-      padding: 40px 0 50px;
-      margin-bottom: 0;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    /* 斜角分隔設計 */
-    .team-section::before {
-      content: '';
-      position: absolute;
-      top: -50px;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background: inherit;
-      transform: skewY(var(--flow-angle));
-      transform-origin: left;
-      z-index: 1;
-    }
-    
-    .team-section::after {
-      content: '';
-      position: absolute;
-      bottom: -50px;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background: inherit;
-      transform: skewY(var(--flow-angle));
-      transform-origin: right;
-      z-index: 1;
-    }
-    
-    /* 超現代卡片基本樣式 */
-    .team-member-card {
-      display: flex;
-      align-items: center;
-      gap: 50px;
-      margin: 70px 0;
-      padding: 40px 50px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.08),
-        0 0 0 1px rgba(0, 102, 204, 0.05);
-      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .team-member-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 
-        0 30px 60px rgba(0, 0, 0, 0.12),
-        0 0 0 1px rgba(0, 102, 204, 0.08);
-    }
-    
-    /* 交錯排列 */
-    .team-member-card:nth-child(even) {
-      flex-direction: row-reverse;
-    }
-    
-    /* 裝飾元素 */
-    .team-member-card::before {
-      content: '';
-      position: absolute;
-      width: 250px;
-      height: 250px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba(0, 112, 221, 0.08) 0%, rgba(0, 112, 221, 0.01) 100%);
-      z-index: 0;
-      top: -125px;
-      left: -125px;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-    
-    .team-member-card:nth-child(even)::before {
-      left: auto;
-      right: -125px;
-    }
-    
-    .team-member-card:hover::before {
-      opacity: 1;
-    }
-    
-    /* 照片容器 - 不對稱設計 */
-    .member-photo {
-      flex: 0 0 45%;
-      position: relative;
-      overflow: hidden;
-      border-radius: 14px;
-      box-shadow: 
-        0 15px 30px rgba(0, 0, 0, 0.15),
-        0 0 0 1px rgba(0, 102, 204, 0.1);
-      transform: rotate(-1deg);
-      transition: all 0.4s ease;
-    }
-    
-    .team-member-card:nth-child(even) .member-photo {
-      transform: rotate(1deg);
-    }
-    
-    .team-member-card:hover .member-photo {
-      transform: rotate(0);
-    }
-    
-    .member-photo img {
-      width: 100%;
-      height: auto;
-      display: block;
-      transition: transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
-    }
-    
-    .team-member-card:hover .member-photo img {
-      transform: scale(1.05);
-    }
-    
-    /* 內容設計 */
-    .member-content {
-      flex: 1;
-      position: relative;
-      z-index: 1;
-    }
-    
-    /* 姓名設計 */
-    .member-name {
-      font-size: 2.2rem;
-      font-weight: 700;
-      color: var(--primary-color);
-      margin-bottom: 8px;
-      position: relative;
-      letter-spacing: -0.02em;
-    }
-    
-    /* 現代化職稱設計 */
-    .member-title {
-      display: inline-block;
-      font-size: 1rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--secondary-color);
-      margin-bottom: 20px;
-      padding-bottom: 8px;
-      position: relative;
-    }
-    
-    .member-title::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 40px;
-      height: 2px;
-      background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
-    }
-    
-    .team-member-card:nth-child(even) .member-title::after {
-      background: linear-gradient(to left, var(--secondary-color), rgba(0, 112, 221, 0.3));
-    }
-    
-    /* 簡介段落 */
-    .member-bio {
-      font-size: 1.05rem;
-      line-height: 1.7;
-      color: #444;
-    }
-    
-    /* 專長標籤 */
-    .member-skills {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 20px;
-    }
-    
-    .skill-tag {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 30px;
-      background: rgba(0, 112, 221, 0.08);
-      color: var(--secondary-color);
-      font-size: 0.85rem;
-      font-weight: 500;
-      transition: all 0.3s ease;
-    }
-    
-    .skill-tag:hover {
-      background: rgba(0, 112, 221, 0.15);
-      transform: translateY(-2px);
-    }
-    
-    /* 專業承諾區塊 */
-    .about-section {
-      background: linear-gradient(175deg, var(--bg-light), #f0f6ff);
-      padding: 40px 0 60px;
-      margin-bottom: 0;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    /* 斜角分隔設計 */
-    .about-section::before {
-      content: '';
-      position: absolute;
-      top: -50px;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background: inherit;
-      transform: skewY(var(--flow-angle));
-      transform-origin: left;
-      z-index: 1;
-    }
-    
-    .about-content {
-      position: relative;
-      z-index: 2;
-    }
-    
-    .section-title {
-      margin-bottom: 30px;
-    }
-    
-    .section-title h2 {
-      font-size: 2.2rem;
-      margin-bottom: 10px;
-    }
-    
-    /* 專業承諾卡片容器 */
-    .commitment-cards {
-      display: flex;
-      gap: 25px;
-      flex-wrap: wrap;
-      margin-top: 30px;
-    }
-    
-    /* 專業承諾卡片 */
-    .commitment-card {
-      flex: 1;
-      min-width: 250px;
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
-      text-align: center;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .commitment-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-    }
-    
-    .commitment-icon {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background: rgba(0, 112, 221, 0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-    }
-    
-    .commitment-card h3 {
-      font-size: 1.5rem;
-      color: var(--primary-color);
-      margin-bottom: 15px;
-    }
-    
-    .commitment-card p {
-      color: #444;
-      line-height: 1.6;
-      font-size: 0.95rem;
-    }
-    
-    /* 裝飾元素 */
-    .decorative-dots {
-      position: absolute;
-      right: 5%;
-      bottom: 15%;
-      width: 180px;
-      height: 180px;
-      z-index: 0;
-      opacity: 0.1;
-      background-image: radial-gradient(circle, var(--secondary-color) 1px, transparent 1px);
-      background-size: 18px 18px;
-    }
-    
-    /* 響應式設計 */
-    @media (max-width: 1280px) {
-      .team-member-card {
-        gap: 35px;
-        padding: 35px 40px;
-      }
-      
-      .member-name {
-        font-size: 2rem;
-      }
-    }
-    
-    @media (max-width: 992px) {
-      .team-member-card {
-        gap: 25px;
-        padding: 30px;
-        margin: 50px 0;
-      }
-      
-      .member-photo {
-        flex: 0 0 40%;
-      }
-      
-      .member-name {
-        font-size: 1.8rem;
-      }
-      
-      .commitment-card {
-        flex: 1 1 calc(50% - 15px);
-        min-width: 240px;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .team-member-card {
-        flex-direction: column;
-        gap: 25px;
-      }
-      
-      .team-member-card:nth-child(even) {
-        flex-direction: column;
-      }
-      
-      .member-photo {
-        width: 100%;
-        transform: rotate(0);
-      }
-      
-      .team-member-card:nth-child(even) .member-photo {
-        transform: rotate(0);
-      }
-      
-      .page-header {
-        text-align: center;
-        padding: 30px 0 15px;
-      }
-      
-      .page-header h1 {
-        font-size: 2rem;
-        padding-left: 0;
-      }
-      
-      .page-header h1::after {
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      
-      .page-header p {
-        margin: 0 auto 10px;
-        font-size: 1rem;
-      }
-      
-      .member-title::after {
-        left: 0;
-        transform: none;
-      }
-      
-      .team-member-card:nth-child(even) .member-title::after {
-        left: 0;
-        transform: none;
-      }
-      
-      .commitment-card {
-        flex: 1 1 100%;
-      }
-    }
-    
-    @media (max-width: 576px) {
-      .team-member-card {
-        padding: 25px 20px;
-        margin: 40px 0;
-      }
-      
-      .member-name {
-        font-size: 1.6rem;
-      }
-      
-      .member-title {
-        font-size: 0.9rem;
-      }
-      
-      .member-bio {
-        font-size: 1rem;
-      }
-    }
-  </style>
-  
 </head>
+
 <body>
 
-<!-- 導航欄 -->
-<nav class="site-nav">
-  <div class="nav-container">
-    <div class="logo">
-      <a href="/index.html">
-        <div class="logo-container">
-          <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
-          <div class="logo-sub">HorgosCPA</div>
-        </div>
-      </a>
-    </div>
-    <input type="checkbox" id="nav-toggle" class="nav-toggle">
-    <label for="nav-toggle" class="nav-toggle-label">
-      <span></span>
-    </label>
-    <ul class="nav-menu">
-      <li><a href="/services.html">專業服務</a></li>
-      <li><a href="/team.html" class="active">專業團隊</a></li>
-      <li><a href="/blog.html">專欄文章</a></li>
-      <li><a href="/faq.html">常見問題</a></li>
-      <li><a href="/resources.html">資源中心</a></li>
-      <li><a href="/contact.html">聯繫我們</a></li>
-      <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
-    </ul>
-  </div>
-</nav>
-
-<!-- 移動版導航欄 -->
-<div class="mobile-navbar" style="display: none;">
-  <div class="mobile-nav-container">
-    <div class="mobile-menu-btn" id="mobileMenuBtn">
-      <span class="material-symbols-rounded">menu</span>
-    </div>
-    <div class="logo">
-      <a href="/index.html">
-        <div class="logo-container">
-          <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
-          <div class="logo-sub">HorgosCPA</div>
-        </div>
-      </a>
-    </div>
-    <div class="mobile-nav-spacer"></div>
-  </div>
-  
-  <div class="mobile-menu" id="mobileMenu">
-    <ul class="mobile-menu-links">
-      <li><a href="/services.html" class="mobile-nav-link">專業服務</a></li>
-      <li><a href="/team.html" class="mobile-nav-link">專業團隊</a></li>
-      <li><a href="/blog.html" class="mobile-nav-link">專欄文章</a></li>
-      <li><a href="/faq.html" class="mobile-nav-link">常見問題</a></li>
-      <li><a href="/resources.html" class="mobile-nav-link">資源中心</a></li>
-      <li><a href="/contact.html" class="mobile-nav-link">聯繫我們</a></li>
-      <li><a href="/booking.html" class="mobile-consult-btn">免費諮詢</a></li>
-    </ul>
-  </div>
-</div>
-
-<!-- 頁面標題 -->
-<header class="page-header">
-  <div class="container">
-    <h1>專業團隊</h1>
-    <p>由資深會計師與財務專家組成的精英團隊，為您提供專業的財稅顧問服務</p>
-  </div>
-</header>
-
-<!-- 團隊成員區塊 -->
-<div class="team-member-card">
-  <div class="member-photo">
-    <img src="/assets/images/accountant-liu.jpg" alt="劉韋辰會計師">
-  </div>
-  <div class="member-content">
-    <h2 class="member-name">劉韋辰會計師</h2>
-    <div class="member-title">稅務規劃與企業顧問專家</div>
-    
-    <h3>學歷</h3>
-    <ul class="member-credentials">
-      <li>德克薩斯大學達拉斯分校 會計學碩士</li>
-      <li>國立成功大學 會計學學士</li>
-    </ul>
-    
-    <h3>專業證照與職務</h3>
-    <ul class="member-credentials">
-      <li>中華民國高考會計師</li>
-      <li>美國會計師執照(AICPA)</li>
-      <li>中華民國會計師公會全國聯合會國際事務委員會委員</li>
-      <li>法院檢查人</li>
-    </ul>
-    
-    <p class="member-bio">專精於製造業、買賣業、服務業與科技業等各行業的稅務規劃與申報，包括公司、行號、個人獨資與合夥等各類組織型態。深入了解不同產業特性，提供營業稅申報與減免、營所稅節稅方案、稅務行政救濟、未分配盈餘與房地合一稅等全方位稅務服務。協助客戶進行投資架構規劃、股東借貸處理及關係企業交易審視，設計最佳化稅務解決方案。提供工商登記、財務報表查核簽證與稅務簽證，確保企業財務運作符合法規要求。擔任法院檢查人，運用財務分析專業，協助企業股東了解公司真實財務狀況及營運績效。具備家族傳承規劃經驗，針對不同產業特性提供量身定制的資產配置建議。職業生涯橫跨多家知名機構，曾任職台達電子，並在深圳安永華明會計師事務所參與電信、媒體與科技產業上市審計，在勤業眾信與廉風聯合會計師事務所累積多年審計經驗，了解各行各業的財稅需求與挑戰，能為不同規模與產業的企業提供最適切的專業服務。</p>
-    
-    <div class="member-skills">
-      <span class="skill-tag">稅務規劃</span>
-      <span class="skill-tag">工商登記</span>
-      <span class="skill-tag">法院檢查人</span>
-      <span class="skill-tag">製造業</span>
-      <span class="skill-tag">買賣業</span>
-      <span class="skill-tag">行號登記</span>
-      <span class="skill-tag">營所稅</span>
-      <span class="skill-tag">家族傳承</span>
-    </div>
-  </div>
-</div>    
-    <!-- 成員卡片 - 第二位，照片右側 -->
-    <div class="team-member-card">
-  <div class="member-photo">
-    <img src="/assets/images/accountant-tian.jpg" alt="田稚萱協理">
-  </div>
-  <div class="member-content">
-    <h2 class="member-name">田稚萱協理</h2>
-    <div class="member-title">企業財務顧問</div>
-    
-    <h3>學歷</h3>
-    <ul class="member-credentials">
-<li>國立政治大學 會計學博士班</li>
-      <li>香港中文大學 理學碩士</li>
-      <li>北京交通大學 會計學學士</li>
-    </ul>
-    
-    <h3>專業經歷</h3>
-    <ul class="member-credentials">
-    <p class="member-bio">具備會計與市場行銷雙學位背景及香港投資銀行多年實務經驗，專長於企業財務規劃、資金運用策略、工商登記、價值評估、公司治理與永續發展制度規劃。針對企業不同成長階段，從企業設立到資本結構優化，協助客戶制定完整的財務策略與方案，提升財務決策效率與透明度。
-過往長期參與企業籌資、上市與併購相關專案，熟悉資本結構規劃、風險控管與財務資訊揭露。曾參與多宗香港主板上市籌資專案，包括但不限於：宜搜科技（2550.HK）、天圖資本（1973.HK）、匯通達網絡（9878.HK）、諾亞控股（6686.HK）、晶泰科技（2228.HK）等，擁有豐富的跨境籌資與合規經驗。</p >
-    
-    <div class="member-skills">
-      <span class="skill-tag">工商登記</span>
-      <span class="skill-tag">金融業</span>
-      <span class="skill-tag">科技業</span>
-      <span class="skill-tag">財務規劃</span>
-      <span class="skill-tag">籌資方案規劃</span>
-      <span class="skill-tag">估值</span>
-    </div>
-  </div>
-</div>  
-
-
-    
-    <div class="decorative-dots"></div>
-  </div>
-</section>
-
-<!-- 專業承諾區塊 -->
-<section class="about-section">
-  <div class="container">
-    <div class="section-title">
-      <h2>我們的專業承諾</h2>
-      <p>霍爾果斯會計師事務所秉持「專業、誠信、創新」的核心價值，致力於為每一位客戶提供最適切的財稅解決方案</p>
-    </div>
-    <div class="about-content">
-      <div class="commitment-cards">
-        <!-- 專業實力 -->
-        <div class="commitment-card">
-          <div class="commitment-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#0066cc">
-              <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm6 9.09c0 4-2.55 7.7-6 8.83-3.45-1.13-6-4.82-6-8.83v-4.7l6-2.25 6 2.25v4.7zM12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
-            </svg>
-          </div>
-          <h3>專業實力</h3>
-          <p>團隊成員擁有會計師執照或相關專業證照，擁有多年實務經驗，持續參與專業進修，掌握最新法規動態。</p>
-        </div>
-        
-        <!-- 全方位服務 -->
-        <div class="commitment-card">
-          <div class="commitment-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#0066cc">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM5 19V5h14v14H5zM7 10h2v7H7v-7zm0-3h2v2H7V7zm4 3h2v7h-2v-7zm0-3h2v2h-2V7zm4 3h2v7h-2v-7zm0-3h2v2h-2V7z"/>
-            </svg>
-          </div>
-          <h3>全方位服務</h3>
-          <p>從日常記帳、稅務申報到企業營運顧問，提供無縫整合的一站式服務，讓您專注於核心業務的發展與拓展。</p>
-        </div>
-        
-        <!-- 客戶導向 -->
-        <div class="commitment-card">
-          <div class="commitment-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#0066cc">
-              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-            </svg>
-          </div>
-          <h3>客戶導向</h3>
-          <p>每位客戶都由專屬顧問持續服務，深入了解您的需求與目標，提供客製化解決方案，建立長期合作夥伴關係。</p>
-        </div>
+  <!-- Navbar -->
+  <nav class="site-nav scrolled">
+    <a href="index.html" class="logo">
+      <div class="logo-container">
+        <img src="assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 40px; width: auto;">
       </div>
-    </div>
-  </div>
-</section>
+    </a>
+    <ul class="nav-links">
+      <li><a href="services.html">專業服務</a></li>
+      <li><a href="team.html">專業團隊</a></li>
+      <li><a href="resources.html">文章專區</a></li>
+      <li><a href="faq.html">常見問題</a></li>
+      <li><a href="contact.html">聯絡我們</a></li>
+    </ul>
+    <a href="booking.html" class="btn-solid-gold">預約諮詢</a>
+    <div class="mobile-toggle">選單</div>
+  </nav>
 
-<!-- 頁尾區域 -->
-<footer class="site-footer">
-  <div class="footer-container">
-    <div class="footer-content">
-      <!-- Logo與簡介 -->
-      <div class="footer-logo">
-        <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="footer-logo-img">
-        <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
-        <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
-        <!-- 新增LINE按鈕 -->
-        <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="footer-line-btn">
-          <span class="line-icon"></span>
-          <span>加入LINE好友</span>
-        </a>
+  <!-- Page Header -->
+  <!-- Page Header -->
+  <header class="page-header">
+    <span class="eyebrow text-gold">PARTNERS</span>
+    <h1 class="display-text">合夥人簡介</h1>
+  </header>
+
+  <div class="container section-gap">
+
+    <!-- Partner 1: Liu -->
+    <section class="service-block">
+      <div class="visual-col">
+        <img src="assets/images/accountant-liu.jpg" alt="劉韋辰 會計師" style="width:100%; border-radius: 4px;">
       </div>
-      
-      <!-- 聯絡資訊 -->
-      <div class="footer-contact">
-        <h3>聯絡我們</h3>
-        <ul class="contact-info">
-          <li>
-            <i class="icon-contact"><span class="material-symbols-rounded">location_on</span></i>
-            <span>台中市西區建國路21號3樓之1</span>
-          </li>
-          <li>
-            <i class="icon-contact"><span class="material-symbols-rounded">call</span></i>
-            <a href="tel:+886422205606">04-2220-5606</a>
-          </li>
-          <li>
-            <i class="icon-contact"><span class="material-symbols-rounded">schedule</span></i>
-            <span>週一至週五 8:30-17:30</span>
-          </li>
-          <li>
-            <i class="icon-contact"><span class="material-symbols-rounded">mail</span></i>
-            <a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a>
-          </li>
+      <div class="text-col">
+        <span class="eyebrow text-gold">主持會計師 (CPA)</span>
+        <h2 style="font-family: var(--font-serif);">劉韋辰 會計師</h2>
+
+        <p class="bio-text">
+          專精於製造業、買賣業、服務業與科技業等各行業的稅務規劃與申報，包括公司、行號、個人獨資與合夥等各類組織型態。深入了解不同產業特性，提供營業稅申報與減免、營所稅節稅方案、稅務行政救濟、未分配盈餘與房地合一稅等全方位稅務服務。
+        </p>
+        <p class="bio-text">
+          協助客戶進行投資架構規劃、股東借貸處理及關係企業交易審視，設計最佳化稅務解決方案。提供工商登記、財務報表查核簽證與稅務簽證，確保企業財務運作符合法規要求。
+        </p>
+        <p class="bio-text">
+          擔任法院檢查人，運用財務分析專業，協助企業股東了解公司真實財務狀況及營運績效。具備家族傳承規劃經驗，針對不同產業特性提供量身定制的資產配置建議。職業生涯橫跨多家知名機構，曾任職台達電子，並在深圳安永華明會計師事務所參與電信、媒體與科技產業上市審計，在勤業眾信與廉風聯合會計師事務所累積多年審計經驗。
+        </p>
+
+        <ul class="credential-list">
+          <li>中華民國高考會計師 / 美國會計師執照 (AICPA)</li>
+          <li>中華民國會計師公會全國聯合會國際事務委員會委員 / 法院檢查人</li>
+          <li>德克薩斯大學達拉斯分校 會計學碩士</li>
+          <li>國立成功大學 會計學學士</li>
         </ul>
+
+        <div style="margin-top:20px;">
+          <span class="skill-tag">稅務規劃</span>
+          <span class="skill-tag">工商登記</span>
+          <span class="skill-tag">製造業</span>
+          <span class="skill-tag">家族傳承</span>
+        </div>
       </div>
-      
-      <!-- 快速連結 -->
+    </section>
+
+    <hr class="deco-line" style="margin: 80px auto; max-width: 200px;">
+
+    <!-- Partner 2: Tian -->
+    <section class="service-block reverse">
+      <div class="visual-col">
+        <img src="assets/images/accountant-tian.jpg" alt="田稚萱 協理" style="width:100%; border-radius: 4px;">
+      </div>
+      <div class="text-col">
+        <span class="eyebrow text-gold">企業財務顧問</span>
+        <h2 style="font-family: var(--font-serif);">田稚萱 協理</h2>
+
+        <p class="bio-text">
+          具備會計與市場行銷雙學位背景及香港投資銀行多年實務經驗，專長於企業財務規劃、資金運用策略、工商登記、價值評估、公司治理與永續發展制度規劃。針對企業不同成長階段，從企業設立到資本結構優化，協助客戶制定完整的財務策略與方案，提升財務決策效率與透明度。
+        </p>
+        <p class="bio-text">
+          過往長期參與企業籌資、上市與併購相關專案，熟悉資本結構規劃、風險控管與財務資訊揭露。曾參與多宗香港主板上市籌資專案，包括但不限於：宜搜科技（2550.HK）、天圖資本（1973.HK）、匯通達網絡（9878.HK）、諾亞控股（6686.HK）、晶泰科技（2228.HK）等，擁有豐富的跨境籌資與合規經驗。
+        </p>
+
+        <ul class="credential-list">
+          <li>國立政治大學 會計學博士班</li>
+          <li>香港中文大學 理學碩士</li>
+          <li>北京交通大學 會計學學士</li>
+        </ul>
+
+        <div style="margin-top:20px;">
+          <span class="skill-tag">財務規劃</span>
+          <span class="skill-tag">跨境籌資</span>
+          <span class="skill-tag">估值</span>
+          <span class="skill-tag">企業併購</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer-dark">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <img src="assets/images/logo-white.png" alt="霍爾果斯會計師事務所"
+          style="height: 48px; width: auto; margin-bottom: 20px;">
+        <p>每一筆數字背後，<br>都有一個值得被守護的夢想。</p>
+      </div>
       <div class="footer-links">
-        <h3>快速連結</h3>
-        <ul class="quick-links">
-          <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
-          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 專業團隊</a></li>
-          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 專欄文章</a></li>
-          <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
-          <li><a href="/resources.html"><span class="material-symbols-rounded icon-link">inventory_2</span> 資源中心</a></li>
-          <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
-        </ul>
+        <h4>網站地圖</h4>
+        <a href="services.html">專業服務</a>
+        <a href="team.html">專業團隊</a>
+        <a href="resources.html">文章專區</a>
+        <a href="faq.html">常見問題</a>
       </div>
-      
-      <!-- 服務項目 - 更新為與首頁一致 -->
-      <div class="footer-services">
-        <h3>服務項目</h3>
-        <ul class="services-list">
-          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">store</span> 工商登記</a></li>
-          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance_wallet</span> 帳務處理</a></li>
-          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">payments</span> 稅務申報</a></li>
-          <li><a href="/services/audit.html"><span class="material-symbols-rounded icon-link">verified</span> 財稅簽證</a></li>
-          <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
-        </ul>
+      <div class="footer-links">
+        <h4>聯絡資訊</h4>
+        <p>台中市西區建國路21號3樓之1</p>
+        <p><a href="tel:0422205606">04-2220-5606</a></p>
+        <p>週一至週五 8:30-17:30</p>
+        <p><a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a></p>
+      </div>
+      <div class="footer-links">
+        <h4>社群媒體</h4>
+        <a href="https://line.me/R/ti/p/@208ihted" target="_blank">Line 官方帳號</a>
       </div>
     </div>
-    
-    <!-- 版權資訊 -->
-    <div class="footer-bottom">
-      <div class="footer-text">
-        <p>&copy; 2025 霍爾果斯會計師事務所</p>
-      </div>
-    </div>
-  </div>
-  
-  <!-- 返回頂部按鈕 -->
-  <div class="back-to-top">
-    <span class="material-symbols-rounded">arrow_upward</span>
-  </div>
-</footer>
+  </footer>
 
-<!-- 返回頂部按鈕功能 - 腳本 -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // 返回頂部按鈕功能
-    const backToTopButton = document.querySelector('.back-to-top');
-    
-    // 初始隱藏按鈕
-    backToTopButton.classList.remove('visible');
-    
-    // 監聽滾動事件
-    window.addEventListener('scroll', function() {
-      if (window.pageYOffset > 300) {
-        backToTopButton.classList.add('visible');
-      } else {
-        backToTopButton.classList.remove('visible');
-      }
-    });
-    
-    // 點擊事件
-    backToTopButton.addEventListener('click', function() {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    });
-  });
-</script>
-
-<!-- 導航欄功能腳本 -->
-<script src="/assets/js/navbar.js"></script>
-
-<!-- 團隊頁面動畫效果 -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // 添加滾動時的元素動畫效果
-    const animateOnScroll = function() {
-      // 獲取所有需要動畫的元素
-      const memberCards = document.querySelectorAll('.team-member-card');
-      const commitmentCards = document.querySelectorAll('.commitment-card');
-      const sectionTitle = document.querySelector('.section-title');
-      
-      // 檢查元素是否在視圖中
-      function isElementInViewport(el) {
-        const rect = el.getBoundingClientRect();
-        return (
-          rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.85 &&
-          rect.bottom >= 0
-        );
-      }
-      
-      // 處理標題動畫
-      if (sectionTitle && isElementInViewport(sectionTitle) && !sectionTitle.classList.contains('animated')) {
-        sectionTitle.classList.add('animated');
-        
-        // 為標題添加動畫類
-        const heading = sectionTitle.querySelector('h2');
-        const description = sectionTitle.querySelector('p');
-        
-        if (heading) {
-          heading.style.opacity = '0';
-          heading.style.transform = 'translateY(20px)';
-          setTimeout(() => {
-            heading.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-            heading.style.opacity = '1';
-            heading.style.transform = 'translateY(0)';
-          }, 100);
-        }
-        
-        if (description) {
-          description.style.opacity = '0';
-          description.style.transform = 'translateY(20px)';
-          setTimeout(() => {
-            description.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-            description.style.opacity = '1';
-            description.style.transform = 'translateY(0)';
-          }, 300); // 延遲出現，形成錯位感
-        }
-      }
-      
-      // 處理成員卡片動畫
-      const visibleMemberCards = Array.from(memberCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
-      
-      visibleMemberCards.forEach((card, index) => {
-        card.classList.add('animated');
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
-        
-        setTimeout(() => {
-          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, 100 + (index * 150)); // 依次延遲顯示
-      });
-      
-      // 處理承諾卡片動畫
-      const visibleCommitmentCards = Array.from(commitmentCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
-      
-      visibleCommitmentCards.forEach((card, index) => {
-        card.classList.add('animated');
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
-        
-        setTimeout(() => {
-          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, 100 + (index * 150)); // 依次延遲顯示
-      });
-    };
-    
-    // 初始執行
-    animateOnScroll();
-    
-    // 滾動時執行動畫
-    window.addEventListener('scroll', function() {
-      animateOnScroll();
-    });
-    
-    // 窗口大小改變時重新計算
-    window.addEventListener('resize', function() {
-      animateOnScroll();
-    });
-  });
-</script>
-
-<!-- 移動版導航欄功能腳本 -->
-<script src="/assets/js/mobile-navbar.js"></script>
+  <script src="assets/js/main.js"></script>
 
 </body>
+
 </html>

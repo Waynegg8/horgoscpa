@@ -1,0 +1,741 @@
+/* HorgosCPA Organisms (Component Layouts) */
+
+/* --- Navigation --- */
+.site-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-inverse);
+    z-index: 1000;
+    transition: background 0.3s ease;
+}
+
+.site-nav.scrolled {
+    background: rgba(26, 26, 26, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-links {
+    display: flex;
+    gap: var(--space-4);
+    list-style: none;
+}
+
+.nav-links a {
+    text-decoration: none;
+    font-family: var(--font-serif);
+    /* Unify with Logo & Headings for Luxury feel */
+    font-weight: 500;
+    color: #FFFFFF;
+    font-size: 1.05rem;
+    /* Slightly larger for Serif readability */
+    letter-spacing: 0.05em;
+    padding-bottom: 4px;
+    /* Optical adjustment */
+    border-bottom: 2px solid transparent;
+    /* Prepare for hover underline */
+    transition: all 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: var(--color-brand);
+}
+
+.nav-links a.active {
+    color: var(--color-brand);
+}
+
+.mobile-toggle {
+    display: none;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.9rem;
+    color: #FFFFFF;
+}
+
+/* --- Hero Section --- */
+.hero-center {
+    min-height: 40vh;
+    /* Reduced from 90vh to 40vh for compact subpage headers */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 160px var(--space-4) 60px;
+    /* Increased top padding to 160px to clear navbar */
+    position: relative;
+}
+
+.hero-center::after {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    right: 30px;
+    bottom: 30px;
+    border: 1px solid var(--border-gold);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.hero-content {
+    max-width: 800px;
+    z-index: 1;
+}
+
+.visual-frame {
+    margin-top: var(--space-8);
+    border: 1px solid var(--color-brand);
+    padding: 10px;
+    display: inline-block;
+    background: #fff;
+}
+
+/* --- Philosophy Grid --- */
+.philosophy-section {
+    padding: var(--space-16) 0;
+}
+
+.philosophy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-8);
+}
+
+.philosophy-item p {
+    color: var(--text-body);
+    font-family: var(--font-sans);
+    line-height: var(--leading-loose);
+}
+
+/* --- Editorial Service List (For Home) --- */
+.editorial-list {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border-line);
+    max-width: 900px;
+    /* Constraint width */
+    margin: 0 auto;
+    /* Center it */
+    width: 100%;
+}
+
+.list-item {
+    display: flex;
+    align-items: baseline;
+    padding: 50px 0;
+    /* Slightly reduced vertical padding for tighter groups, or keep loose? User wants less oppressive. Loose is better, but maybe the *size* was the oppressor. Let's keep 50px. */
+    border-bottom: 1px solid var(--border-line);
+    transition: background 0.4s ease;
+    position: relative;
+    text-decoration: none;
+}
+
+.list-item:hover {
+    background: linear-gradient(to right, rgba(180, 142, 85, 0.05), transparent);
+}
+
+.list-item .num {
+    font-family: var(--font-sans);
+    color: var(--color-brand);
+    font-weight: 700;
+    margin-right: 40px;
+    width: 30px;
+    font-size: 0.9rem;
+    /* Reduce number size */
+}
+
+.list-item .title {
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+    /* Reduced from 2.5rem to be smaller than H2 (2.0rem) */
+    color: var(--text-primary);
+    margin: 0;
+    flex-grow: 1;
+    transition: color 0.3s ease;
+    letter-spacing: 0.05em;
+}
+
+.list-item:hover .title {
+    color: var(--color-brand);
+}
+
+.list-item .desc {
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    margin-right: 40px;
+}
+
+.list-item .arrow {
+    opacity: 0;
+    transition: all 0.3s ease;
+    color: var(--color-brand);
+}
+
+.list-item:hover .arrow {
+    opacity: 1;
+    transform: translateX(10px);
+}
+
+/* --- Service Z-Pattern (For Services Page) --- */
+.service-block {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    margin-bottom: var(--space-16);
+}
+
+.service-block.reverse {
+    flex-direction: row-reverse;
+}
+
+.service-block .text-col {
+    flex: 1;
+}
+
+.service-block .visual-col {
+    flex: 1;
+}
+
+.service-block h2 {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-4);
+}
+
+.checklist {
+    list-style: none;
+    margin-top: var(--space-4);
+}
+
+.checklist li {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    font-family: var(--font-sans);
+    color: var(--text-body);
+}
+
+.checklist li::before {
+    content: '◆';
+    color: var(--color-brand);
+    margin-right: 15px;
+    font-size: 0.8rem;
+}
+
+/* --- Team Gallery --- */
+.team-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-8);
+}
+
+.team-card {
+    text-align: center;
+}
+
+.team-card .photo {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    margin-bottom: var(--space-4);
+}
+
+.team-card:hover .photo {
+    /* No hover effect needed for color */
+}
+
+.team-card .name {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.team-card .role {
+    font-family: var(--font-sans);
+    color: var(--color-brand);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 20px;
+}
+
+/* --- Library Grid --- */
+.library-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+}
+
+.book-card {
+    background: transparent;
+    perspective: 1000px;
+}
+
+.book-cover {
+    background: #1B4D3E;
+    /* Deep Green */
+    padding: 40px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    position: relative;
+    border-left: 5px solid rgba(255, 255, 255, 0.1);
+    /* Spine effect */
+}
+
+.book-cover:hover {
+    transform: rotateY(-5deg) translateX(5px);
+}
+
+.book-title {
+    color: #D4AF37;
+    /* Gold Text */
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    border: 1px solid #D4AF37;
+    padding: 10px 20px;
+}
+
+/* --- Contact Split --- */
+/* --- Page Header (Unified System) --- */
+.page-header {
+    padding: 180px 0 80px;
+    /* Unified top padding to clear navbar */
+    text-align: center;
+    position: relative;
+    background-color: var(--bg-base);
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 500;
+    margin-top: 10px;
+    letter-spacing: 0.05em;
+    color: var(--text-primary);
+}
+
+.page-header p {
+    max-width: 600px;
+    margin: 20px auto;
+    color: var(--text-body);
+    font-family: var(--font-sans);
+}
+
+/* --- Contact Split (Content Stream) --- */
+/* --- Contact Grid (Boxed Layout) --- */
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
+    align-items: start;
+    padding-bottom: 60px;
+    max-width: 1000px;
+    /* Constrain width for luxury margins */
+    margin: 0 auto;
+    /* Center the grid */
+}
+
+.contact-grid .info-panel {
+    background: transparent;
+    /* Remove background for cleaner look */
+    padding: 0;
+    /* Remove padding */
+    padding-right: 40px;
+    /* Add internal breathing room */
+}
+
+.contact-grid .map-container {
+    height: 450px;
+    /* Slightly reduced height for better proportion */
+    width: 100%;
+    border-radius: 2px;
+    overflow: hidden;
+    /* Removed border for cleaner look */
+}
+
+/* --- Search Toolbar (Minimalist) --- */
+.search-toolbar {
+    /* Removed container box (border/bg) per user feedback */
+    margin-bottom: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    /* Tightened gap between input and buttons */
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.search-input {
+    padding: 12px 0;
+    /* Vertical padding only */
+    width: 100%;
+    max-width: 300px;
+    border: none;
+    border-bottom: 1px solid var(--border-line);
+    /* Minimal underline */
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    background: transparent;
+    text-align: center;
+    /* Center text for elegance */
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    border-bottom-color: var(--color-brand);
+    outline: none;
+    max-width: 400px;
+    /* Subtle expansion on focus */
+}
+
+.filter-group {
+    display: flex;
+    gap: 15px;
+    /* Cleaner gap */
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* --- Invitation Form (Unified Card) --- */
+.invitation-container {
+    padding: 0;
+    /* Handled by container */
+    display: flex;
+    justify-content: center;
+}
+
+.invitation-form {
+    background: #FFF;
+    padding: 60px 80px;
+    /* Generous internal padding */
+    width: 100%;
+    max-width: 800px;
+    /* Slightly wider for better proportion */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border-line);
+    text-align: left;
+    /* Force Left Alignment */
+}
+
+.form-group {
+    margin-bottom: 30px;
+}
+
+.form-group label {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    letter-spacing: 0.05em;
+}
+
+.input-line {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--border-line);
+    padding: 10px 0;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    background: transparent;
+    transition: all 0.3s ease;
+    border-radius: 0;
+}
+
+.input-line:focus {
+    outline: none;
+    border-bottom-color: var(--color-brand);
+}
+
+/* --- Booking Notices Section (Integrated) --- */
+.booking-notices {
+    margin-top: 50px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border-line);
+}
+
+.booking-notices h4 {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+}
+
+.booking-notices ul {
+    padding-left: 20px;
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.8;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .invitation-form {
+        padding: 40px 20px;
+    }
+}
+
+/* --- Footer --- */
+.footer-dark {
+    background: var(--bg-inverse);
+    color: #FFF;
+    padding: 80px 0;
+    margin-top: var(--space-16);
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 40px;
+}
+
+.footer-dark h4 {
+    color: var(--color-brand);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+}
+
+.footer-dark p,
+.footer-dark a {
+    color: #CCC;
+    font-family: var(--font-sans);
+    text-decoration: none;
+    line-height: 1.8;
+    display: block;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .site-nav {
+        padding: 15px 20px;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .mobile-toggle {
+        display: block;
+    }
+
+    .hero-center::after {
+        top: 15px;
+        left: 15px;
+        right: 15px;
+        bottom: 15px;
+    }
+
+    .list-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .list-item .num {
+        margin-bottom: 10px;
+    }
+
+    .list-item .title {
+        font-size: 1.8rem;
+    }
+
+    .list-item .desc {
+        display: none;
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .service-block,
+    .service-block.reverse {
+        flex-direction: column;
+    }
+
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-grid .info-panel {
+        padding-right: 0;
+        margin-bottom: 40px;
+    }
+
+    .contact-split {
+        flex-direction: column;
+    }
+
+    .team-gallery,
+    .library-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .invitation-form {
+        padding: 40px 20px;
+    }
+
+    /* --- Radio Cards (Booking Form) --- */
+    .radio-options {
+        display: flex;
+        flex-direction: row;
+        /* Force row */
+        flex-wrap: nowrap;
+        /* Prevent wrapping if possible, or wrap normally */
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    /* Mobile override for small screens */
+    @media (max-width: 600px) {
+        .radio-options {
+            flex-wrap: wrap;
+        }
+    }
+
+    .radio-card {
+        position: relative;
+        flex: 1;
+        /* Distribute space evenly */
+        min-width: 0;
+        /* Allow shrinking */
+    }
+
+    .radio-card input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .radio-card label {
+        display: block;
+        padding: 15px;
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-line);
+        cursor: pointer;
+        text-align: center;
+        font-family: var(--font-sans);
+        font-weight: 500;
+        color: var(--text-body);
+        transition: all 0.3s ease;
+    }
+
+    .radio-card:hover label {
+        border-color: var(--color-brand);
+        color: var(--color-brand);
+    }
+
+    .radio-card input[type="radio"]:checked+label {
+        background-color: var(--color-brand);
+        border-color: var(--color-brand);
+        color: #FFF;
+        box-shadow: 0 4px 10px rgba(180, 142, 85, 0.3);
+    }
+}
+
+/* --- Hero Split Layout (High Conversion) --- */
+.hero-split {
+    min-height: 85vh;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 160px 8% 0 8%;
+    /* Increased top padding to 160px for ALL content */
+    /* Wider gutters */
+    gap: 5%;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--bg-base);
+    /* Ensure non-transparent bg */
+}
+
+.hero-split .text-col {
+    flex: 1;
+    max-width: 600px;
+    z-index: 2;
+    padding-top: 0;
+    /* Removed individual padding as container handles it */
+    padding-bottom: 60px;
+    /* Add bottom padding to balance */
+    /* Account for fixed nav visual balance */
+}
+
+.hero-split .visual-col {
+    flex: 1;
+    height: 70vh;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-split .visual-col img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 2px;
+    /* Consistent subtle radius */
+    box-shadow: 30px 30px 0 rgba(180, 142, 85, 0.1);
+    /* Editorial Shadow */
+}
+
+/* Enhancing the Typography for Split Hero */
+.hero-split h1 {
+    font-size: 3.2rem;
+    line-height: 1.25;
+    margin-bottom: 24px;
+}
+
+.hero-split p {
+    font-size: 1.1rem;
+    color: var(--text-body);
+    margin-bottom: 40px;
+    max-width: 480px;
+    /* Optimal reading line length */
+}
+
+@media (max-width: 900px) {
+    .hero-split {
+        flex-direction: column;
+        padding: 100px 20px 60px 20px;
+        text-align: center;
+        height: auto;
+        min-height: auto;
+    }
+
+    .hero-split .text-col {
+        padding-top: 0;
+        margin-bottom: 40px;
+        max-width: 100%;
+    }
+
+    .hero-split .text-col p {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero-split .visual-col {
+        width: 100%;
+        height: 40vh;
+    }
+}

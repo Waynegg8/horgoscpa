@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="霍爾果斯會計師事務所預約諮詢 - 預約專業會計師、稅務顧問一對一服務。" />
+  <title>預約諮詢 | 霍爾果斯會計師事務所</title>
+
+<!-- hreflang 標籤 -->
+  <link rel="alternate" hreflang="zh-TW" href="https://www.horgoscpa.com/booking.html" />
+  
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- Material Symbols 圖示庫 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- 引用全站共用樣式 -->
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <link rel="stylesheet" href="/assets/css/navbar.css" />
+  <link rel="stylesheet" href="/assets/css/footer.css" />
+  
+  <!-- 移動版導航欄樣式 -->
+  <link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
+
+  <!-- 確保Material Icons可用 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- 新增: 首頁特定樣式 - 用於流動式設計 -->
+  <link rel="stylesheet" href="/assets/css/index-style.css" />
+  
+  <!-- 預約頁面特定樣式 -->
+  <style>
+    /* 標題區塊樣式調整 - 與contact.html保持一致 */
+    .booking-header {
+      text-align: left;
+      padding: 40px 0 20px;
+      margin-bottom: 0;
+      position: relative;
+      background: linear-gradient(135deg, var(--bg-light), #ffffff);
+      border-bottom: none;
+    }
+    
+    .booking-header-content {
+      padding-left: 20px;
+    }
+    
+    .booking-header h1 {
+      font-size: 2.8rem;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      position: relative;
+      display: inline-block;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .booking-header h1::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: var(--title-accent-width);
+      height: 4px;
+      background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
+      border-radius: 2px;
+    }
+    
+    .booking-header p {
+      font-size: 1.2rem;
+      color: var(--text-medium);
+      max-width: 800px;
+      margin: 0 0 10px 20px;
+      line-height: 1.6;
+    }
+    
+    /* 主要容器樣式 */
+    .booking-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    
+    /* 表單與須知並排顯示 */
+    .booking-layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      margin: 50px 0;
+      align-items: stretch;
+    }
+    
+    .form-column {
+      flex: 3;
+      min-width: 320px;
+    }
+    
+    .info-column {
+      flex: 2;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* 表單美化 */
+    .booking-form {
+      background: white;
+      padding: 35px;
+      border-radius: 15px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+      height: 100%;
+      transition: all 0.3s ease;
+    }
+    
+    .booking-form:hover {
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+      transform: translateY(-5px);
+    }
+    
+    /* 表單組樣式改進 */
+    .form-group {
+      margin-bottom: 25px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+      font-size: 1.05rem;
+    }
+    
+    .form-group input[type="text"],
+    .form-group input[type="tel"],
+    .form-group input[type="email"],
+    .form-group textarea {
+      width: 100%;
+      padding: 14px 18px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background-color: #f9f9f9;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #0066cc;
+      box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+      outline: none;
+      background-color: #fff;
+    }
+    
+    /* 改進的選項按鈕樣式 */
+    .radio-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .radio-card {
+      position: relative;
+      min-width: 200px;
+      flex-grow: 1;
+    }
+    
+    .radio-card input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .radio-card label {
+      display: block;
+      padding: 15px;
+      background-color: #f5f7fa;
+      border: 2px solid #e6e9ee;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      font-weight: 500;
+      color: #555;
+    }
+    
+    .radio-card:hover label {
+      border-color: #0066cc;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .radio-card input[type="radio"]:checked + label {
+      background-color: #0066cc;
+      border-color: #0066cc;
+      color: white;
+      box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
+      transform: translateY(-3px);
+    }
+    
+    /* 提交按鈕改進 */
+    .submit-btn {
+      background: linear-gradient(135deg, #0066cc, #0088ff);
+      color: white;
+      padding: 16px 30px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 17px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin-top: 30px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 6px 15px rgba(0, 102, 204, 0.3);
+    }
+    
+    .submit-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 102, 204, 0.4);
+    }
+    
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+    
+    /* 產生漣漪效果 */
+    .submit-btn::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 300px;
+      height: 300px;
+      margin-left: -150px;
+      margin-top: -150px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 0.5s, opacity 0.3s;
+    }
+    
+    .submit-btn:active::after {
+      transform: scale(1);
+      opacity: 1;
+      transition: 0s;
+    }
+    
+    /* 必填項標記 */
+    .required {
+      color: #ff4d4f;
+      margin-left: 3px;
+    }
+    
+    /* 預約須知區域美化 */
+    .booking-note {
+      background: #f8f9fa;
+      padding: 30px;
+      border-radius: 15px;
+      border-left: 5px solid #0066cc;
+      height: 100%;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+    }
+    
+    .booking-note:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+    }
+    
+    .booking-note h3 {
+      margin-top: 0;
+      color: #002147;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+      position: relative;
+      padding-bottom: 12px;
+    }
+    
+    .booking-note h3:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: linear-gradient(to right, #0066cc, #0088ff);
+    }
+    
+    .booking-note ul {
+      padding-left: 20px;
+      margin-bottom: 25px;
+    }
+    
+    .booking-note li {
+      margin-bottom: 12px;
+      position: relative;
+      padding-left: 10px;
+      line-height: 1.5;
+    }
+    
+    .booking-note li:before {
+      content: "•";
+      color: #0066cc;
+      font-weight: bold;
+      position: absolute;
+      left: -12px;
+    }
+    
+    /* LINE按鈕 */
+    .line-btn {
+      display: inline-flex;
+      align-items: center;
+      background-color: #06c755;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 15px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(6, 199, 85, 0.3);
+    }
+    
+    .line-btn:hover {
+      background-color: #05b54d;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(6, 199, 85, 0.4);
+      color: white;
+    }
+    
+    .line-btn .line-icon {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      background-color: white;
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314'/%3E%3C/svg%3E");
+      mask-size: cover;
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314'/%3E%3C/svg%3E");
+      -webkit-mask-size: cover;
+      margin-right: 10px;
+    }
+    
+    /* 響應式設計 */
+    @media (max-width: 768px) {
+      .booking-layout {
+        flex-direction: column;
+      }
+      
+      .booking-header {
+        text-align: center;
+        padding: 30px 0 20px;
+      }
+      
+      .booking-header-content {
+        padding-left: 0;
+      }
+      
+      .booking-header h1 {
+        font-size: 2rem;
+      }
+      
+      .booking-header h1::after {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .booking-header p {
+        margin: 0 auto 10px;
+        font-size: 1.1rem;
+      }
+      
+      .radio-options {
+        flex-direction: column;
+      }
+      
+      .booking-form, .booking-note {
+        padding: 25px;
+      }
+    }
+  </style>
+  
+  <!-- Google 分析 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-RKMCS9WVS5');
+  </script>
+  </head>
+<body>
+
+<!-- 導航欄 - 與index.html統一 -->
+<nav class="site-nav">
+  <div class="nav-container">
+    <div class="logo">
+      <a href="/index.html">
+        <div class="logo-container">
+          <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+          <div class="logo-sub">HorgosCPA</div>
+        </div>
+      </a>
+    </div>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+    </label>
+    <ul class="nav-menu">
+      <li><a href="/services.html">專業服務</a></li>
+      <li><a href="/team.html">專業團隊</a></li>
+      <li><a href="/blog.html">專欄文章</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/resources.html">資源中心</a></li>
+      <li><a href="/contact.html">聯繫我們</a></li>
+      <li><a href="/booking.html" class="nav-consult-btn active">免費諮詢</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- 移動版導航欄 - 與index.html統一 -->
+<div class="mobile-navbar" style="display: none;">
+  <div class="mobile-nav-container">
+    <div class="mobile-menu-btn" id="mobileMenuBtn">
+      <span class="material-symbols-rounded">menu</span>
+    </div>
+    <div class="logo">
+      <a href="/index.html">
+        <div class="logo-container">
+          <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+          <div class="logo-sub">HorgosCPA</div>
+        </div>
+      </a>
+    </div>
+    <div class="mobile-nav-spacer"></div>
+  </div>
+  
+  <div class="mobile-menu" id="mobileMenu">
+    <ul class="mobile-menu-links">
+      <li><a href="/services.html" class="mobile-nav-link">專業服務</a></li>
+      <li><a href="/team.html" class="mobile-nav-link">專業團隊</a></li>
+      <li><a href="/blog.html" class="mobile-nav-link">專欄文章</a></li>
+      <li><a href="/faq.html" class="mobile-nav-link">常見問題</a></li>
+      <li><a href="/resources.html" class="mobile-nav-link">資源中心</a></li>
+      <li><a href="/contact.html" class="mobile-nav-link">聯繫我們</a></li>
+      <li><a href="/booking.html" class="mobile-consult-btn">免費諮詢</a></li>
+    </ul>
+  </div>
+</div>
+
+<!-- 預約諮詢頁面 -->
+<main class="booking-page">
+  <!-- 標題區塊 - 修改為與contact.html一致的樣式 -->
+  <header class="booking-header">
+    <div class="container">
+      <div class="booking-header-content">
+        <h1>預約專業諮詢</h1>
+        <p>填寫以下表單，我們將儘快為您安排合適的時間與專業會計師進行諮詢。首次諮詢免費，讓我們幫助您解決財稅問題。</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="booking-container">
+    <!-- 並排布局 -->
+    <div class="booking-layout">
+      <!-- 左側表單列 -->
+      <div class="form-column">
+        <form action="https://formspree.io/f/xwpovnwy" method="POST" class="booking-form">
+          <div class="form-group">
+            <label for="booking-name">姓名 <span class="required">*</span></label>
+            <input type="text" id="booking-name" name="name" required placeholder="請輸入您的姓名">
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-phone">電話 <span class="required">*</span></label>
+            <input type="tel" id="booking-phone" name="phone" required placeholder="請輸入您的聯絡電話">
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-email">電子郵件 <span class="required">*</span></label>
+            <input type="email" id="booking-email" name="email" required placeholder="請輸入您的電子郵件">
+          </div>
+          
+          <div class="form-group">
+            <label>諮詢主題 <span class="required">*</span></label>
+            <input type="hidden" id="topic-field" name="topic" value="工商登記">
+            <div class="radio-options">
+              <div class="radio-card">
+                <input type="radio" id="topic-business" name="topic-radio" value="工商登記" checked>
+                <label for="topic-business">工商登記</label>
+              </div>
+              <div class="radio-card">
+                <input type="radio" id="topic-accounting" name="topic-radio" value="帳務處理">
+                <label for="topic-accounting">帳務處理</label>
+              </div>
+              <div class="radio-card">
+                <input type="radio" id="topic-tax" name="topic-radio" value="稅務申報">
+                <label for="topic-tax">稅務申報</label>
+              </div>
+              <div class="radio-card">
+                <input type="radio" id="topic-other" name="topic-radio" value="其他">
+                <label for="topic-other">其他諮詢</label>
+              </div>
+            </div>
+            <div id="other-topic-container" style="display:none; margin-top: 15px;">
+              <input type="text" id="other-topic" name="other-topic" placeholder="請說明您的諮詢主題">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="booking-message">需求說明</label>
+            <textarea id="booking-message" name="message" rows="4" placeholder="請簡單描述您的需求，以便我們提前準備相關資料"></textarea>
+          </div>
+          
+          <div class="form-group" style="display: flex; align-items: center;">
+            <input type="checkbox" id="privacy-agreement" name="agreement" required style="margin-right: 10px; width: auto;">
+            <label for="privacy-agreement" style="display: inline; margin-bottom: 0;">我同意讓您們通過我提供的資訊與我聯繫</label>
+          </div>
+          
+          <button type="submit" class="submit-btn">送出預約申請</button>
+        </form>
+      </div>
+      
+      <!-- 右側須知列 -->
+      <div class="info-column">
+        <div class="booking-note">
+          <h3>預約須知</h3>
+          <ul>
+            <li>首次諮詢免費</li>
+            <li>預約送出後，我們將於 1 個工作日內與您聯繫確認</li>
+            <li>若需變更或取消預約，請提前告知</li>
+            <li>如有緊急需求，可直接致電 04-2220-5606</li>
+          </ul>
+          <p>您也可以透過 LINE 直接與我們聯繫預約：</p>
+          <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="line-btn">
+            <span class="line-icon"></span>
+            <span>加入LINE好友</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 頁尾區域 - 與index.html統一 -->
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-content">
+      <!-- Logo與簡介 -->
+      <div class="footer-logo">
+        <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="footer-logo-img">
+        <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
+        <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
+        <!-- 新增LINE按鈕 -->
+        <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="footer-line-btn">
+          <span class="line-icon"></span>
+          <span>加入LINE好友</span>
+        </a>
+      </div>
+      
+      <!-- 聯絡資訊 -->
+      <div class="footer-contact">
+        <h3>聯絡我們</h3>
+        <ul class="contact-info">
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">location_on</span></i>
+            <span>台中市西區建國路21號3樓之1</span>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">call</span></i>
+            <a href="tel:+886422205606">04-2220-5606</a>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">schedule</span></i>
+            <span>週一至週五 8:30-17:30</span>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">mail</span></i>
+            <a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- 快速連結 -->
+      <div class="footer-links">
+        <h3>快速連結</h3>
+        <ul class="quick-links">
+          <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
+          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 專業團隊</a></li>
+          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 專欄文章</a></li>
+          <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
+          <li><a href="/resources.html"><span class="material-symbols-rounded icon-link">inventory_2</span> 資源中心</a></li>
+          <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
+        </ul>
+      </div>
+      
+      <!-- 服務項目 - 更新為與首頁一致 -->
+      <div class="footer-services">
+        <h3>服務項目</h3>
+        <ul class="services-list">
+          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">store</span> 工商登記</a></li>
+          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance_wallet</span> 帳務處理</a></li>
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">payments</span> 稅務申報</a></li>
+          <li><a href="/services/audit.html"><span class="material-symbols-rounded icon-link">verified</span> 財稅簽證</a></li>
+          <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- 版權資訊 -->
+    <div class="footer-bottom">
+      <div class="footer-text">
+        <p>&copy; 2025 霍爾果斯會計師事務所</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 返回頂部按鈕 -->
+  <div class="back-to-top">
+    <span class="material-symbols-rounded">arrow_upward</span>
+  </div>
+</footer>
+
+<!-- 返回頂部按鈕功能 - 腳本 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 返回頂部按鈕功能
+    const backToTopButton = document.querySelector('.back-to-top');
+    
+    // 初始隱藏按鈕
+    backToTopButton.classList.remove('visible');
+    
+    // 監聽滾動事件
+    window.addEventListener('scroll', function() {
+      if (window.pageYOffset > 300) {
+        backToTopButton.classList.add('visible');
+      } else {
+        backToTopButton.classList.remove('visible');
+      }
+    });
+    
+    // 點擊事件
+    backToTopButton.addEventListener('click', function() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+  });
+</script>
+
+<!-- 導航欄功能腳本 -->
+<script src="/assets/js/navbar.js"></script>
+
+<!-- 預約表單腳本 -->
+<script src="/assets/js/booking.js"></script>
+
+<!-- 移動版導航欄功能腳本 -->
+<script src="/assets/js/mobile-navbar.js"></script>
+
+</body>
+</html>

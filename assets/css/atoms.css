@@ -1,0 +1,247 @@
+/* HorgosCPA Atomic Components */
+
+/* --- Buttons --- */
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--color-brand);
+    color: var(--color-brand);
+    font-family: var(--font-serif);
+    /* Unified Branding */
+    font-size: 0.95rem;
+    /* Match solid button */
+    font-weight: 500;
+    padding: 12px 36px;
+    letter-spacing: 0.1em;
+    /* Wider tracking for elegance */
+    border-radius: 2px;
+    /* Minimal radius */
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.btn-ghost:hover {
+    background: var(--color-brand);
+    color: #FFF;
+    transform: translateY(-2px);
+}
+
+/* Button: Luxury Black & Gold (Chanel/YSL Style) */
+.btn-solid-gold {
+    display: inline-block;
+    /* Ensure block model/padding works */
+    background-color: #000000;
+    /* Deepest Black */
+    color: #B48E55 !important;
+    /* Brand Gold - Force verify */
+    border: 1px solid #B48E55;
+    padding: 14px 40px;
+    font-family: var(--font-serif);
+    /* Unified Branding */
+    font-weight: 500;
+    font-size: 0.95rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-radius: 0;
+    cursor: pointer;
+    text-decoration: none !important;
+    /* Kill underlines */
+    transition: all 0.4s ease;
+    min-width: 160px;
+    text-align: center;
+}
+
+.btn-solid-gold:hover {
+    background-color: #B48E55;
+    color: #000000 !important;
+    border-color: #B48E55;
+    text-decoration: none !important;
+}
+
+/* --- Inputs --- */
+.input-line {
+    border: none;
+    border-bottom: 1px solid var(--border-line);
+    background: transparent;
+    border-radius: 0;
+    padding: 16px 0;
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    width: 100%;
+    color: var(--text-primary);
+    transition: border-color 0.3s ease;
+}
+
+.input-line::placeholder {
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-weight: 300;
+}
+
+.input-line:focus {
+    outline: none;
+    border-bottom-color: var(--color-brand);
+}
+
+/* Select styling hack to match input-line */
+select.input-line {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23B48E55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+    background-repeat: no-repeat;
+    background-position: right 0 center;
+}
+
+/* --- Common Styles (Atoms) --- */
+.filter-btn:hover,
+.filter-btn.active {
+    color: var(--color-brand) !important;
+    border-bottom: 1px solid var(--color-brand) !important;
+}
+
+/* --- Decorators --- */
+.deco-line {
+    width: 40px;
+    height: 2px;
+    background-color: var(--color-brand);
+    border: none;
+    margin: var(--space-4) 0;
+    display: block;
+}
+
+.frame-border {
+    border: 1px solid var(--border-gold);
+    padding: 12px;
+    display: inline-block;
+}
+
+/* --- Utilities --- */
+.text-gold {
+    color: var(--color-brand);
+}
+
+.bg-cream {
+    background-color: var(--bg-base);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Layout Spacers --- */
+.section-gap {
+    padding: var(--space-16) 0;
+}
+
+/* --- Back to Top Button --- */
+.btn-back-to-top {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    width: 50px;
+    height: 50px;
+    background-color: #000;
+    color: #B48E55;
+    border: 1px solid #B48E55;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s ease;
+    z-index: 999;
+}
+
+.btn-back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.btn-back-to-top:hover {
+    background-color: #B48E55;
+    color: #000;
+}
+
+.btn-back-to-top svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+}
+
+/* --- Bilingual Logo Lockup --- */
+.logo-container {
+    display: flex;
+    flex-direction: row;
+    /* Parallel (Horizontal) */
+    align-items: center;
+    /* Center Vertically */
+    justify-content: flex-start;
+    text-decoration: none !important;
+    /* Kill default link underline */
+    color: inherit;
+    /* Prevent purple visited link color */
+}
+
+/* Force parent link to behave if it wraps this */
+a.logo {
+    text-decoration: none !important;
+    display: flex;
+    align-items: center;
+    border-bottom: none !important;
+}
+
+.logo-img {
+    height: 45px !important;
+    /* Larger as requested */
+    width: auto;
+    margin-bottom: 0px;
+}
+
+.logo-text-en {
+    font-family: var(--font-serif);
+    /* Switch to Serif to match Headings/Brand */
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: #FFFFFF !important;
+    /* Force White */
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-left: 20px;
+    /* Increased gap */
+    opacity: 0.9;
+    padding-top: 4px;
+    transition: color 0.3s ease;
+    text-decoration: none !important;
+    border-bottom: none !important;
+}
+
+/* Scrolled State adjustments (defined in organisms.css but overridden here for safety) */
+.site-nav.scrolled .logo-text-en {
+    color: #FFFFFF !important;
+    /* Keep white on dark scrolled bg */
+}
+
+@media (max-width: 768px) {
+    .logo-img {
+        height: 32px !important;
+    }
+
+    .logo-text-en {
+        font-size: 0.55rem;
+        margin-left: 12px;
+    }
+}
