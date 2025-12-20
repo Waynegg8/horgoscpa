@@ -2,61 +2,11 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // --- Dynamic Navigation & Footer Injection ---
-    // This ensures that adding a new page only requires updating this list.
+    // --- Dynamic Navigation & Footer Injection REMOVED ---
+    // We now rely on static HTML with absolute paths (/assets, /services.html) 
+    // to ensure robustness across all directory levels.
 
-    // Determine base path for subdirectories (e.g., /articles/)
-    // This allows the script to work from root or subfolders without absolute path dependency.
-    const isSubfolder = window.location.pathname.includes('/articles/');
-    const pathPrefix = isSubfolder ? '../' : '';
-
-    const navItems = [
-        { label: '專業服務', link: pathPrefix + 'services.html' },
-        { label: '專業團隊', link: pathPrefix + 'team.html' },
-        { label: '文章專區', link: pathPrefix + 'articles.html' },
-        { label: '資源專區', link: pathPrefix + 'resources.html' },
-        { label: '常見問題', link: pathPrefix + 'faq.html' },
-        { label: '聯絡我們', link: pathPrefix + 'contact.html' }
-    ];
-
-    const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-
-    // 1. Inject Navbar Links
-    const navLinksContainer = document.querySelector('.nav-links');
-    if (navLinksContainer) {
-        navLinksContainer.innerHTML = ''; // Clear existing static links
-        navItems.forEach(item => {
-            const li = document.createElement('li');
-            const a = document.createElement('a');
-            a.href = item.link;
-            a.textContent = item.label;
-            if (item.link === currentPath) {
-                a.classList.add('active'); // Optional styling hook
-            }
-            li.appendChild(a);
-            navLinksContainer.appendChild(li);
-        });
-    }
-
-    // 2. Inject Footer Sitemap Links
-    // We look for specific headings or class structures in the footer.
-    // Based on our HTML, the Sitemap is usually the second .footer-links div, 
-    // or we can target it more robustly if we added IDs. 
-    // For now, let's target the .footer-links that contains "網站地圖".
-    const footerLinkGroups = document.querySelectorAll('.footer-links');
-    footerLinkGroups.forEach(group => {
-        const h4 = group.querySelector('h4');
-        if (h4 && h4.textContent.includes('網站地圖')) {
-            // Keep the header, remove the old links
-            group.innerHTML = '<h4>網站地圖</h4>';
-            navItems.forEach(item => {
-                const a = document.createElement('a');
-                a.href = item.link;
-                a.textContent = item.label;
-                group.appendChild(a);
-            });
-        }
-    });
+    // logic removed to prevent overriding valid absolute paths with relative ones.
 
     // --- Inject English Logo Text ---
     const logoContainer = document.querySelector('.logo-container');
