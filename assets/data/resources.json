@@ -1,16 +1,7 @@
-[
-  {
-    "title": "勞健保級距表",
-    "link": "assets/files/labour_insurance_2025.pdf",
-    "category": "law",
-    "type": "file",
-    "description": "下載 2025 最新級距表 (PDF)"
-  },
-  {
-    "title": "公司設立成本試算",
-    "link": "tools/incorporation-calculator.html",
-    "category": "tax",
-    "type": "tool",
-    "description": "線上快速估算開辦費用"
-  }
-]
+{
+  "type": "tool",
+  "description": "線上試算工具，協助您快速估算公司設立所需的規費與代辦成本。",
+  "title": "公司設立成本試算",
+  "link": "tools/incorporation-calculator.html",
+  "category": "tool"
+}
