@@ -32,7 +32,7 @@ if (Test-Path $articlesDir) {
 
         $newArticles += @{
             title       = $title
-            link        = "articles/" + $_.Name
+            link        = "/articles/" + $_.Name
             date        = $date
             category    = $category
             description = $desc
@@ -55,7 +55,7 @@ if (Test-Path $filesDir) {
     Get-ChildItem -Path $filesDir | ForEach-Object {
         $newResources += @{
             title       = $_.BaseName
-            link        = "assets/files/" + $_.Name
+            link        = "/assets/files/" + $_.Name
             category    = "download"
             type        = "file"
             description = "點擊下載 " + $_.Extension.ToUpper().Trim('.')
@@ -75,7 +75,7 @@ if (Test-Path $toolsDir) {
 
         $newResources += @{
             title       = $title
-            link        = "tools/" + $_.Name
+            link        = "/tools/" + $_.Name
             category    = "tool"
             type        = "tool"
             description = $desc
