@@ -302,4 +302,85 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
+
+    // --- Dynamic Articles List (Main Page) ---
+    const articlesGrid = document.getElementById('articles-grid');
+    if (articlesGrid) {
+        fetch(pathPrefix + 'assets/data/articles.json')
+            .then(response => response.json())
+            .then(articles => {
+                articlesGrid.innerHTML = ''; // Clear loading state
+
+                if (articles.length === 0) {
+                    articlesGrid.innerHTML = '<p class="text-muted" style="text-align:center;">尚無文章</p>';
+                    return;
+                }
+
+                articles.forEach(article => {
+                    const card = document.createElement('div');
+                    card.className = 'book-card';
+                    card.dataset.category = article.category ? article.category.toLowerCase() : 'all';
+
+                    // Determine Image (Fallback logic)
+                    const bgImage = article.image || 'assets/images/hero.jpg';
+                    const linkUrl = pathPrefix + article.link;
+                    const imageUrl = pathPrefix + bgImage;
+
+                    card.innerHTML = `
+                        <div class="book-cover" style="background-image: url('${imageUrl}'); height: 200px; background-size: cover; background-position: center;"></div>
+                        <div class="book-info">
+                            <span class="book-category">${article.category || 'Article'}</span>
+                            <h3 class="book-title">${article.title}</h3>
+                            <p class="book-desc">${article.description || ''}</p>
+                            <a href="${linkUrl}" class="btn-text">閱讀更多 &rarr;</a>
+                        </div>
+                    `;
+                    articlesGrid.appendChild(card);
+                });
+            })
+            .catch(err => {
+                console.error('Failed to load articles:', err);
+                articlesGrid.innerHTML = '<p class="text-error" style="text-align:center;">無法載入文章，請稍後再試。</p>';
+            });
+    }
+
+    // --- Dynamic Resources List (Main Page) ---
+    const resourceGrid = document.getElementById('resource-grid');
+    if (resourceGrid) {
+        fetch(pathPrefix + 'assets/data/resources.json')
+            .then(response => response.json())
+            .then(resources => {
+                resourceGrid.innerHTML = '';
+
+                if (resources.length === 0) {
+                    resourceGrid.innerHTML = '<p class="text-muted" style="text-align:center;">尚無資源</p>';
+                    return;
+                }
+
+                resources.forEach(res => {
+                    const card = document.createElement('div');
+                    card.className = 'book-card';
+                    card.dataset.category = res.category ? res.category.toLowerCase() : 'all';
+
+                    const isTool = res.type === 'tool';
+                    const btnText = isTool ? '前往使用 &rarr;' : '點擊下載 &darr;';
+                    const linkUrl = pathPrefix + res.link;
+
+                    card.innerHTML = `
+                         <div class="book-info" style="padding: 30px;">
+                            <span class="book-category">${res.category || 'Resource'}</span>
+                            <h3 class="book-title" style="margin-top:10px;">${res.title}</h3>
+                            <p class="book-desc">${res.description || ''}</p>
+                            <a href="${linkUrl}" class="btn-text" style="color: ${isTool ? '#b48e55' : '#666'};" ${isTool ? '' : 'download'}>${btnText}</a>
+                        </div>
+                    `;
+                    resourceGrid.appendChild(card);
+                });
+            })
+            .catch(err => {
+                console.error('Failed to load resources:', err);
+                resourceGrid.innerHTML = '<p class="text-error" style="text-align:center;">無法載入資源。</p>';
+            });
+    }
+
 });
