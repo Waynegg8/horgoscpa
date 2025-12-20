@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(err => {
                 console.error('Failed to load articles:', err);
-                articlesGrid.innerHTML = '<p class="text-error" style="text-align:center;">無法載入文章，請稍後再試。</p>';
+                articlesGrid.innerHTML = `<p class="text-error" style="text-align:center;">無法載入文章：${err.message}</p>`;
             });
     }
 
@@ -394,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(err => {
                 console.error('Failed to load resources:', err);
-                resourceGrid.innerHTML = '<p class="text-error" style="text-align:center;">無法載入資源。</p>';
+                resourceGrid.innerHTML = `<p class="text-error" style="text-align:center;">無法載入資源：${err.message}</p>`;
             });
     }
 
