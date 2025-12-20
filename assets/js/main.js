@@ -295,8 +295,19 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(articles => {
                 relatedList.innerHTML = '';
-                // Filter out current page if possible, or just take first 3
-                const randomArticles = articles.slice(0, 3);
+
+                // 1. Identify current page (ignore leading path parts)
+                const currentPath = window.location.pathname;
+
+                // 2. Filter out current article
+                const availableArticles = articles.filter(article => {
+                    // Check if the article link is part of the current path
+                    // e.g. "articles/startup-guide.html" is in "/articles/startup-guide.html"
+                    return !currentPath.includes(article.link);
+                });
+
+                // 3. Take first 3 (or randomize if you prefer)
+                const randomArticles = availableArticles.slice(0, 3);
 
                 if (randomArticles.length === 0) {
                     relatedList.innerHTML = '<li style="color:#999; font-size:0.9rem;">尚無相關文章</li>';
