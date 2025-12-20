@@ -1,16 +1,8 @@
-[
-  {
-    "date": "2025.12.20",
-    "category": "Insight",
-    "image": "",
-    "title": "創業第一步：從零開始的公司設立指南",
-    "description": "完整解析台灣公司設立流程，從選擇公司型態到完成登記，讓創業者少走冤枉路。",
-    "link": "articles/startup-guide.html"
-  },
-  {
-    "title": "2025 稅務新制解析",
-    "link": "articles/template.html",
-    "date": "2024.12.20",
-    "category": "tax"
-  }
-]
+{
+  "title": "創業第一步：從零開始的公司設立指南",
+  "link": "articles/startup-guide.html",
+  "description": "完整解析台灣公司設立流程，從選擇公司型態到完成登記，讓創業者少走冤枉路。",
+  "image": "",
+  "category": "Insight",
+  "date": "2025.12.20"
+}
