@@ -165,17 +165,32 @@ document.addEventListener('DOMContentLoaded', function () {
             const query = searchInput ? searchInput.value.toLowerCase() : '';
             const activeCategory = document.querySelector('.filter-btn.active') ? document.querySelector('.filter-btn.active').dataset.category : 'all';
 
-            resourceCards.forEach(card => {
-                const title = card.querySelector('.book-title').innerText.toLowerCase();
-                const category = card.dataset.category || 'all'; // Assume 'all' if not set
+            // Re-query cards because they are loaded asynchronously
+            const currentCards = document.querySelectorAll('.book-card');
 
+            currentCards.forEach(card => {
+                // Determine title: support both Articles (h3) and Resources (h3 inside, or similar)
+                // Adjust selector based on actual card structure
+                const titleEl = card.querySelector('.book-title') || card.querySelector('h3');
+                const title = titleEl ? titleEl.innerText.toLowerCase() : '';
+
+                // Determine category: data-category attribute or parsing text
+                // Check if card has data-category
+                let category = card.dataset.category || 'all';
+                // If not in dataset, maybe logic needed? 
+                // Currently generated cards DO NOT have data-category set in JS loop! 
+                // We need to fix the JS loop to add data-category too.
+
+                // But first let's fix the Search (Title match)
                 const matchesSearch = title.includes(query);
+
+                // Category match needs valid data. 
+                // Let's assume for now 'all' or actual match.
+                // We need to ensure cards have data-category.
                 const matchesCategory = activeCategory === 'all' || category === activeCategory;
 
                 if (matchesSearch && matchesCategory) {
-                    card.style.display = 'block'; // Or 'block', depending on grid
-                    // Actually, for Grid, we might just want to show/hide. 
-                    // But 'display:none' removes it from layout flow which is good for grid.
+                    card.style.display = 'block';
                 } else {
                     card.style.display = 'none';
                 }
@@ -316,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 resources.forEach(res => {
                     const card = document.createElement('a');
                     card.className = 'book-card';
+                    card.dataset.category = (res.category || 'tool').toLowerCase(); // Add category for filtering
                     card.href = res.link;
                     // Handle Download Attribute
                     if (res.type !== 'tool') {
