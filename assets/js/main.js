@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Dynamic Articles List (Main Page) ---
     const articlesGrid = document.getElementById('articles-grid');
     if (articlesGrid) {
-        fetch(pathPrefix + 'assets/data/articles.json')
+        fetch('/assets/data/articles.json')
             .then(response => response.json())
             .then(articles => {
                 articlesGrid.innerHTML = '';
@@ -217,9 +217,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 articles.forEach(article => {
                     const card = document.createElement('a');
                     card.className = 'book-card';
-                    card.href = pathPrefix + article.link;
+                    // Link is already absolute in JSON or needs to be treated as such
+                    card.href = article.link;
                     const bgImage = article.image || 'assets/images/hero.jpg';
-                    const imageUrl = pathPrefix + bgImage;
+                    const imageUrl = bgImage.startsWith('/') ? bgImage : '/' + bgImage;
                     card.innerHTML = `
                         <div class="book-cover" style="background-image: url('${imageUrl}');"></div>
                         <div class="book-info">
@@ -241,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Related Topics Logic (Article Pages) ---
     const relatedList = document.getElementById('related-articles-list');
     if (relatedList) {
-        fetch(pathPrefix + 'assets/data/articles.json')
+        fetch('/assets/data/articles.json')
             .then(response => response.json())
             .then(articles => {
                 relatedList.innerHTML = '';
@@ -251,12 +252,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // 2. Filter out current article
                 const availableArticles = articles.filter(article => {
-                    // Check if the article link is part of the current path
-                    // e.g. "articles/startup-guide.html" is in "/articles/startup-guide.html"
                     return !currentPath.includes(article.link);
                 });
 
-                // 3. Take first 3 (or randomize if you prefer)
+                // 3. Take first 3
                 const randomArticles = availableArticles.slice(0, 3);
 
                 if (randomArticles.length === 0) {
@@ -268,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const item = document.createElement('li');
                     item.style.marginBottom = '15px';
                     item.innerHTML = `
-                        <a href="${pathPrefix}${article.link}" style="text-decoration: none; display: block;">
+                        <a href="${article.link}" style="text-decoration: none; display: block;">
                             <span style="font-size: 0.8rem; color: #b48e55; text-transform: uppercase; display: block; margin-bottom: 2px;">${article.category || 'Insight'}</span>
                             <h5 style="font-size: 0.95rem; color: #1a1a1a; margin: 0; line-height: 1.4; transition: color 0.3s;" onmouseover="this.style.color='#b48e55'" onmouseout="this.style.color='#1a1a1a'">${article.title}</h5>
                         </a>
@@ -283,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Dynamic Resources List (Main Page) ---
     const resourceGrid = document.getElementById('resource-grid');
     if (resourceGrid) {
-        fetch(pathPrefix + 'assets/data/resources.json')
+        fetch('/assets/data/resources.json')
             .then(response => response.json())
             .then(resources => {
                 resourceGrid.innerHTML = '';
@@ -296,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 resources.forEach(res => {
                     const card = document.createElement('a');
                     card.className = 'book-card';
-                    card.href = pathPrefix + res.link;
+                    card.href = res.link;
                     // Handle Download Attribute
                     if (res.type !== 'tool') {
                         card.setAttribute('download', '');
