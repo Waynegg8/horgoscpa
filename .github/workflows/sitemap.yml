@@ -1,0 +1,31 @@
+name: Auto Generate Sitemap
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.html'
+  schedule:
+    - cron: '0 0 * * *' # Run daily at midnight UTC
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sitemap:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Generate Sitemap
+        shell: pwsh
+        run: ./generate_sitemap.ps1
+
+      - name: Commit Change
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: auto-update sitemap.xml"
+          file_pattern: sitemap.xml
