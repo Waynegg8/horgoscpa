@@ -11,7 +11,7 @@ if (Test-Path $articlesDir) {
         $content = Get-Content $_.FullName -Raw
         
         # Skip template
-        if ($_.Name -eq "template.html") { return }
+        # Skip nothing, process all HTML files in articles/
 
         # Extract Metadata using Regex
         $title = "Untitled"
@@ -40,7 +40,11 @@ if (Test-Path $articlesDir) {
         }
     }
 }
-$newArticles | ConvertTo-Json -Depth 3 | Out-File -Encoding UTF8 $articlesPath
+# Custom manual override would go here if needed
+}
+}
+# Use InputObject to force Array format even with single item
+ConvertTo-Json -InputObject $newArticles -Depth 3 | Out-File -Encoding UTF8 $articlesPath
 
 
 # --- 2. Resources Generator ---
@@ -82,6 +86,7 @@ if (Test-Path $toolsDir) {
     }
 }
 
-$newResources | ConvertTo-Json -Depth 3 | Out-File -Encoding UTF8 $resourcesPath
+# Use InputObject to force Array format
+ConvertTo-Json -InputObject $newResources -Depth 3 | Out-File -Encoding UTF8 $resourcesPath
 
 Write-Host "Content Indexes Updated!"
