@@ -101,39 +101,58 @@ document.addEventListener('DOMContentLoaded', function () {
     // No JS interception needed for Formspree to work natively.
     // We keep the logic clean to avoid preventing the default POST action.
 
-    // --- FAQ Accordion ---
-    const faqItems = document.querySelectorAll('.faq-item');
-    faqItems.forEach(item => {
-        const title = item.querySelector('h3');
-        const content = item.querySelector('p');
+    // --- FAQ Dynamic Injection & Accordion ---
+    const faqContainer = document.getElementById('faq-container-list');
+    if (faqContainer) {
+        fetch('/assets/data/faq.json')
+            .then(response => response.json())
+            .then(data => {
+                faqContainer.innerHTML = ''; // Clear "Loading..."
 
-        if (title && content) {
-            // Initial State: element is collapsed via CSS or we set it here
-            // Let's assume we toggle a class 'active' on click
-            title.style.cursor = 'pointer';
-            title.addEventListener('click', () => {
-                const isActive = item.classList.contains('active');
-
-                // Close all others (optional - typical accordion behavior)
-                faqItems.forEach(other => {
-                    other.classList.remove('active');
-                    const otherContent = other.querySelector('p');
-                    if (otherContent) otherContent.style.display = 'none';
-                });
-
-                if (!isActive) {
-                    item.classList.add('active');
-                    content.style.display = 'block';
-                } else {
-                    item.classList.remove('active');
-                    content.style.display = 'none';
+                if (data.length === 0) {
+                    faqContainer.innerHTML = '<p class="text-muted" style="text-align:center;">目前沒有常見問題資料。</p>';
+                    return;
                 }
-            });
 
-            // Init: Hide content initially
-            content.style.display = 'none';
-        }
-    });
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'faq-item';
+                    // Inline styles for simplicity to match design
+                    div.style.borderBottom = '1px solid #eee';
+                    div.style.marginBottom = '15px';
+                    div.style.paddingBottom = '15px';
+
+                    div.innerHTML = `
+                        <h3 style="font-size:1.1rem; color:#1a1a1a; margin-bottom:10px; cursor:pointer; font-weight:500;">${item.question}</h3>
+                        <p style="font-size:0.95rem; color:#666; display:none; line-height:1.6; padding-left:0;">${item.answer}</p>
+                    `;
+                    faqContainer.appendChild(div);
+
+                    // Add Click Event for toggling
+                    const title = div.querySelector('h3');
+                    const content = div.querySelector('p');
+
+                    title.addEventListener('click', () => {
+                        // Close others
+                        document.querySelectorAll('.faq-item p').forEach(p => {
+                            if (p !== content) p.style.display = 'none';
+                        });
+                        // Toggle current
+                        if (content.style.display === 'none') {
+                            content.style.display = 'block';
+                            title.style.color = '#b48e55'; // Gold highlight active
+                        } else {
+                            content.style.display = 'none';
+                            title.style.color = '#1a1a1a';
+                        }
+                    });
+                });
+            })
+            .catch(err => {
+                console.error('Failed to load FAQ:', err);
+                faqContainer.innerHTML = '<p class="text-error" style="text-align:center;">無法載入常見問題。</p>';
+            });
+    }
 
     // --- Resources / Articles Search & Filter ---
     const searchInput = document.getElementById('resourceSearch');
