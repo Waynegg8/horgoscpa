@@ -309,25 +309,17 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch(pathPrefix + 'assets/data/articles.json')
             .then(response => response.json())
             .then(articles => {
-                articlesGrid.innerHTML = ''; // Clear loading state
-
+                articlesGrid.innerHTML = '';
                 if (articles.length === 0) {
                     articlesGrid.innerHTML = '<p class="text-muted" style="text-align:center;">尚無文章</p>';
                     return;
                 }
-
                 articles.forEach(article => {
-                    // Change: Create <a> tag instead of <div>
                     const card = document.createElement('a');
                     card.className = 'book-card';
-                    card.dataset.category = article.category ? article.category.toLowerCase() : 'all';
-
-                    const linkUrl = pathPrefix + article.link;
-                    card.href = linkUrl;
-
+                    card.href = pathPrefix + article.link;
                     const bgImage = article.image || 'assets/images/hero.jpg';
                     const imageUrl = pathPrefix + bgImage;
-
                     card.innerHTML = `
                         <div class="book-cover" style="background-image: url('${imageUrl}');"></div>
                         <div class="book-info">
@@ -346,6 +338,37 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
+    // --- Related Topics Logic (Article Pages) ---
+    const relatedList = document.getElementById('related-articles-list');
+    if (relatedList) {
+        fetch(pathPrefix + 'assets/data/articles.json')
+            .then(response => response.json())
+            .then(articles => {
+                relatedList.innerHTML = '';
+                // Filter out current page if possible, or just take first 3
+                const randomArticles = articles.slice(0, 3);
+
+                if (randomArticles.length === 0) {
+                    relatedList.innerHTML = '<li style="color:#999; font-size:0.9rem;">尚無相關文章</li>';
+                    return;
+                }
+
+                randomArticles.forEach(article => {
+                    const item = document.createElement('li');
+                    item.style.marginBottom = '15px';
+                    item.innerHTML = `
+                        <a href="${pathPrefix}${article.link}" style="text-decoration: none; display: block;">
+                            <span style="font-size: 0.8rem; color: #b48e55; text-transform: uppercase; display: block; margin-bottom: 2px;">${article.category || 'Insight'}</span>
+                            <h5 style="font-size: 0.95rem; color: #1a1a1a; margin: 0; line-height: 1.4; transition: color 0.3s;" onmouseover="this.style.color='#b48e55'" onmouseout="this.style.color='#1a1a1a'">${article.title}</h5>
+                        </a>
+                     `;
+                    relatedList.appendChild(item);
+                });
+            })
+            .catch(err => console.error('Failed to load related articles:', err));
+    }
+
+
     // --- Dynamic Resources List (Main Page) ---
     const resourceGrid = document.getElementById('resource-grid');
     if (resourceGrid) {
@@ -360,15 +383,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 resources.forEach(res => {
-                    // Change: Create <a> tag instead of <div>
                     const card = document.createElement('a');
                     card.className = 'book-card';
-                    card.dataset.category = res.category ? res.category.toLowerCase() : 'all';
-
-                    const linkUrl = pathPrefix + res.link;
-                    card.href = linkUrl;
-
-                    // Handle Download Attribute for files
+                    card.href = pathPrefix + res.link;
+                    // Handle Download Attribute
                     if (res.type !== 'tool') {
                         card.setAttribute('download', '');
                         card.target = '_blank';
@@ -377,11 +395,22 @@ document.addEventListener('DOMContentLoaded', function () {
                     const isTool = res.type === 'tool';
                     const btnText = isTool ? '前往使用 &rarr;' : '點擊下載 &darr;';
 
-                    // Use logo as generic resource icon/cover
-                    const imageUrl = pathPrefix + 'assets/images/logo-white.png';
+                    // Premium Gradient Fallback instead of Logo
+                    const bgStyle = `background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;`;
+
+                    // Simple Icon Overlay (CSS Shapes or SVG)
+                    // Using a simple abstract "H" letter or just text
+                    const iconOverlay = `
+                        <div style="font-family: 'Cinzel', serif; font-size: 3rem; color: rgba(180, 142, 85, 0.2); font-weight: 700;">
+                            ${res.category ? res.category[0].toUpperCase() : 'H'}
+                        </div>
+                        <div style="position: absolute; bottom: 10px; right: 10px; width: 40px; height: 1px; background: rgba(180, 142, 85, 0.5);"></div>
+                    `;
 
                     card.innerHTML = `
-                         <div class="book-cover" style="background-image: url('${imageUrl}'); background-size: 50% auto; background-repeat: no-repeat; background-color: #2c2c2c;"></div>
+                         <div class="book-cover" style="${bgStyle}">
+                            ${iconOverlay}
+                         </div>
                          <div class="book-info">
                             <span class="book-category">${res.category || 'Resource'}</span>
                             <h3 class="book-title" style="margin-top:10px;">${res.title}</h3>
