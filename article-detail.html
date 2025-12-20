@@ -174,13 +174,21 @@
             <div style="font-family: var(--font-sans);">
                 <h4 style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.9rem; color: #888;">Share this
                     article</h4>
-                <div style="margin-top: 15px;">
+                <div style="margin-top: 15px; display: flex; gap: 20px;">
                     <a href="#"
-                        style="color: #000; margin-right: 20px; text-decoration: none; border-bottom: 1px solid transparent; transition: border 0.3s;">Facebook</a>
+                        onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), 'facebook-share', 'width=580,height=296'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#b48e55'" onmouseout="this.style.color='#1a1a1a'">Facebook</a>
+
                     <a href="#"
-                        style="color: #000; margin-right: 20px; text-decoration: none; border-bottom: 1px solid transparent; transition: border 0.3s;">Line</a>
+                        onclick="window.open('https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(window.location.href), 'line-share', 'width=500,height=500'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#06C755'" onmouseout="this.style.color='#1a1a1a'">Line</a>
+
                     <a href="#"
-                        style="color: #000; text-decoration: none; border-bottom: 1px solid transparent; transition: border 0.3s;">LinkedIn</a>
+                        onclick="window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(window.location.href), 'linkedin-share', 'width=580,height=480'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#0077b5'" onmouseout="this.style.color='#1a1a1a'">LinkedIn</a>
                 </div>
             </div>
         </article>
