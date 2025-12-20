@@ -3,8 +3,9 @@
 /video.html /resources.html 301
 /video /resources.html 301
 
-# 舊 blog 文章 → 新 blog 列表（因全部重寫，統一導向列表）
-/blog/*.html /blog.html 301
+# 舊 blog 文章 → 文章專區（因全部重寫，統一導向列表）
+/blog/*.html /articles.html 301
+/blog.html /articles.html 301
 
 
 

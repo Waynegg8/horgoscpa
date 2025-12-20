@@ -33,7 +33,7 @@ if (Test-Path $articlesDir) {
 
         $newArticles += @{
             title       = $title
-            link        = "/articles/" + $_.Name
+            link        = "/articles/" + $_.BaseName
             date        = $date
             category    = $category
             description = $desc
@@ -76,7 +76,7 @@ if (Test-Path $toolsDir) {
 
         $newResources += @{
             title       = $title
-            link        = "/tools/" + $_.Name
+            link        = "/tools/" + $_.BaseName
             category    = "tool"
             type        = "tool"
             description = $desc

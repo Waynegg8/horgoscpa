@@ -3,62 +3,88 @@
 
 $baseUrl = "https://www.horgoscpa.com"
 $sitemapPath = "sitemap.xml"
-$ignoreList = @("404.html", "articles/template.html", "google*.html")
+$ignoreList = @("404.html", "articles/template.html")
 
-# Header
-$xmlContent = @"
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-"@
+# Initialize XML content with header
+$script:xmlLines = @()
+$script:xmlLines += '<?xml version="1.0" encoding="UTF-8"?>'
+$script:xmlLines += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
 
-# Function to add URL
-function Add-Url {
-    param ($file, $priority, $freq)
-    $relPath = $file.FullName.Substring($PWD.Path.Length + 1).Replace("\", "/")
+# Function to add URL entry
+function Add-UrlEntry {
+    param (
+        [string]$relPath,
+        [string]$lastMod,
+        [string]$priority,
+        [string]$freq
+    )
     
-    if ($ignoreList -contains $relPath) { return }
-
-    $lastMod = $file.LastWriteTime.ToString("yyyy-MM-dd")
-    $url = "$baseUrl/$relPath"
+    # Skip if in ignore list
+    foreach ($ignore in $ignoreList) {
+        if ($relPath -like $ignore) { return }
+    }
     
-    $xmlContent += @"
-
-  <url>
-    <loc>$url</loc>
-    <lastmod>$lastMod</lastmod>
-    <changefreq>$freq</changefreq>
-    <priority>$priority</priority>
-  </url>
-"@
+    # Build clean URL (remove .html extension and index.html -> /)
+    $cleanPath = $relPath -replace '\.html$', ''
+    if ($cleanPath -eq "index") {
+        $url = "$baseUrl/"
+    }
+    else {
+        $url = "$baseUrl/$cleanPath"
+    }
+    
+    $script:xmlLines += "  <url>"
+    $script:xmlLines += "    <loc>$url</loc>"
+    $script:xmlLines += "    <lastmod>$lastMod</lastmod>"
+    $script:xmlLines += "    <changefreq>$freq</changefreq>"
+    $script:xmlLines += "    <priority>$priority</priority>"
+    $script:xmlLines += "  </url>"
 }
 
-# 1. Root Pages
+# 1. Scan Root HTML Pages
 Get-ChildItem -Filter "*.html" | ForEach-Object {
     $prio = "0.8"
-    if ($_.Name -eq "index.html") { $prio = "1.0" }
-    Add-Url $_ $prio "monthly"
+    $freq = "monthly"
+    
+    # Set priority based on page importance
+    switch ($_.Name) {
+        "index.html" { $prio = "1.0"; $freq = "weekly" }
+        "services.html" { $prio = "0.9" }
+        "booking.html" { $prio = "0.9" }
+        "contact.html" { $prio = "0.8" }
+        "articles.html" { $prio = "0.8"; $freq = "weekly" }
+        "resources.html" { $prio = "0.7"; $freq = "weekly" }
+    }
+    
+    $lastMod = $_.LastWriteTime.ToString("yyyy-MM-dd")
+    Add-UrlEntry -relPath $_.Name -lastMod $lastMod -priority $prio -freq $freq
 }
 
-# 2. Articles
+# 2. Scan Articles Directory
 if (Test-Path "articles") {
     Get-ChildItem -Path "articles" -Filter "*.html" | ForEach-Object {
-        Add-Url $_ "0.8" "monthly"
+        if ($_.Name -eq "template.html") { return }
+        
+        $relPath = "articles/" + $_.Name
+        $lastMod = $_.LastWriteTime.ToString("yyyy-MM-dd")
+        Add-UrlEntry -relPath $relPath -lastMod $lastMod -priority "0.7" -freq "monthly"
     }
 }
 
-# 3. Tools
+# 3. Scan Tools Directory
 if (Test-Path "tools") {
     Get-ChildItem -Path "tools" -Filter "*.html" | ForEach-Object {
-        Add-Url $_ "0.8" "monthly"
+        $relPath = "tools/" + $_.Name
+        $lastMod = $_.LastWriteTime.ToString("yyyy-MM-dd")
+        Add-UrlEntry -relPath $relPath -lastMod $lastMod -priority "0.6" -freq "monthly"
     }
 }
 
-# Footer
-$xmlContent += @"
+# Close XML
+$script:xmlLines += "</urlset>"
 
-</urlset>
-"@
+# Write to file
+$script:xmlLines -join "`n" | Out-File -Encoding UTF8 -FilePath $sitemapPath
 
-# Write File
-$xmlContent | Out-File -Encoding UTF8 $sitemapPath
 Write-Host "Sitemap updated successfully! ($sitemapPath)"
+Write-Host "Total URLs: $(($script:xmlLines | Where-Object { $_ -match '<url>' }).Count)"
