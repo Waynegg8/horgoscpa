@@ -1,63 +1,28 @@
 name: Content Automation
 
 on:
-  # 當 Markdown 內容變更時觸發
   push:
     paths:
-      - 'content/**/*.md'
-      - 'scripts/content_pipeline.py'
-      - 'templates/*.html'
-  
-  # 允許手動觸發
+      - 'articles/*.html'
+      - 'assets/files/**'
+      - 'tools/*.html'
   workflow_dispatch:
 
 jobs:
-  generate-content:
+  build-index:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      
+      - name: Rebuild Content Indexes
+        shell: pwsh
+        run: ./generate_index.ps1
+        
+      - name: Commit Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      
-      - name: Install dependencies
-        run: |
-          echo "腳本只使用 Python 標準庫，無需安裝額外依賴"
-      
-      - name: Run content pipeline
-        run: |
-          echo "執行內容產線..."
-          python scripts/content_pipeline.py
-      
-      - name: Update sitemap
-        run: |
-          echo "更新站點地圖..."
-          echo "✓ Sitemap 將在下次部署時自動更新"
-      
-      - name: Commit and push changes
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "GitHub Actions"
-          
-          git add assets/data/posts.json
-          git add assets/data/resources.json
-          git add blog/*.html
-          git add sitemap.xml
-          
-          # 如果有變更才 commit
-          if git diff --staged --quiet; then
-            echo "無變更需要提交"
-          else
-            git commit -m "chore: auto-generate content from Markdown"
-            git push
-          fi
-
-
+          commit_message: "chore: auto-update articles.json and resources.json"
+          file_pattern: "assets/data/*.json"
