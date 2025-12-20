@@ -360,20 +360,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 resources.forEach(res => {
-                    const card = document.createElement('div');
+                    // Change: Create <a> tag instead of <div>
+                    const card = document.createElement('a');
                     card.className = 'book-card';
                     card.dataset.category = res.category ? res.category.toLowerCase() : 'all';
 
+                    const linkUrl = pathPrefix + res.link;
+                    card.href = linkUrl;
+
+                    // Handle Download Attribute for files
+                    if (res.type !== 'tool') {
+                        card.setAttribute('download', '');
+                        card.target = '_blank';
+                    }
+
                     const isTool = res.type === 'tool';
                     const btnText = isTool ? '前往使用 &rarr;' : '點擊下載 &darr;';
-                    const linkUrl = pathPrefix + res.link;
+
+                    // Use logo as generic resource icon/cover
+                    const imageUrl = pathPrefix + 'assets/images/logo-white.png';
 
                     card.innerHTML = `
-                         <div class="book-info" style="padding: 30px;">
+                         <div class="book-cover" style="background-image: url('${imageUrl}'); background-size: 50% auto; background-repeat: no-repeat; background-color: #2c2c2c;"></div>
+                         <div class="book-info">
                             <span class="book-category">${res.category || 'Resource'}</span>
                             <h3 class="book-title" style="margin-top:10px;">${res.title}</h3>
                             <p class="book-desc">${res.description || ''}</p>
-                            <a href="${linkUrl}" class="btn-text" style="color: ${isTool ? '#b48e55' : '#666'};" ${isTool ? '' : 'download'}>${btnText}</a>
+                            <span class="card-cta" style="color: ${isTool ? 'var(--color-brand)' : 'inherit'}">${btnText}</span>
                         </div>
                     `;
                     resourceGrid.appendChild(card);
