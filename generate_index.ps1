@@ -40,9 +40,6 @@ if (Test-Path $articlesDir) {
         }
     }
 }
-# Custom manual override would go here if needed
-}
-}
 # Use InputObject to force Array format even with single item
 ConvertTo-Json -InputObject $newArticles -Depth 3 | Out-File -Encoding UTF8 $articlesPath
 
