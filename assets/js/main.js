@@ -361,13 +361,59 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // --- Dynamic Resources List (Main Page) ---
+    // --- Dynamic Resources List (Main Page & Resources Page) ---
     const resourceGrid = document.getElementById('resource-grid');
     if (resourceGrid) {
         fetch('/assets/data/resources.json')
             .then(response => response.json())
             .then(resources => {
                 resourceGrid.innerHTML = '';
+
+                // --- Dynamic Category Generation (Resources) ---
+                const filterGroup = document.querySelector('.filter-group');
+                // Only run this if we are on resources page (resource-grid exists) AND filterGroup exists
+                // Note: If both grids existed on one page, we'd have a conflict. But assuming separate pages.
+                if (filterGroup && resources.length > 0) {
+                    // 1. Extract unique categories
+                    const categories = ['All', ...new Set(resources.map(item => item.category || 'Tool'))];
+
+                    // 2. Clear hardcoded buttons
+                    filterGroup.innerHTML = '';
+
+                    // 3. Generate Buttons
+                    categories.forEach(cat => {
+                        const btn = document.createElement('button');
+                        btn.className = 'filter-btn';
+                        if (cat === 'All') btn.classList.add('active');
+                        btn.dataset.category = cat.toLowerCase();
+
+                        // Map specific English categories to Chinese for display
+                        const labelMap = {
+                            'all': '全部',
+                            'tool': '工具',
+                            'download': '下載',
+                            'tax': '稅務',
+                            'law': '法規'
+                        };
+                        // Use map or fallback to original text (Capitalized)
+                        btn.textContent = labelMap[cat.toLowerCase()] || cat;
+
+                        // Inline Styles
+                        btn.style.cssText = 'padding: 6px 16px; background: transparent; border: 1px solid transparent; color: var(--text-muted); cursor: pointer; font-family: var(--font-sans); font-size: 0.9rem; transition: all 0.3s ease;';
+
+                        filterGroup.appendChild(btn);
+
+                        // 4. Attach Click Event
+                        btn.addEventListener('click', () => {
+                            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+
+                            // Trigger Filter Logic
+                            const searchInput = document.getElementById('resourceSearch');
+                            if (searchInput) searchInput.dispatchEvent(new Event('input'));
+                        });
+                    });
+                }
 
                 if (resources.length === 0) {
                     resourceGrid.innerHTML = '<p class="text-muted" style="text-align:center;">尚無資源</p>';
