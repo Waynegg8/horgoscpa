@@ -11,7 +11,8 @@ if (Test-Path $articlesDir) {
         $content = Get-Content $_.FullName -Raw
         
         # Skip template
-        # Skip nothing, process all HTML files in articles/
+        if ($_.Name -eq "template.html") { continue }
+        # Skip nothing else, process all other HTML files in articles/
 
         # Extract Metadata using Regex
         $title = "Untitled"
