@@ -86,12 +86,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 navLinks.style.padding = '20px';
                 navLinks.style.borderBottom = '1px solid #EEE';
 
+                // Fix visibility: Make nav links dark on white background
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.style.color = '#1a1a1a';
+                });
+
                 nav.classList.add('scrolled'); // Force solid bg
                 mobileToggle.textContent = '關閉';
+                mobileToggle.style.color = '#FFFFFF'; // Keep toggle white on dark nav
             } else {
                 // Close Menu logic
                 navLinks.style.display = ''; // Reset to css default
+
+                // Reset link colors
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.style.color = '';
+                });
+
                 mobileToggle.textContent = '選單';
+                mobileToggle.style.color = ''; // Reset toggle color
                 handleScroll(); // Reset scroll state
             }
         });
