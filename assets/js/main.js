@@ -247,12 +247,14 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(articles => {
                 relatedList.innerHTML = '';
 
-                // 1. Identify current page (ignore leading path parts)
-                const currentPath = window.location.pathname;
+                // 1. Identify current page normalized (remove extension and leading/trailing slashes)
+                const normalize = (path) => path.split('/').pop().replace('.html', '').toLowerCase();
+                const currentSlug = normalize(window.location.pathname);
 
                 // 2. Filter out current article
                 const availableArticles = articles.filter(article => {
-                    return !currentPath.includes(article.link);
+                    const articleSlug = normalize(article.link);
+                    return currentSlug !== articleSlug;
                 });
 
                 // 3. Take first 3
