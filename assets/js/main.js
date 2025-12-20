@@ -5,13 +5,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Dynamic Navigation & Footer Injection ---
     // This ensures that adding a new page only requires updating this list.
 
+    // Determine base path for subdirectories (e.g., /articles/)
+    // This allows the script to work from root or subfolders without absolute path dependency.
+    const isSubfolder = window.location.pathname.includes('/articles/');
+    const pathPrefix = isSubfolder ? '../' : '';
+
     const navItems = [
-        { label: '專業服務', link: 'services.html' },
-        { label: '專業團隊', link: 'team.html' },
-        { label: '文章專區', link: 'articles.html' },
-        { label: '資源專區', link: 'resources.html' },
-        { label: '常見問題', link: 'faq.html' },
-        { label: '聯絡我們', link: 'contact.html' }
+        { label: '專業服務', link: pathPrefix + 'services.html' },
+        { label: '專業團隊', link: pathPrefix + 'team.html' },
+        { label: '文章專區', link: pathPrefix + 'articles.html' },
+        { label: '資源專區', link: pathPrefix + 'resources.html' },
+        { label: '常見問題', link: pathPrefix + 'faq.html' },
+        { label: '聯絡我們', link: pathPrefix + 'contact.html' }
     ];
 
     const currentPath = window.location.pathname.split('/').pop() || 'index.html';
@@ -241,5 +246,60 @@ document.addEventListener('DOMContentLoaded', function () {
             behavior: 'smooth'
         });
     });
+
+    // --- Dynamic Related Articles ---
+    // --- Dynamic Related Articles (JSON Source) ---
+    const relatedList = document.getElementById('related-articles-list');
+    if (relatedList) {
+        fetch('assets/data/articles.json')
+            .then(response => response.json())
+            .then(articlesDB => {
+                // 1. Filter out current page
+                const currentFilename = window.location.pathname.split('/').pop();
+                const availableArticles = articlesDB.filter(article => article.link !== currentFilename);
+
+                // 2. Randomize
+                for (let i = availableArticles.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [availableArticles[i], availableArticles[j]] = [availableArticles[j], availableArticles[i]];
+                }
+
+                // 3. Select top 3
+                const selectedArticles = availableArticles.slice(0, 3);
+
+                // 4. Render
+                if (selectedArticles.length > 0) {
+                    selectedArticles.forEach(article => {
+                        const li = document.createElement('li');
+                        li.style.marginBottom = '15px';
+                        li.style.paddingBottom = '15px';
+                        li.style.borderBottom = '1px solid #eee';
+
+                        const a = document.createElement('a');
+                        a.href = article.link;
+                        a.style.textDecoration = 'none';
+                        a.style.color = '#1a1a1a';
+                        a.style.fontFamily = 'var(--font-serif)';
+                        a.style.fontSize = '1.1rem';
+                        a.style.transition = 'color 0.3s';
+                        a.innerText = article.title;
+
+                        a.onmouseover = () => a.style.color = '#b48e55';
+                        a.onmouseout = () => a.style.color = '#1a1a1a';
+
+                        li.appendChild(a);
+                        relatedList.appendChild(li);
+                    });
+                } else {
+                    relatedList.innerHTML = '<li style="color:#999; font-size:0.9rem;">尚無更多推薦文章</li>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading articles:', error);
+                // Fallback or Empty
+            });
+    }
+
+
 
 });
