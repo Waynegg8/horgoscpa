@@ -317,22 +317,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 articles.forEach(article => {
-                    const card = document.createElement('div');
+                    // Change: Create <a> tag instead of <div>
+                    const card = document.createElement('a');
                     card.className = 'book-card';
                     card.dataset.category = article.category ? article.category.toLowerCase() : 'all';
 
-                    // Determine Image (Fallback logic)
-                    const bgImage = article.image || 'assets/images/hero.jpg';
                     const linkUrl = pathPrefix + article.link;
+                    card.href = linkUrl;
+
+                    const bgImage = article.image || 'assets/images/hero.jpg';
                     const imageUrl = pathPrefix + bgImage;
 
                     card.innerHTML = `
-                        <div class="book-cover" style="background-image: url('${imageUrl}'); height: 200px; background-size: cover; background-position: center;"></div>
+                        <div class="book-cover" style="background-image: url('${imageUrl}');"></div>
                         <div class="book-info">
-                            <span class="book-category">${article.category || 'Article'}</span>
+                            <span class="book-category">${article.category || 'Insight'}</span>
                             <h3 class="book-title">${article.title}</h3>
                             <p class="book-desc">${article.description || ''}</p>
-                            <a href="${linkUrl}" class="btn-text">閱讀更多 &rarr;</a>
+                            <span class="card-cta">閱讀更多</span>
                         </div>
                     `;
                     articlesGrid.appendChild(card);
