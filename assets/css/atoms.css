@@ -33,11 +33,9 @@
 .btn-solid-gold {
     display: inline-block;
     /* Ensure block model/padding works */
-    background-color: #000000;
-    /* Deepest Black */
-    color: #B48E55 !important;
-    /* Brand Gold - Force verify */
-    border: 1px solid #B48E55;
+    background-color: var(--bg-inverse);
+    color: var(--color-brand) !important;
+    border: 1px solid var(--color-brand);
     padding: 14px 40px;
     font-family: var(--font-serif);
     /* Unified Branding */
@@ -55,9 +53,9 @@
 }
 
 .btn-solid-gold:hover {
-    background-color: #B48E55;
-    color: #000000 !important;
-    border-color: #B48E55;
+    background-color: var(--color-brand);
+    color: var(--bg-inverse) !important;
+    border-color: var(--color-brand);
     text-decoration: none !important;
 }
 
@@ -117,8 +115,8 @@ select.input-line {
 }
 
 /* FAQ */
-.faq-item { border-bottom: 1px solid #eee; margin-bottom: 15px; padding-bottom: 15px; }
-.faq-question { font-size: 1.1rem; color: #1a1a1a; margin-bottom: 10px; cursor: pointer; font-weight: 500; }
+.faq-item { border-bottom: 1px solid var(--border-line); margin-bottom: 15px; padding-bottom: 15px; }
+.faq-question { font-size: 1.1rem; color: var(--text-primary); margin-bottom: 10px; cursor: pointer; font-weight: 500; }
 .faq-question.active { color: var(--color-brand); }
 .faq-answer { font-size: 0.95rem; color: #666; display: none; line-height: 1.6; }
 .faq-answer.open { display: block; }
@@ -133,7 +131,7 @@ select.input-line {
 }
 .related-article-title {
     font-size: 0.95rem;
-    color: #1a1a1a;
+    color: var(--text-primary);
     margin: 0;
     line-height: 1.4;
     transition: color 0.3s;
@@ -187,9 +185,9 @@ select.input-line {
     right: 40px;
     width: 50px;
     height: 50px;
-    background-color: #000;
-    color: #B48E55;
-    border: 1px solid #B48E55;
+    background-color: var(--bg-inverse);
+    color: var(--color-brand);
+    border: 1px solid var(--color-brand);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -206,8 +204,8 @@ select.input-line {
 }
 
 .btn-back-to-top:hover {
-    background-color: #B48E55;
-    color: #000;
+    background-color: var(--color-brand);
+    color: var(--bg-inverse);
 }
 
 .btn-back-to-top svg {

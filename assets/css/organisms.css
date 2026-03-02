@@ -31,7 +31,7 @@
     font-family: var(--font-serif);
     /* Unify with Logo & Headings for Luxury feel */
     font-weight: 500;
-    color: #FFFFFF;
+    color: var(--bg-surface);
     font-size: 1.05rem;
     /* Slightly larger for Serif readability */
     letter-spacing: 0.05em;
@@ -57,7 +57,7 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-size: 0.9rem;
-    color: #FFFFFF;
+    color: var(--bg-surface);
 }
 
 /* --- Hero Section --- */
@@ -278,8 +278,8 @@
 .book-card {
     display: flex;
     flex-direction: column;
-    background: #fff;
-    border: 1px solid #eee;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-line);
     /* Clean border */
     text-decoration: none;
     /* Remove underline from link */
@@ -303,7 +303,7 @@
     aspect-ratio: 16/9;
     background-size: cover;
     background-position: center;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-line);
     filter: grayscale(20%);
     /* Artistic touch */
     transition: filter 0.3s ease;
@@ -492,7 +492,7 @@
 }
 
 .invitation-form {
-    background: #FFF;
+    background: var(--bg-surface);
     padding: 60px 80px;
     /* Generous internal padding */
     width: 100%;
@@ -621,13 +621,13 @@
         top: 100%;
         left: 0;
         width: 100%;
-        background-color: #FFFFFF;
+        background-color: var(--bg-surface);
         padding: 20px;
-        border-bottom: 1px solid #EEEEEE;
+        border-bottom: 1px solid var(--border-line);
     }
 
     .nav-links.nav-open a {
-        color: #1a1a1a;
+        color: var(--bg-inverse);
     }
 }
 
@@ -702,63 +702,6 @@
         padding: 40px 20px;
     }
 
-    /* --- Radio Cards (Booking Form) --- */
-    .radio-options {
-        display: flex;
-        flex-direction: row;
-        /* Force row */
-        flex-wrap: nowrap;
-        /* Prevent wrapping if possible, or wrap normally */
-        gap: 15px;
-        margin-top: 15px;
-    }
-
-    /* Mobile override for small screens */
-    @media (max-width: 600px) {
-        .radio-options {
-            flex-wrap: wrap;
-        }
-    }
-
-    .radio-card {
-        position: relative;
-        flex: 1;
-        /* Distribute space evenly */
-        min-width: 0;
-        /* Allow shrinking */
-    }
-
-    .radio-card input[type="radio"] {
-        position: absolute;
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-
-    .radio-card label {
-        display: block;
-        padding: 15px;
-        background-color: var(--bg-surface);
-        border: 1px solid var(--border-line);
-        cursor: pointer;
-        text-align: center;
-        font-family: var(--font-sans);
-        font-weight: 500;
-        color: var(--text-body);
-        transition: all 0.3s ease;
-    }
-
-    .radio-card:hover label {
-        border-color: var(--color-brand);
-        color: var(--color-brand);
-    }
-
-    .radio-card input[type="radio"]:checked+label {
-        background-color: var(--color-brand);
-        border-color: var(--color-brand);
-        color: #FFF;
-        box-shadow: 0 4px 10px rgba(180, 142, 85, 0.3);
-    }
 }
 
 /* --- Hero Split Layout (High Conversion) --- */
@@ -845,5 +788,206 @@
     .hero-split .visual-col {
         width: 100%;
         height: 40vh;
+    }
+}
+
+/* --- Radio Cards (Booking Form) --- */
+.radio-options {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 15px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.radio-card {
+    position: relative;
+    flex: 1 1 0px;
+    min-width: 0;
+    display: block;
+}
+
+.radio-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    z-index: -1;
+}
+
+.radio-card label {
+    display: block;
+    padding: 15px;
+    width: 100%;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-line);
+    cursor: pointer;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--text-body);
+    transition: all 0.3s ease;
+    margin: 0;
+}
+
+.radio-card:hover label {
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+}
+
+.radio-card input[type="radio"]:checked + label {
+    background-color: var(--color-brand);
+    border-color: var(--color-brand);
+    color: var(--bg-surface);
+    box-shadow: 0 4px 10px rgba(180, 142, 85, 0.3);
+}
+
+@media (max-width: 600px) {
+    .radio-options { flex-wrap: wrap; }
+    .radio-card { flex: 1 1 45%; min-width: 140px; }
+}
+
+/* --- Team Page --- */
+.bio-text {
+    font-size: 0.95rem;
+    color: var(--text-body);
+    line-height: 1.8;
+    margin-bottom: 20px;
+    text-align: justify;
+}
+
+.credential-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+    border-top: 1px solid var(--border-line);
+    padding-top: 15px;
+}
+
+.credential-list li {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: baseline;
+}
+
+.credential-list li::before {
+    content: '•';
+    color: var(--color-brand);
+    margin-right: 10px;
+}
+
+.skill-tag {
+    display: inline-block;
+    background: var(--color-brand-light);
+    color: var(--color-brand-dark);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+/* --- Resource Card Cover --- */
+.resource-card-cover {
+    background: linear-gradient(135deg, var(--bg-inverse) 0%, #2c2c2c 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.resource-card-initial {
+    font-family: var(--font-serif);
+    font-size: 3rem;
+    color: rgba(180, 142, 85, 0.2);
+    font-weight: 700;
+}
+
+.resource-card-bar {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 40px;
+    height: 1px;
+    background: rgba(180, 142, 85, 0.5);
+}
+
+.card-cta--brand {
+    color: var(--color-brand);
+}
+
+/* --- Article Layout --- */
+.article-hero {
+    padding: 100px 0;
+    background-color: var(--bg-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.article-container {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 60px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 80px 20px;
+}
+
+.article-content {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    line-height: 1.9;
+    color: var(--text-primary);
+}
+
+.article-sidebar {
+    position: sticky;
+    top: 120px;
+    align-self: start;
+    padding-left: 40px;
+    border-left: 1px solid var(--border-line);
+}
+
+.drop-cap::first-letter {
+    float: left;
+    font-size: 4.5rem;
+    line-height: 0.85;
+    margin-right: 15px;
+    margin-top: 5px;
+    color: var(--color-brand);
+    font-family: var(--font-serif);
+}
+
+.pull-quote {
+    border-top: 2px solid var(--color-brand);
+    border-bottom: 2px solid var(--color-brand);
+    padding: 30px 0;
+    margin: 50px 0;
+    font-size: 1.6rem;
+    font-style: italic;
+    text-align: center;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+    .article-container {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .article-sidebar {
+        border-left: none;
+        border-top: 1px solid var(--border-line);
+        padding-left: 0;
+        padding-top: 40px;
+        position: static;
     }
 }

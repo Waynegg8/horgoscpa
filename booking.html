@@ -4,6 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <title>預約諮詢 | 霍爾果斯會計師事務所</title>
   <meta name="description" content="立即預約諮詢。填寫表單，我們的合夥人會計師將盡快與您聯繫，提供專屬的財稅建議。">
   <meta property="og:title" content="預約諮詢 | 霍爾果斯會計師事務所">
@@ -17,75 +19,6 @@
   <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
   <link rel="stylesheet" href="/assets/css/common.css">
   <link rel="stylesheet" href="/assets/css/organisms.css">
-  <style>
-    /* Force Inline CSS to fix Radio Button Stacking */
-    .radio-options {
-      display: -webkit-flex !important;
-      display: flex !important;
-      flex-direction: row !important;
-      flex-wrap: nowrap !important;
-      gap: 15px !important;
-      margin-top: 15px !important;
-      width: 100% !important;
-    }
-
-    .radio-card {
-      position: relative !important;
-      flex: 1 1 0px !important;
-      /* Flex-grow, Flex-shrink, Flex-basis 0 */
-      min-width: 0 !important;
-      display: block !important;
-    }
-
-    .radio-card input[type="radio"] {
-      position: absolute !important;
-      opacity: 0 !important;
-      width: 0 !important;
-      height: 0 !important;
-      z-index: -1 !important;
-    }
-
-    .radio-card label {
-      display: block !important;
-      padding: 15px !important;
-      background-color: var(--bg-surface) !important;
-      border: 1px solid var(--border-line) !important;
-      cursor: pointer !important;
-      text-align: center !important;
-      font-family: var(--font-sans) !important;
-      font-weight: 500 !important;
-      color: var(--text-body) !important;
-      transition: all 0.3s ease !important;
-      margin: 0 !important;
-      width: 100% !important;
-    }
-
-    .radio-card:hover label {
-      border-color: var(--color-brand) !important;
-      color: var(--color-brand) !important;
-    }
-
-    /* Checked state style */
-    .radio-card input[type="radio"]:checked+label {
-      background-color: var(--color-brand) !important;
-      border-color: var(--color-brand) !important;
-      color: #FFF !important;
-      box-shadow: 0 4px 10px rgba(180, 142, 85, 0.3) !important;
-    }
-
-    /* Mobile override */
-    @media (max-width: 768px) {
-      .radio-options {
-        flex-wrap: wrap !important;
-      }
-
-      .radio-card {
-        flex: 1 1 45% !important;
-        /* 2 items per row */
-        min-width: 140px !important;
-      }
-    }
-  </style>
   <link rel="icon" href="/favicon.ico">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>

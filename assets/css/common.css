@@ -16,6 +16,8 @@
   /* Brand Colors */
   --color-brand: #B48E55;
   /* Bronze Gold */
+  --color-brand-dark: #8A6D3B;
+  /* Darker Gold (for skill tags, accents) */
   --color-brand-light: rgba(180, 142, 85, 0.1);
 
   /* Text Colors */
