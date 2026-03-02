@@ -1,0 +1,104 @@
+/**
+ * Build Script: Inject Nav/Footer HTML into placeholder divs
+ * 
+ * Runs at build time (GitHub Actions) so there's ZERO runtime CLS cost.
+ * Source files keep <div id="nav-placeholder"></div> for local dev.
+ * Single source of truth for Nav/Footer HTML is THIS file.
+ * 
+ * Usage: node build.js
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const NAV_HTML = `<nav class="site-nav scrolled">
+  <a href="/index.html" class="logo">
+    <div class="logo-container">
+      <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 40px; width: auto;" width="124" height="56">
+      <span class="logo-text-en">HORGOS CPA FIRM</span>
+    </div>
+  </a>
+  <ul id="site-nav-links" class="nav-links">
+    <li><a href="/services.html">專業服務</a></li>
+    <li><a href="/team.html">專業團隊</a></li>
+    <li><a href="/articles.html">文章專區</a></li>
+    <li><a href="/resources.html">資源專區</a></li>
+    <li><a href="/faq.html">常見問題</a></li>
+    <li><a href="/contact.html">聯絡我們</a></li>
+  </ul>
+  <a href="/booking.html" class="btn-solid-gold">預約諮詢</a>
+  <button class="mobile-toggle" aria-expanded="false" aria-controls="site-nav-links">選單</button>
+</nav>`;
+
+const FOOTER_HTML = `<footer class="footer-dark">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <div class="logo-container" style="margin-bottom: 20px;">
+        <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 48px; width: auto;" width="124" height="56">
+        <span class="logo-text-en">HORGOS CPA FIRM</span>
+      </div>
+      <p>每一筆數字背後，<br>都有一個值得被守護的夢想。</p>
+    </div>
+    <div class="footer-links">
+      <h4>網站地圖</h4>
+      <a href="/services.html">專業服務</a>
+      <a href="/team.html">專業團隊</a>
+      <a href="/articles.html">文章專區</a>
+      <a href="/resources.html">資源專區</a>
+      <a href="/faq.html">常見問題</a>
+    </div>
+    <div class="footer-links">
+      <h4>聯絡資訊</h4>
+      <p>台中市西區建國路21號3樓之1</p>
+      <p><a href="tel:0422205606">04-2220-5606</a></p>
+      <p>週一至週五 8:30-17:30</p>
+      <p><a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a></p>
+    </div>
+    <div class="footer-links">
+      <h4>社群媒體</h4>
+      <a href="https://line.me/R/ti/p/@208ihted" target="_blank" rel="noopener noreferrer">Line 官方帳號</a>
+    </div>
+  </div>
+</footer>`;
+
+// Recursively find all HTML files
+function findHtmlFiles(dir, files = []) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory() && entry.name !== '.git' && entry.name !== 'node_modules') {
+            findHtmlFiles(full, files);
+        } else if (entry.isFile() && entry.name.endsWith('.html')) {
+            files.push(full);
+        }
+    }
+    return files;
+}
+
+console.log('=== Build: Injecting Nav/Footer into HTML ===');
+
+const root = path.resolve(__dirname);
+const htmlFiles = findHtmlFiles(root);
+let count = 0;
+
+for (const file of htmlFiles) {
+    let content = fs.readFileSync(file, 'utf-8');
+    let changed = false;
+
+    if (content.includes('<div id="nav-placeholder"></div>')) {
+        content = content.replace('<div id="nav-placeholder"></div>', NAV_HTML);
+        changed = true;
+    }
+
+    if (content.includes('<div id="footer-placeholder"></div>')) {
+        content = content.replace('<div id="footer-placeholder"></div>', FOOTER_HTML);
+        changed = true;
+    }
+
+    if (changed) {
+        fs.writeFileSync(file, content, 'utf-8');
+        count++;
+        console.log(`  Injected: ${path.relative(root, file)}`);
+    }
+}
+
+console.log(`=== Done: ${count} files processed ===`);
