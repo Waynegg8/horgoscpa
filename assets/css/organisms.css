@@ -181,8 +181,9 @@
 
 .list-item .arrow {
     opacity: 0;
-    transition: all 0.3s ease;
     color: var(--color-brand);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    will-change: opacity, transform;
 }
 
 .list-item:hover .arrow {

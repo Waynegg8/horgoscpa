@@ -6,7 +6,7 @@ const NAV_HTML = `
 <nav class="site-nav scrolled">
   <a href="/index.html" class="logo">
     <div class="logo-container">
-      <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 40px; width: auto;">
+      <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 40px; width: auto;" width="124" height="56">
       <span class="logo-text-en">HORGOS CPA FIRM</span>
     </div>
   </a>
@@ -27,7 +27,7 @@ const FOOTER_HTML = `
   <div class="container footer-grid">
     <div class="footer-brand">
       <div class="logo-container" style="margin-bottom: 20px;">
-        <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 48px; width: auto;">
+        <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 48px; width: auto;" width="124" height="56">
         <span class="logo-text-en">HORGOS CPA FIRM</span>
       </div>
       <p>每一筆數字背後，<br>都有一個值得被守護的夢想。</p>
