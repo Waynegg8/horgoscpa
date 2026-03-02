@@ -23,7 +23,10 @@ export function initFAQ() {
     if (!faqContainer) return;
 
     fetch('/assets/data/faq.json')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error('network');
+            return response.json();
+        })
         .then(data => {
             faqContainer.innerHTML = '';
 
@@ -67,6 +70,10 @@ export function initFAQ() {
         })
         .catch(err => {
             console.error('Failed to load FAQ:', err);
-            faqContainer.innerHTML = '<p class="text-error" style="text-align:center;">無法載入常見問題。</p>';
+            const msg = document.createElement('p');
+            msg.className = 'text-muted';
+            msg.style.textAlign = 'center';
+            msg.textContent = '目前無法載入常見問題，請稍後再試。';
+            faqContainer.appendChild(msg);
         });
 }

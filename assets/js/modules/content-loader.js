@@ -136,7 +136,10 @@ function loadContentGrid({ gridId, jsonUrl, buildCard, defaultEmpty, categoryExt
     if (!grid) return;
 
     fetch(jsonUrl)
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) throw new Error('network');
+            return r.json();
+        })
         .then(items => {
             grid.innerHTML = '';
 
@@ -160,9 +163,9 @@ function loadContentGrid({ gridId, jsonUrl, buildCard, defaultEmpty, categoryExt
         .catch(err => {
             console.error(`Failed to load ${jsonUrl}:`, err);
             const msg = document.createElement('p');
-            msg.className = 'text-error';
+            msg.className = 'text-muted';
             msg.style.textAlign = 'center';
-            msg.textContent = `載入失敗：${err.message}`;
+            msg.textContent = '內容暫時無法載入，請稍後再試。';
             grid.appendChild(msg);
         });
 }
@@ -220,7 +223,10 @@ export function initContentLoader() {
     const relatedList = document.getElementById('related-articles-list');
     if (relatedList) {
         fetch('/assets/data/articles.json')
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) throw new Error('network');
+                return r.json();
+            })
             .then(articles => {
                 relatedList.innerHTML = '';
                 const normalize = p => p.split('/').pop().replace('.html', '').toLowerCase();

@@ -52,17 +52,20 @@
 
           <div class="form-group">
             <label>您的姓名 <span style="color:#d93025">*</span></label>
-            <input type="text" name="name" class="input-line" placeholder="請輸入姓名" required>
+            <input type="text" name="name" class="input-line" placeholder="請輸入姓名"
+              required minlength="2" autocomplete="name">
           </div>
 
           <div class="form-group">
             <label>聯絡電話 <span style="color:#d93025">*</span></label>
-            <input type="tel" name="phone" class="input-line" placeholder="手機或電話號碼" required>
+            <input type="tel" name="phone" class="input-line" placeholder="手機或電話號碼"
+              required pattern="[0-9\+\-\(\)\s]{7,20}" title="請輸入有效的電話號碼（7–20 碼數字）" autocomplete="tel">
           </div>
 
           <div class="form-group">
             <label>電子郵件 <span style="color:#d93025">*</span></label>
-            <input type="email" name="email" class="input-line" placeholder="請輸入電子郵件" required>
+            <input type="email" name="email" class="input-line" placeholder="請輸入電子郵件"
+              required autocomplete="email">
           </div>
 
           <div class="form-group">
@@ -93,7 +96,8 @@
 
           <div class="form-group">
             <label>備註說明</label>
-            <input type="text" name="message" class="input-line" placeholder="請簡述您的需求...">
+            <input type="text" name="message" class="input-line" placeholder="請簡述您的需求..."
+              minlength="5">
           </div>
 
           <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 30px;">
