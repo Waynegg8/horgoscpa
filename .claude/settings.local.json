@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(done)",
+      "Bash(python3:*)",
+      "Bash(node:*)",
+      "Bash(rm:*)",
+      "Bash(identify assets/images/*)",
+      "Bash(powershell:*)",
+      "Bash(xargs sed:*)",
+      "Bash(do:*)",
+      "Bash(python:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

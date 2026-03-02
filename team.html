@@ -18,7 +18,9 @@
   <meta name="twitter:description" content="認識霍爾果斯的專業團隊。由具備四大會計師事務所經驗的會計師與財務顧問組成，更是您值得信賴的商業夥伴。">
   <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
   <link rel="stylesheet" href="/assets/css/common.css">
-  <link rel="stylesheet" href="/assets/css/organisms.css">
+  <link rel="stylesheet" href="/assets/css/organisms.css" media="print" onload="this.media='all'">
+
+  <noscript><link rel="stylesheet" href="/assets/css/organisms.css"></noscript>
   <link rel="icon" href="/favicon.ico">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -28,6 +30,13 @@
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
   </script>
+  <style>
+    .page-header{padding:180px 0 80px;text-align:center;background-color:var(--bg-base)}
+    .page-header h1{font-size:2.5rem;font-weight:500;margin-top:10px;
+      letter-spacing:.05em;color:var(--text-primary)}
+    .page-header p{max-width:600px;margin:20px auto;
+      color:var(--text-body);font-family:var(--font-sans)}
+  </style>
 </head>
 
 <body>
@@ -46,7 +55,13 @@
     <!-- Partner 1: Liu -->
     <section class="service-block">
       <div class="visual-col">
-        <img src="/assets/images/accountant-liu.jpg" alt="劉韋辰 會計師" width="2925" height="3762" style="width:100%; border-radius: 4px;">
+        <picture>
+          <source srcset="/assets/images/accountant-liu-900w.webp 900w, /assets/images/accountant-liu.webp 2925w"
+            sizes="(max-width: 900px) 100vw, 50vw" type="image/webp">
+          <source srcset="/assets/images/accountant-liu-900w.jpg 900w, /assets/images/accountant-liu.jpg 2925w"
+            sizes="(max-width: 900px) 100vw, 50vw">
+          <img src="/assets/images/accountant-liu.jpg" alt="劉韋辰 會計師" width="2925" height="3762" style="width:100%; border-radius: 4px;">
+        </picture>
       </div>
       <div class="text-col">
         <span class="eyebrow text-gold">主持會計師 (CPA)</span>
@@ -83,7 +98,13 @@
     <!-- Partner 2: Tian -->
     <section class="service-block reverse">
       <div class="visual-col">
-        <img src="/assets/images/accountant-tian.jpg" alt="田稚萱 協理" width="1805" height="2322" style="width:100%; border-radius: 4px;">
+        <picture>
+          <source srcset="/assets/images/accountant-tian-900w.webp 900w, /assets/images/accountant-tian.webp 1805w"
+            sizes="(max-width: 900px) 100vw, 50vw" type="image/webp">
+          <source srcset="/assets/images/accountant-tian-900w.jpg 900w, /assets/images/accountant-tian.jpg 1805w"
+            sizes="(max-width: 900px) 100vw, 50vw">
+          <img src="/assets/images/accountant-tian.jpg" alt="田稚萱 協理" width="1805" height="2322" style="width:100%; border-radius: 4px;">
+        </picture>
       </div>
       <div class="text-col">
         <span class="eyebrow text-gold">企業財務顧問</span>

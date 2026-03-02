@@ -18,7 +18,9 @@
     <meta name="twitter:description" content="提供一站式公司設立服務，從名稱預查、資本簽證到稅籍登記。讓您的創業之路擁有最優雅的開端。">
     <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
     <link rel="stylesheet" href="/assets/css/common.css">
-    <link rel="stylesheet" href="/assets/css/organisms.css">
+    <link rel="stylesheet" href="/assets/css/organisms.css" media="print" onload="this.media='all'">
+
+    <noscript><link rel="stylesheet" href="/assets/css/organisms.css"></noscript>
     <link rel="icon" href="/favicon.ico">
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -28,6 +30,13 @@
         gtag('js', new Date());
         gtag('config', 'G-RKMCS9WVS5');
     </script>
+  <style>
+    .page-header{padding:180px 0 80px;text-align:center;background-color:var(--bg-base)}
+    .page-header h1{font-size:2.5rem;font-weight:500;margin-top:10px;
+      letter-spacing:.05em;color:var(--text-primary)}
+    .page-header p{max-width:600px;margin:20px auto;
+      color:var(--text-body);font-family:var(--font-sans)}
+  </style>
 </head>
 
 <body>
@@ -63,9 +72,15 @@
                 </div>
             </div>
             <div class="visual-col">
-                <img src="/assets/images/business-registration.jpg" alt="公司設立"
+                <picture>
+                  <source srcset="/assets/images/business-registration-900w.webp 900w, /assets/images/business-registration.webp 3648w"
+                    sizes="(max-width: 900px) 100vw, 50vw" type="image/webp">
+                  <source srcset="/assets/images/business-registration-900w.jpg 900w, /assets/images/business-registration.jpg 3648w"
+                    sizes="(max-width: 900px) 100vw, 50vw">
+                  <img src="/assets/images/business-registration.jpg" alt="公司設立"
                     width="3648" height="2736"
                     style="width:100%; border:1px solid var(--border-line); padding:10px;">
+                </picture>
             </div>
         </section>
     </div>

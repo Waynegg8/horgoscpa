@@ -164,6 +164,18 @@ function buildSchema(path) {
 }
 
 export function initComponents() {
+    // Skip link + main-content landmark
+    const skipLink = document.createElement('a');
+    skipLink.href = '#main-content';
+    skipLink.className = 'skip-link';
+    skipLink.textContent = '跳至主要內容';
+    document.body.insertBefore(skipLink, document.body.firstChild);
+
+    const mainLandmark = document.querySelector(
+        'header.page-header, section.hero-split, .booking-container, .article-hero, .article-container, .container'
+    );
+    if (mainLandmark && !mainLandmark.id) mainLandmark.id = 'main-content';
+
     // Inject Nav
     const navPlaceholder = document.getElementById('nav-placeholder');
     if (navPlaceholder) {
@@ -186,6 +198,47 @@ export function initComponents() {
     });
 }
 
+// --- BreadcrumbList builder ---
+const BREADCRUMB_MAP = {
+    '/index.html':                { name: '首頁' },
+    '/services.html':             { name: '專業服務' },
+    '/service-registration.html': { name: '工商登記' },
+    '/service-accounting.html':   { name: '帳務處理' },
+    '/service-tax.html':          { name: '稅務申報' },
+    '/service-audit.html':        { name: '財稅簽證' },
+    '/team.html':                 { name: '專業團隊' },
+    '/articles.html':             { name: '文章專區' },
+    '/resources.html':            { name: '資源專區' },
+    '/faq.html':                  { name: '常見問題' },
+    '/contact.html':              { name: '聯絡我們' },
+    '/booking.html':              { name: '預約諮詢' },
+};
+
+function buildBreadcrumb(path) {
+    const items = [
+        { '@type': 'ListItem', position: 1, name: '首頁', item: BASE_URL + '/' }
+    ];
+
+    if (path === '/index.html' || path === '/') return null;
+
+    let name = BREADCRUMB_MAP[path]?.name;
+    if (!name && path.startsWith('/articles/')) {
+        name = document.title.split('|')[0].trim();
+        items.push({ '@type': 'ListItem', position: 2, name: '文章專區', item: BASE_URL + '/articles.html' });
+        items.push({ '@type': 'ListItem', position: 3, name, item: BASE_URL + path });
+    } else if (name) {
+        items.push({ '@type': 'ListItem', position: 2, name, item: BASE_URL + path });
+    } else {
+        return null;
+    }
+
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: items
+    };
+}
+
 export function initSEO() {
     const path = window.location.pathname.replace(/\/$/, '') || '/index.html';
 
@@ -197,12 +250,30 @@ export function initSEO() {
         document.head.appendChild(canonical);
     }
 
-    // 2. Inject Schema.org JSON-LD (only if not already present in HTML)
+    // 2. Hreflang alternate links
+    [['zh-Hant', BASE_URL + path], ['x-default', BASE_URL + path]].forEach(([lang, href]) => {
+        const link = document.createElement('link');
+        link.rel = 'alternate';
+        link.hreflang = lang;
+        link.href = href;
+        document.head.appendChild(link);
+    });
+
+    // 3. Inject main Schema.org JSON-LD (only if not already present in HTML)
     const schema = buildSchema(path);
     if (schema && !document.querySelector('script[type="application/ld+json"]')) {
         const script = document.createElement('script');
         script.type = 'application/ld+json';
         script.textContent = JSON.stringify(schema, null, 2);
         document.head.appendChild(script);
+    }
+
+    // 4. Inject BreadcrumbList (always separate, even if main schema exists)
+    const breadcrumb = buildBreadcrumb(path);
+    if (breadcrumb) {
+        const bcScript = document.createElement('script');
+        bcScript.type = 'application/ld+json';
+        bcScript.textContent = JSON.stringify(breadcrumb, null, 2);
+        document.head.appendChild(bcScript);
     }
 }

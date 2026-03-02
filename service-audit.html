@@ -18,7 +18,9 @@
     <meta name="twitter:description" content="獨立客觀的財稅簽證服務。財務報表查核、營所稅簽證與協議程序執行，為您的企業信譽背書。">
     <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
     <link rel="stylesheet" href="/assets/css/common.css">
-    <link rel="stylesheet" href="/assets/css/organisms.css">
+    <link rel="stylesheet" href="/assets/css/organisms.css" media="print" onload="this.media='all'">
+
+    <noscript><link rel="stylesheet" href="/assets/css/organisms.css"></noscript>
     <link rel="icon" href="/favicon.ico">
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -28,6 +30,13 @@
         gtag('js', new Date());
         gtag('config', 'G-RKMCS9WVS5');
     </script>
+  <style>
+    .page-header{padding:180px 0 80px;text-align:center;background-color:var(--bg-base)}
+    .page-header h1{font-size:2.5rem;font-weight:500;margin-top:10px;
+      letter-spacing:.05em;color:var(--text-primary)}
+    .page-header p{max-width:600px;margin:20px auto;
+      color:var(--text-body);font-family:var(--font-sans)}
+  </style>
 </head>
 
 <body>
@@ -63,9 +72,15 @@
                 </div>
             </div>
             <div class="visual-col">
-                <img src="/assets/images/tax-audit.jpg" alt="財稅簽證"
+                <picture>
+                  <source srcset="/assets/images/tax-audit-900w.webp 900w, /assets/images/tax-audit.webp 4160w"
+                    sizes="(max-width: 900px) 100vw, 50vw" type="image/webp">
+                  <source srcset="/assets/images/tax-audit-900w.jpg 900w, /assets/images/tax-audit.jpg 4160w"
+                    sizes="(max-width: 900px) 100vw, 50vw">
+                  <img src="/assets/images/tax-audit.jpg" alt="財稅簽證"
                     width="4160" height="6240"
                     style="width:100%; border:1px solid var(--border-line); padding:10px;">
+                </picture>
             </div>
         </section>
     </div>

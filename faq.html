@@ -18,7 +18,9 @@
   <meta name="twitter:description" content="常見問題解答。了解我們的服務模式、收費標準與新創公司常見的財稅疑問。">
   <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
   <link rel="stylesheet" href="/assets/css/common.css">
-  <link rel="stylesheet" href="/assets/css/organisms.css">
+  <link rel="stylesheet" href="/assets/css/organisms.css" media="print" onload="this.media='all'">
+
+  <noscript><link rel="stylesheet" href="/assets/css/organisms.css"></noscript>
   <link rel="icon" href="/favicon.ico">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -28,6 +30,13 @@
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
   </script>
+  <style>
+    .page-header{padding:180px 0 80px;text-align:center;background-color:var(--bg-base)}
+    .page-header h1{font-size:2.5rem;font-weight:500;margin-top:10px;
+      letter-spacing:.05em;color:var(--text-primary)}
+    .page-header p{max-width:600px;margin:20px auto;
+      color:var(--text-body);font-family:var(--font-sans)}
+  </style>
 </head>
 
 <body>

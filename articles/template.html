@@ -22,7 +22,9 @@
     <meta name="category" content="Tax">
     <meta name="cover" content="/assets/images/hero.jpg">
     <link rel="stylesheet" href="/assets/css/common.css">
-    <link rel="stylesheet" href="/assets/css/organisms.css">
+    <link rel="stylesheet" href="/assets/css/organisms.css" media="print" onload="this.media='all'">
+
+    <noscript><link rel="stylesheet" href="/assets/css/organisms.css"></noscript>
     <link rel="stylesheet" href="/assets/css/atoms.css">
     <link rel="icon" href="/favicon.ico">
     <!-- Google Analytics -->
@@ -109,6 +111,13 @@
             }
         }
     </style>
+  <style>
+    .page-header{padding:180px 0 80px;text-align:center;background-color:var(--bg-base)}
+    .page-header h1{font-size:2.5rem;font-weight:500;margin-top:10px;
+      letter-spacing:.05em;color:var(--text-primary)}
+    .page-header p{max-width:600px;margin:20px auto;
+      color:var(--text-body);font-family:var(--font-sans)}
+  </style>
 </head>
 
 <body>
@@ -209,9 +218,12 @@
                     <div
                         style="width: 60px; height: 60px; background: #eee; border-radius: 50%; margin-right: 15px; overflow: hidden;">
                         <!-- Placeholder for Author Img -->
-                        <img src="/assets/images/accountant-liu.jpg" alt="Partner"
+                        <picture>
+                          <source srcset="/assets/images/accountant-liu-900w.webp" type="image/webp">
+                          <img src="/assets/images/accountant-liu.jpg" alt="Partner"
                             width="2925" height="3762"
                             style="width: 100%; height: 100%; object-fit: cover;">
+                        </picture>
                     </div>
                     <div>
                         <h5 style="font-size: 1rem; margin: 0 0 5px 0;">劉韋辰 會計師</h5>
