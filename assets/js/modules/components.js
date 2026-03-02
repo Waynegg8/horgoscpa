@@ -1,4 +1,6 @@
-/* HorgosCPA — Components: NAV / FOOTER injection + active link */
+/* HorgosCPA — Components: NAV / FOOTER injection + active link + SEO */
+
+const BASE_URL = 'https://www.horgoscpa.com';
 
 const NAV_HTML = `
 <nav class="site-nav scrolled">
@@ -47,10 +49,119 @@ const FOOTER_HTML = `
     </div>
     <div class="footer-links">
       <h4>社群媒體</h4>
-      <a href="https://line.me/R/ti/p/@208ihted" target="_blank">Line 官方帳號</a>
+      <a href="https://line.me/R/ti/p/@208ihted" target="_blank" rel="noopener noreferrer">Line 官方帳號</a>
     </div>
   </div>
 </footer>`;
+
+// --- Schema.org data per page path ---
+function buildSchema(path) {
+    const org = {
+        '@type': 'AccountingService',
+        name: '霍爾果斯會計師事務所',
+        alternateName: 'HORGOS CPA FIRM',
+        url: BASE_URL,
+        logo: `${BASE_URL}/assets/images/logo-white.png`,
+        telephone: '+886-4-2220-5606',
+        email: 'contact@horgoscpa.com',
+        address: {
+            '@type': 'PostalAddress',
+            streetAddress: '建國路21號3樓之1',
+            addressLocality: '西區',
+            addressRegion: '台中市',
+            addressCountry: 'TW'
+        },
+        openingHoursSpecification: [{
+            '@type': 'OpeningHoursSpecification',
+            dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+            opens: '08:30',
+            closes: '17:30'
+        }],
+        sameAs: ['https://line.me/R/ti/p/@208ihted']
+    };
+
+    if (path === '/' || path === '/index.html') {
+        return {
+            '@context': 'https://schema.org',
+            ...org,
+            image: `${BASE_URL}/assets/images/hero.jpg`,
+            description: '為講究細節的創業者，策展您的財務版圖。'
+        };
+    }
+
+    if (path === '/contact.html') {
+        return { '@context': 'https://schema.org', ...org };
+    }
+
+    if (path === '/services.html') {
+        return {
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            name: '霍爾果斯會計師事務所 - 專業服務',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: '工商登記', url: `${BASE_URL}/service-registration.html` },
+                { '@type': 'ListItem', position: 2, name: '帳務處理', url: `${BASE_URL}/service-accounting.html` },
+                { '@type': 'ListItem', position: 3, name: '稅務申報', url: `${BASE_URL}/service-tax.html` },
+                { '@type': 'ListItem', position: 4, name: '財稅簽證', url: `${BASE_URL}/service-audit.html` }
+            ]
+        };
+    }
+
+    const serviceMap = {
+        '/service-registration.html': { name: '工商登記', desc: '一站式公司設立服務，從名稱預查、資本簽證到稅籍登記。' },
+        '/service-accounting.html':   { name: '帳務處理', desc: '專業帳務處理與稅務申報，提供清晰財務報表與主動式稅務規劃。' },
+        '/service-tax.html':          { name: '稅務申報', desc: '專業稅務申報與節稅規劃，守護每一分企業利潤。' },
+        '/service-audit.html':        { name: '財稅簽證', desc: '獨立客觀的財稅簽證服務，財務報表查核與營所稅簽證。' }
+    };
+    if (serviceMap[path]) {
+        const s = serviceMap[path];
+        return {
+            '@context': 'https://schema.org',
+            '@type': 'Service',
+            name: s.name,
+            description: s.desc,
+            provider: { '@type': 'AccountingService', name: '霍爾果斯會計師事務所', url: BASE_URL },
+            url: BASE_URL + path
+        };
+    }
+
+    if (path.startsWith('/articles/') && !path.endsWith('/template.html')) {
+        const title = document.title.split('|')[0].trim();
+        const desc = document.querySelector('meta[name="description"]')?.content || '';
+        const image = document.querySelector('meta[property="og:image"]')?.content
+            || `${BASE_URL}/assets/images/hero.jpg`;
+        return {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: title,
+            description: desc,
+            image: image,
+            author: { '@type': 'Organization', name: '霍爾果斯會計師事務所', url: BASE_URL },
+            publisher: {
+                '@type': 'Organization',
+                name: '霍爾果斯會計師事務所',
+                logo: { '@type': 'ImageObject', url: `${BASE_URL}/assets/images/logo-white.png` }
+            },
+            url: BASE_URL + path,
+            mainEntityOfPage: { '@type': 'WebPage', '@id': BASE_URL + path }
+        };
+    }
+
+    if (path.startsWith('/tools/')) {
+        const title = document.title.split('|')[0].trim();
+        return {
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareApplication',
+            name: title,
+            applicationCategory: 'BusinessApplication',
+            operatingSystem: 'Any',
+            offers: { '@type': 'Offer', price: '0', priceCurrency: 'TWD' },
+            url: BASE_URL + path
+        };
+    }
+
+    return null;
+}
 
 export function initComponents() {
     // Inject Nav
@@ -73,4 +184,25 @@ export function initComponents() {
             link.classList.add('active');
         }
     });
+}
+
+export function initSEO() {
+    const path = window.location.pathname.replace(/\/$/, '') || '/index.html';
+
+    // 1. Inject canonical (only if not already present in HTML)
+    if (!document.querySelector('link[rel="canonical"]')) {
+        const canonical = document.createElement('link');
+        canonical.rel = 'canonical';
+        canonical.href = BASE_URL + path;
+        document.head.appendChild(canonical);
+    }
+
+    // 2. Inject Schema.org JSON-LD
+    const schema = buildSchema(path);
+    if (schema) {
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.textContent = JSON.stringify(schema, null, 2);
+        document.head.appendChild(script);
+    }
 }

@@ -1,4 +1,22 @@
-/* HorgosCPA — FAQ: fetch + accordion */
+/* HorgosCPA — FAQ: fetch + accordion + FAQPage schema */
+
+function injectFAQSchema(data) {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: data.map(item => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.answer
+            }
+        }))
+    }, null, 2);
+    document.head.appendChild(script);
+}
 
 export function initFAQ() {
     const faqContainer = document.getElementById('faq-container-list');
@@ -14,18 +32,24 @@ export function initFAQ() {
                 return;
             }
 
+            // Inject FAQPage schema for SEO
+            injectFAQSchema(data);
+
             data.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'faq-item';
 
-                div.innerHTML = `
-                    <h3 class="faq-question">${item.question}</h3>
-                    <p class="faq-answer">${item.answer}</p>
-                `;
-                faqContainer.appendChild(div);
+                const title = document.createElement('h3');
+                title.className = 'faq-question';
+                title.textContent = item.question;
 
-                const title = div.querySelector('.faq-question');
-                const content = div.querySelector('.faq-answer');
+                const content = document.createElement('p');
+                content.className = 'faq-answer';
+                content.textContent = item.answer;
+
+                div.appendChild(title);
+                div.appendChild(content);
+                faqContainer.appendChild(div);
 
                 title.addEventListener('click', () => {
                     // Close others

@@ -123,6 +123,23 @@ select.input-line {
 .faq-answer { font-size: 0.95rem; color: #666; display: none; line-height: 1.6; }
 .faq-answer.open { display: block; }
 
+/* Related articles sidebar */
+.related-article-cat {
+    font-size: 0.8rem;
+    color: var(--color-brand);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+}
+.related-article-title {
+    font-size: 0.95rem;
+    color: #1a1a1a;
+    margin: 0;
+    line-height: 1.4;
+    transition: color 0.3s;
+}
+.related-article-title:hover { color: var(--color-brand); }
+
 /* --- Decorators --- */
 .deco-line {
     width: 40px;
