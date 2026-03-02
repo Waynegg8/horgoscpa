@@ -109,9 +109,9 @@ function buildSchema(path) {
 
     const serviceMap = {
         '/service-registration.html': { name: '工商登記', desc: '一站式公司設立服務，從名稱預查、資本簽證到稅籍登記。' },
-        '/service-accounting.html': { name: '帳務處理', desc: '專業帳務處理與稅務申報，提供清晰財務報表與主動式稅務規劃。' },
-        '/service-tax.html': { name: '稅務申報', desc: '專業稅務申報與節稅規劃，守護每一分企業利潤。' },
-        '/service-audit.html': { name: '財稅簽證', desc: '獨立客觀的財稅簽證服務，財務報表查核與營所稅簽證。' }
+        '/service-accounting.html':   { name: '帳務處理', desc: '專業帳務處理與稅務申報，提供清晰財務報表與主動式稅務規劃。' },
+        '/service-tax.html':          { name: '稅務申報', desc: '專業稅務申報與節稅規劃，守護每一分企業利潤。' },
+        '/service-audit.html':        { name: '財稅簽證', desc: '獨立客觀的財稅簽證服務，財務報表查核與營所稅簽證。' }
     };
     if (serviceMap[path]) {
         const s = serviceMap[path];
@@ -179,13 +179,13 @@ export function initComponents() {
         mainLandmark.setAttribute('role', 'main');
     }
 
-    // Inject Nav (skip if already handled by components-sync.js)
+    // Inject Nav
     const navPlaceholder = document.getElementById('nav-placeholder');
     if (navPlaceholder) {
         navPlaceholder.outerHTML = NAV_HTML;
     }
 
-    // Inject Footer (skip if already handled by components-sync.js)
+    // Inject Footer
     const footerPlaceholder = document.getElementById('footer-placeholder');
     if (footerPlaceholder) {
         footerPlaceholder.outerHTML = FOOTER_HTML;
@@ -203,18 +203,18 @@ export function initComponents() {
 
 // --- BreadcrumbList builder ---
 const BREADCRUMB_MAP = {
-    '/index.html': { name: '首頁' },
-    '/services.html': { name: '專業服務' },
+    '/index.html':                { name: '首頁' },
+    '/services.html':             { name: '專業服務' },
     '/service-registration.html': { name: '工商登記' },
-    '/service-accounting.html': { name: '帳務處理' },
-    '/service-tax.html': { name: '稅務申報' },
-    '/service-audit.html': { name: '財稅簽證' },
-    '/team.html': { name: '專業團隊' },
-    '/articles.html': { name: '文章專區' },
-    '/resources.html': { name: '資源專區' },
-    '/faq.html': { name: '常見問題' },
-    '/contact.html': { name: '聯絡我們' },
-    '/booking.html': { name: '預約諮詢' },
+    '/service-accounting.html':   { name: '帳務處理' },
+    '/service-tax.html':          { name: '稅務申報' },
+    '/service-audit.html':        { name: '財稅簽證' },
+    '/team.html':                 { name: '專業團隊' },
+    '/articles.html':             { name: '文章專區' },
+    '/resources.html':            { name: '資源專區' },
+    '/faq.html':                  { name: '常見問題' },
+    '/contact.html':              { name: '聯絡我們' },
+    '/booking.html':              { name: '預約諮詢' },
 };
 
 function buildBreadcrumb(path) {
