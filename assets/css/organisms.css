@@ -205,6 +205,13 @@
     flex: 1;
 }
 
+.service-block .visual-col img {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    display: block;
+}
+
 .service-block h2 {
     font-size: 2.5rem;
     margin-bottom: var(--space-4);
@@ -945,6 +952,39 @@
     font-size: 1.15rem;
     line-height: 1.9;
     color: var(--text-primary);
+}
+
+/* Scoped typography — overrides global reset (margin:0) inside article body */
+.article-content p {
+    margin-bottom: 1.6em;
+}
+
+.article-content p:last-child {
+    margin-bottom: 0;
+}
+
+.article-content h2 {
+    margin-top: 50px;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+}
+
+.article-content h3 {
+    margin-top: 30px;
+    margin-bottom: 12px;
+    font-size: 1.4rem;
+    color: var(--color-brand);
+}
+
+.article-content ul,
+.article-content ol {
+    padding-left: 20px;
+    margin-top: 15px;
+    margin-bottom: 1.4em;
+}
+
+.article-content li {
+    margin-bottom: 0.5em;
 }
 
 .article-sidebar {

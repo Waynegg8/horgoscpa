@@ -197,9 +197,9 @@ export function initSEO() {
         document.head.appendChild(canonical);
     }
 
-    // 2. Inject Schema.org JSON-LD
+    // 2. Inject Schema.org JSON-LD (only if not already present in HTML)
     const schema = buildSchema(path);
-    if (schema) {
+    if (schema && !document.querySelector('script[type="application/ld+json"]')) {
         const script = document.createElement('script');
         script.type = 'application/ld+json';
         script.textContent = JSON.stringify(schema, null, 2);

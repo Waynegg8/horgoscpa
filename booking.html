@@ -59,7 +59,9 @@
           <div class="form-group">
             <label>聯絡電話 <span style="color:#d93025">*</span></label>
             <input type="tel" name="phone" class="input-line" placeholder="手機或電話號碼"
-              required pattern="[0-9\+\-\(\)\s]{7,20}" title="請輸入有效的電話號碼（7–20 碼數字）" autocomplete="tel">
+              required pattern="09[0-9]{8}|0[1-9]{1,2}[0-9]{7,8}"
+              title="請輸入手機（09開頭10碼）或市話（區碼+7~8碼）"
+              maxlength="15" autocomplete="tel">
           </div>
 
           <div class="form-group">
@@ -70,7 +72,7 @@
 
           <div class="form-group">
             <label>諮詢項目</label>
-            <div class="radio-options" style="flex-wrap: wrap;">
+            <div class="radio-options">
               <div class="radio-card">
                 <input type="radio" id="topic-registration" name="topic" value="工商登記" checked>
                 <label for="topic-registration">工商登記</label>
