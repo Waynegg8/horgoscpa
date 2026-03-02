@@ -174,7 +174,10 @@ export function initComponents() {
     const mainLandmark = document.querySelector(
         'header.page-header, section.hero-split, .booking-container, .article-hero, .article-container, .container'
     );
-    if (mainLandmark && !mainLandmark.id) mainLandmark.id = 'main-content';
+    if (mainLandmark) {
+        if (!mainLandmark.id) mainLandmark.id = 'main-content';
+        mainLandmark.setAttribute('role', 'main');
+    }
 
     // Inject Nav
     const navPlaceholder = document.getElementById('nav-placeholder');
