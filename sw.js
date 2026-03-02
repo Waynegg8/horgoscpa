@@ -1,59 +1,43 @@
-const CACHE = 'horgoscpa-v1';
+const CACHE = 'horgoscpa-v2';
 
-const PRECACHE = [
-  '/assets/css/common.css',
-  '/assets/css/organisms.css',
-  '/assets/css/atoms.css',
-  '/assets/js/main.js',
-  '/assets/js/modules/components.js',
-  '/assets/js/modules/ui-effects.js',
-  '/assets/js/modules/faq.js',
-  '/assets/js/modules/content-loader.js',
-  '/assets/data/articles.json',
-  '/assets/data/resources.json',
-  '/assets/data/faq.json',
-  '/assets/images/hero.webp',
-  '/assets/images/hero-900w.webp',
-  '/assets/images/logo-white.png',
-];
+// Only cache fonts and core CSS on-demand (no precache to avoid blocking first load)
+const CACHE_PATTERNS = /\.(css|woff2?)(\?|$)|fonts\.gstatic\.com/;
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting())
-  );
+    // Skip precache entirely — let the first page load proceed unimpeded
+    e.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
+    e.waitUntil(
+        caches.keys().then((keys) =>
+            Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+        ).then(() => self.clients.claim())
+    );
 });
 
 self.addEventListener('fetch', (e) => {
-  const { request } = e;
-  const url = new URL(request.url);
+    const { request } = e;
+    const url = new URL(request.url);
 
-  // Only handle same-origin GET requests
-  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+    if (request.method !== 'GET') return;
 
-  const isAsset = /\.(css|js|webp|jpg|png|json|woff2?)(\?|$)/.test(url.pathname);
-  const isFont = url.hostname === 'fonts.gstatic.com';
+    const isFont = url.hostname === 'fonts.gstatic.com';
+    const isLocalCSS = url.origin === self.location.origin && /\.css(\?|$)/.test(url.pathname);
 
-  if (isAsset || isFont) {
-    // Cache-first for static assets
-    e.respondWith(
-      caches.match(request).then(
-        (cached) => cached || fetch(request).then((res) => {
-          if (res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, clone));
-          }
-          return res;
-        })
-      )
-    );
-  }
-  // HTML: network-first (always get fresh HTML)
+    if (isFont || isLocalCSS) {
+        // Cache-first for fonts and CSS (stable assets)
+        e.respondWith(
+            caches.match(request).then(
+                (cached) => cached || fetch(request).then((res) => {
+                    if (res.ok) {
+                        const clone = res.clone();
+                        caches.open(CACHE).then((c) => c.put(request, clone));
+                    }
+                    return res;
+                })
+            )
+        );
+    }
+    // Everything else (HTML, JS, images) — let browser handle normally
 });
