@@ -58,6 +58,11 @@
     letter-spacing: 0.1em;
     font-size: 0.9rem;
     color: var(--bg-surface);
+    /* Reset <button> defaults */
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: inherit;
 }
 
 /* --- Hero Section --- */

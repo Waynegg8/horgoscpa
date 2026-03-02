@@ -23,13 +23,15 @@ export function initUIEffects() {
     if (mobileToggle) {
         mobileToggle.addEventListener('click', function () {
             document.body.classList.toggle('menu-open');
+            const isOpen = document.body.classList.contains('menu-open');
 
-            if (document.body.classList.contains('menu-open')) {
-                navLinks.classList.add('nav-open');
+            navLinks.classList.toggle('nav-open', isOpen);
+            mobileToggle.setAttribute('aria-expanded', String(isOpen));
+
+            if (isOpen) {
                 nav.classList.add('scrolled');
                 mobileToggle.textContent = '關閉';
             } else {
-                navLinks.classList.remove('nav-open');
                 mobileToggle.textContent = '選單';
                 handleScroll();
             }
@@ -37,9 +39,10 @@ export function initUIEffects() {
     }
 
     // --- Back to Top Button ---
-    const backToTopBtn = document.createElement('div');
+    const backToTopBtn = document.createElement('button');
     backToTopBtn.className = 'btn-back-to-top';
-    backToTopBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+    backToTopBtn.setAttribute('aria-label', '返回頂部');
+    backToTopBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
     document.body.appendChild(backToTopBtn);
 
     window.addEventListener('scroll', () => {

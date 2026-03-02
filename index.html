@@ -18,6 +18,9 @@
   <meta name="twitter:description" content="為講究細節的創業者，策展您的財務版圖。">
   <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
 
+  <!-- LCP Preload: hero image is the largest above-the-fold element -->
+  <link rel="preload" as="image" href="/assets/images/hero.jpg">
+
   <!-- CSS System -->
   <link rel="stylesheet" href="/assets/css/common.css">
   <link rel="stylesheet" href="/assets/css/organisms.css">
@@ -54,7 +57,7 @@
     </div>
 
     <div class="visual-col">
-      <img src="/assets/images/hero.jpg" alt="霍爾果斯事務所" loading="lazy" width="3072" height="2239">
+      <img src="/assets/images/hero.jpg" alt="霍爾果斯事務所" fetchpriority="high" width="3072" height="2239">
     </div>
   </section>
 

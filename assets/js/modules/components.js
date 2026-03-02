@@ -10,7 +10,7 @@ const NAV_HTML = `
       <span class="logo-text-en">HORGOS CPA FIRM</span>
     </div>
   </a>
-  <ul class="nav-links">
+  <ul id="site-nav-links" class="nav-links">
     <li><a href="/services.html">專業服務</a></li>
     <li><a href="/team.html">專業團隊</a></li>
     <li><a href="/articles.html">文章專區</a></li>
@@ -19,7 +19,7 @@ const NAV_HTML = `
     <li><a href="/contact.html">聯絡我們</a></li>
   </ul>
   <a href="/booking.html" class="btn-solid-gold">預約諮詢</a>
-  <div class="mobile-toggle">選單</div>
+  <button class="mobile-toggle" aria-expanded="false" aria-controls="site-nav-links">選單</button>
 </nav>`;
 
 const FOOTER_HTML = `
