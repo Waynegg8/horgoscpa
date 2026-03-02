@@ -21,10 +21,8 @@
   <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
 
   <!-- LCP Preload: hero image is the largest above-the-fold element -->
-  <link rel="preload" as="image"
-    href="/assets/images/hero.webp"
-    imagesrcset="/assets/images/hero-900w.webp 900w, /assets/images/hero.webp 3072w"
-    imagesizes="(max-width: 900px) 100vw, 50vw">
+  <link rel="preload" as="image" href="/assets/images/hero-900w.webp" media="(max-width: 900px)">
+  <link rel="preload" as="image" href="/assets/images/hero.webp" media="(min-width: 901px)">
 
   <!-- CSS System -->
   <link rel="stylesheet" href="/assets/css/common.css">
