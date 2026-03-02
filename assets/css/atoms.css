@@ -98,11 +98,30 @@ select.input-line {
 }
 
 /* --- Common Styles (Atoms) --- */
+/* filter-btn base (replaces JS inline style) */
+.filter-btn {
+    padding: 6px 16px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
 .filter-btn:hover,
 .filter-btn.active {
     color: var(--color-brand) !important;
     border-bottom: 1px solid var(--color-brand) !important;
 }
+
+/* FAQ */
+.faq-item { border-bottom: 1px solid #eee; margin-bottom: 15px; padding-bottom: 15px; }
+.faq-question { font-size: 1.1rem; color: #1a1a1a; margin-bottom: 10px; cursor: pointer; font-weight: 500; }
+.faq-question.active { color: var(--color-brand); }
+.faq-answer { font-size: 0.95rem; color: #666; display: none; line-height: 1.6; }
+.faq-answer.open { display: block; }
 
 /* --- Decorators --- */
 .deco-line {

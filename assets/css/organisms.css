@@ -612,6 +612,25 @@
     }
 }
 
+/* Mobile nav-open state (replaces JS inline styles) */
+@media (max-width: 768px) {
+    .nav-links.nav-open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: #FFFFFF;
+        padding: 20px;
+        border-bottom: 1px solid #EEEEEE;
+    }
+
+    .nav-links.nav-open a {
+        color: #1a1a1a;
+    }
+}
+
 /* Mobile Adjustments */
 @media (max-width: 768px) {
     .site-nav {
