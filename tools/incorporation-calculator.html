@@ -412,10 +412,8 @@
             registrationMin: 1000,          // 設立登記最低規費 §3
             registrationPerUnit: 1,         // 每4,000元資本額收1元 §3
             registrationUnit: 4000,         // 計算單位
-            eFilingDiscount: 300,           // 電子申辦減收 §6
             // 商業登記規費收費準則（114.12.30 修正）
             bizRegistration: 1000,          // 商業設立登記 §2
-            bizEFilingRate: 0.8,            // 電子申辦 80%（減收 20%）§4
         };
 
         // 法定要求
@@ -514,9 +512,7 @@
             // Update e-filing description
             const eLabel = document.querySelector('label[for="eFiling"] small');
             if (eLabel) {
-                eLabel.textContent = req.isCompany
-                    ? '線上申請可減免部分規費（公司登記規費收費準則 §6）'
-                    : '線上申請減收 20%（商業登記規費收費準則 §4）';
+                eLabel.textContent = '線上申請可減免預查規費';
             }
 
             // Reset director min/max
@@ -571,18 +567,17 @@
             });
             total += nameFee;
 
-            // 2. 設立登記規費
+            // 2. 設立登記規費（無電子減免）
             let regFee, regNote;
             if (isBiz) {
-                regFee = eFiling ? Math.round(GOV_FEES.bizRegistration * GOV_FEES.bizEFilingRate) : GOV_FEES.bizRegistration;
-                regNote = eFiling ? '§2：固定 $1,000，電子減收 20%' : '§2：固定 $1,000';
+                regFee = GOV_FEES.bizRegistration;
+                regNote = '商業登記規費收費準則 §2：固定 $1,000';
             } else {
                 regFee = Math.max(GOV_FEES.registrationMin, Math.ceil(capital / GOV_FEES.registrationUnit));
-                if (eFiling) regFee = Math.max(regFee - GOV_FEES.eFilingDiscount, 0);
-                regNote = '§3：每 $4,000 資本額收 $1，最低 $1,000';
+                regNote = '公司登記規費收費準則 §3：每 $4,000 資本額收 $1，最低 $1,000';
             }
             items.push({
-                label: `設立登記規費${eFiling && !isBiz ? '（電子減收 $300）' : eFiling ? '（電子減收 20%）' : ''}`,
+                label: '設立登記規費',
                 value: regFee, note: regNote
             });
             total += regFee;
