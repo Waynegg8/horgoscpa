@@ -54,5 +54,47 @@
     "title": "盈餘分配全流程試算",
     "category": "tool",
     "link": "/tools/profit-distribution-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "依據所得稅法計算不動產交易所得稅，支援自住優惠、境內外居住者身分判定。",
+    "title": "房地合一稅試算",
+    "category": "tool",
+    "link": "/tools/property-tax-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "依據遺產及贈與稅法計算贈與稅額，支援免稅額扣除及累進稅率試算。",
+    "title": "贈與稅試算",
+    "category": "tool",
+    "link": "/tools/gift-tax-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "依據遺產及贈與稅法計算遺產稅額，支援各項扣除額及累進稅率試算。",
+    "title": "遺產稅試算",
+    "category": "tool",
+    "link": "/tools/estate-tax-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "依據營業稅法計算應納營業稅額，支援一般稅額計算及小規模查定課徵。",
+    "title": "營業稅試算",
+    "category": "tool",
+    "link": "/tools/business-tax-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "依據所得稅法計算年度綜合所得稅，支援標準/列舉扣除額及各項特別扣除額。",
+    "title": "個人綜合所得稅試算",
+    "category": "tool",
+    "link": "/tools/income-tax-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "依據土地稅法計算土地移轉增值稅，支援一般累進稅率及自用住宅優惠稅率。",
+    "title": "土地增值稅試算",
+    "category": "tool",
+    "link": "/tools/land-value-tax-calculator"
   }
 ]

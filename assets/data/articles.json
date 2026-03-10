@@ -6,5 +6,69 @@
     "date": "2025-10-25",
     "image": "/assets/images/business-registration.jpg",
     "title": "創業第一步：從零開始的公司設立指南"
+  },
+  {
+    "description": "從稅率到申報，完整解析房地合一稅 2.0 制度、自住優惠條件與計算範例。",
+    "link": "/articles/property-tax-guide",
+    "category": "Tax Guide",
+    "date": "2026-03-11",
+    "image": "/assets/images/hero.jpg",
+    "title": "房地合一稅完整指南"
+  },
+  {
+    "description": "善用免稅額與合法規劃，掌握贈與稅節稅策略，守護家族財富。",
+    "link": "/articles/gift-tax-guide",
+    "category": "Tax Planning",
+    "date": "2026-03-11",
+    "image": "/assets/images/hero.jpg",
+    "title": "贈與稅節稅攻略"
+  },
+  {
+    "description": "遺產稅扣除額全解析，從申報流程到節稅方法一次搞定。",
+    "link": "/articles/estate-tax-guide",
+    "category": "Tax Guide",
+    "date": "2026-03-11",
+    "image": "/assets/images/hero.jpg",
+    "title": "遺產稅申報指南"
+  },
+  {
+    "description": "從開立發票到申報繳納，一般營業人與小規模營業人的營業稅完全攻略。",
+    "link": "/articles/business-tax-guide",
+    "category": "Tax Practice",
+    "date": "2026-03-11",
+    "image": "/assets/images/hero.jpg",
+    "title": "營業稅申報實務"
+  },
+  {
+    "description": "十類所得、扣除額、稅率級距與節稅方法，個人綜合所得稅完整解析。",
+    "link": "/articles/income-tax-guide",
+    "category": "Tax Guide",
+    "date": "2026-03-11",
+    "image": "/assets/images/hero.jpg",
+    "title": "個人綜合所得稅全攻略"
+  },
+  {
+    "description": "漲價歸公原則下的土地增值稅，一般稅率、自用住宅優惠與重購退稅全解析。",
+    "link": "/articles/land-value-tax-guide",
+    "category": "Tax Guide",
+    "date": "2026-03-11",
+    "image": "/assets/images/hero.jpg",
+    "title": "土地增值稅解析"
+  },
+  {
+    "description": "行號、有限公司、股份有限公司的稅務差異一覽表，幫你選對組織型態。",
+    "link": "/articles/business-structure-comparison",
+    "category": "Tax Strategy",
+    "date": "2026-03-11",
+    "image": "/assets/images/hero.jpg",
+    "title": "組織架構與稅務比較"
+  },
+  {
+    "description": "擴大書審、查帳申報、會計師簽證三種申報方式的差異比較與最佳選擇。",
+    "link": "/articles/tax-filing-methods",
+    "category": "Tax Strategy",
+    "date": "2026-03-11",
+    "image": "/assets/images/hero.jpg",
+    "title": "稅務申報方式全解析"
   }
 ]

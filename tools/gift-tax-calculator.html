@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>贈與稅試算 | 霍爾果斯會計師事務所</title>
+    <meta name="description" content="線上贈與稅試算工具，依據遺產及贈與稅法計算贈與稅額。支援免稅額扣除及累進稅率試算。">
+    <meta property="og:title" content="贈與稅試算 | 霍爾果斯會計師事務所">
+    <meta property="og:description" content="線上贈與稅試算工具，依據遺產及贈與稅法計算贈與稅額。">
+    <meta property="og:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <meta property="og:url" content="https://www.horgoscpa.com/tools/gift-tax-calculator">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- Critical CSS (inline) -->
+  <style>:root{--font-serif:'Playfair Display',serif;--font-sans:'Lato','Noto Sans TC',sans-serif;--text-d1:4rem;--text-h1:2.75rem;--text-h2:2rem;--text-h3:1.35rem;--text-body:.95rem;--text-sm:.85rem;--leading-tight:1.3;--leading-base:1.9;--leading-loose:2.1;--bg-base:#FDFBF7;--bg-surface:#FFF;--bg-inverse:#1A1A1A;--color-brand:#B48E55;--color-brand-dark:#8A6D3B;--color-brand-light:rgba(180,142,85,.1);--text-primary:#2C2C2C;--text-body:#555;--text-muted:#999;--border-line:#E5E5E5;--border-gold:rgba(180,142,85,.4);--space-1:8px;--space-2:16px;--space-4:40px;--space-8:100px;--space-16:200px;--container-width:1200px;--header-height:100px}@media(max-width:768px){:root{--text-d1:2.8rem;--text-h1:2.2rem;--space-16:60px;--space-8:32px}}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background-color:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-base);overflow-x:hidden;-webkit-font-smoothing:antialiased}h1,h2,h3,h4,h5,h6{font-family:var(--font-serif);font-weight:600;line-height:var(--leading-tight);color:var(--text-primary);margin-bottom:var(--space-2)}.display-text{font-size:var(--text-d1);font-weight:700;letter-spacing:-.02em}.eyebrow{font-family:var(--font-sans);text-transform:uppercase;letter-spacing:.15em;font-size:var(--text-sm);font-weight:700}.container{max-width:var(--container-width);margin:0 auto;padding:0 var(--space-4);width:100%}.text-gold{color:var(--color-brand)}.text-center{text-align:center}.section-gap{padding:var(--space-16) 0}</style>
+  <link rel="stylesheet" href="/assets/css/common.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/assets/css/common.css"></noscript>
+    <link rel="stylesheet" href="/assets/css/organisms.css">
+    <link rel="stylesheet" href="/assets/css/atoms.css">
+    <link rel="icon" href="/favicon.ico">
+  <!-- Google Analytics (deferred) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    function loadGTM() {
+      if (loadGTM.done) return; loadGTM.done = true;
+      var s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5';
+      s.onload = function () { gtag('js', new Date()); gtag('config', 'G-RKMCS9WVS5'); };
+      document.head.appendChild(s);
+    }
+    setTimeout(loadGTM, 3500);
+    ['mouseover','touchstart','scroll','keydown'].forEach(function(e){
+      addEventListener(e, loadGTM, {once:true,passive:true});
+    });
+  </script>
+    <style>
+        /* Calculator Specific Styles */
+        .calculator-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .calculator-card {
+            background: #fff;
+            border: 1px solid #eee;
+            padding: 50px;
+            margin-bottom: 40px;
+        }
+
+        .calc-section {
+            margin-bottom: 40px;
+        }
+
+        .calc-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .calc-section-title {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .calc-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .calc-label {
+            flex: 1;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: var(--text-body);
+        }
+
+        .calc-label small {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .calc-input {
+            width: 180px;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            text-align: right;
+            transition: border-color 0.3s;
+        }
+
+        .calc-input:focus {
+            outline: none;
+            border-color: var(--color-brand);
+        }
+
+        .calc-select {
+            width: 180px;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            background: #fff;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .calc-select:focus {
+            outline: none;
+            border-color: var(--color-brand);
+        }
+
+        /* Results Section */
+        .results-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+            color: #fff;
+            padding: 50px;
+            margin-bottom: 40px;
+        }
+
+        .results-title {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            color: var(--color-brand);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: var(--font-sans);
+        }
+
+        .result-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #ccc;
+        }
+
+        .result-value {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .result-total {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-brand);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-total-label {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .result-total-value {
+            font-family: var(--font-sans);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-brand);
+        }
+
+        .disclaimer {
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .cta-text {
+            font-family: var(--font-serif);
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+
+            .calculator-card,
+            .results-card {
+                padding: 30px 20px;
+            }
+
+            .calc-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .calc-input,
+            .calc-select {
+                width: 100%;
+            }
+
+            .result-total {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <div id="nav-placeholder"></div>
+
+    <!-- Page Header -->
+    <header class="page-header" style="padding-bottom: 40px;">
+        <span class="eyebrow text-gold">GIFT TAX CALCULATOR</span>
+        <h1 class="display-text">贈與稅試算</h1>
+        <p class="text-body" style="max-width: 600px; margin: 20px auto 0;">
+            依據遺產及贈與稅法，快速計算贈與稅額
+        </p>
+    </header>
+
+    <div class="calculator-container section-gap">
+
+        <!-- Calculator Form -->
+        <div class="calculator-card">
+
+            <div class="calc-section">
+                <h3 class="calc-section-title">贈與資訊</h3>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="giftAmount">
+                        本次贈與金額
+                        <small>本次贈與財產價值（新台幣）</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="giftAmount" class="calc-input" value="5,000,000"
+                        oninput="formatInput(this); calculate()" onchange="formatInput(this); calculate()">
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="prevGift">
+                        同年度已贈與金額
+                        <small>同一年度內先前已贈與之累計金額</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="prevGift" class="calc-input" value="0"
+                        oninput="formatInput(this); calculate()" onchange="formatInput(this); calculate()">
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="deduction">
+                        扣除額
+                        <small>不計入贈與總額之金額，如父母於子女婚嫁時贈與 100 萬</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="deduction" class="calc-input" value="0"
+                        oninput="formatInput(this); calculate()" onchange="formatInput(this); calculate()">
+                </div>
+
+            </div>
+
+        </div>
+
+        <div id="identityHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:30px;font-size:.88rem;line-height:1.7;color:var(--text-body);">
+            <strong>免稅額說明：</strong><br>
+            每年免稅額 244 萬元是以「贈與人」為單位計算（非受贈人），因此父母可各自享有 244 萬元免稅額。<br>
+            例如：父母各贈與子女，每人每年各有 244 萬免稅額，合計可贈與 488 萬元免稅。
+        </div>
+
+        <!-- Results -->
+        <div class="results-card">
+            <h3 class="results-title">贈與稅試算結果</h3>
+
+            <div class="result-row">
+                <span class="result-label">贈與總額</span>
+                <span class="result-value" id="rGiftTotal">NT$ 0</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">免稅額</span>
+                <span class="result-value" id="rExemption">- NT$ 2,440,000</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">扣除額</span>
+                <span class="result-value" id="rDeduction">- NT$ 0</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">贈與淨額</span>
+                <span class="result-value" id="rNetGift">NT$ 0</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">適用稅率</span>
+                <span class="result-value" id="rTaxRate">0%</span>
+            </div>
+
+            <div class="result-total">
+                <span class="result-total-label">應納贈與稅額</span>
+                <span class="result-total-value" id="totalTax">NT$ 0</span>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div style="background:linear-gradient(135deg,#1a1a1a,#2c2c2c);color:#fff;padding:30px;margin-bottom:30px;font-family:var(--font-sans);font-size:.88rem;line-height:1.7;">
+            <h3 style="color:var(--color-brand);font-family:var(--font-serif);font-size:1.15rem;margin-bottom:14px;">贈與稅速算（115年適用）</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">
+                <div><strong style="color:#fff;">免稅額</strong><br><span style="color:#ccc;">每年每位贈與人 244 萬元</span></div>
+                <div><strong style="color:#fff;">稅率級距</strong><br><span style="color:#ccc;">&le;2,500 萬 10% / &le;5,000 萬 15% / &gt;5,000 萬 20%</span></div>
+                <div><strong style="color:#fff;">申報期限</strong><br><span style="color:#ccc;">贈與行為發生後 30 日內向主管稽徵機關申報</span></div>
+                <div><strong style="color:#fff;">不計入贈與總額</strong><br><span style="color:#ccc;">婚嫁贈與每人 100 萬、農業用地、公共設施保留地等</span></div>
+                <div><strong style="color:#fff;">累進差額</strong><br><span style="color:#ccc;">第二級距 125 萬 / 第三級距 375 萬</span></div>
+                <div><strong style="color:#fff;">贈與人單位</strong><br><span style="color:#ccc;">以贈與人為計算單位，非受贈人</span></div>
+            </div>
+            <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：遺產及贈與稅法 &sect;19、&sect;22（115年適用）</div>
+        </div>
+
+        <p class="disclaimer">
+            * 本試算依遺產及贈與稅法 115 年度規定計算。<br>
+            * 免稅額及稅率級距依財政部公告，如有調整以最新公告為準。<br>
+            * 實際稅額以國稅局核定為準。
+        </p>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <p class="cta-text">需要贈與稅節稅規劃諮詢？</p>
+            <a href="/booking.html" class="btn-solid-gold">預約免費諮詢</a>
+        </div>
+
+        <div style="text-align:center; margin-top: 30px;">
+            <a href="/resources.html" class="btn-text" style="color: #999; text-decoration: none; font-size: 0.9rem;">
+                &larr; 返回資源列表
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script type="module" src="/assets/js/main.js"></script>
+    <script>
+        /* ==========================================================
+           贈與稅試算（Gift Tax Calculator）
+           法源：遺產及贈與稅法 §19、§22（115年適用）
+           ========================================================== */
+
+        function formatInput(el) {
+            const raw = el.value.replace(/[^\d]/g, '');
+            if (raw) {
+                el.value = parseInt(raw).toLocaleString('en-US');
+            }
+        }
+        function parseAmount(id) {
+            return parseInt(document.getElementById(id).value.replace(/,/g, '')) || 0;
+        }
+
+        function fmt(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        const EXEMPTION = 2440000;
+
+        function calculate() {
+            const giftAmount = parseAmount('giftAmount');
+            const prevGift = parseAmount('prevGift');
+            const deduction = parseAmount('deduction');
+
+            const giftTotal = giftAmount + prevGift;
+            const netGift = Math.max(giftTotal - EXEMPTION - deduction, 0);
+
+            var fullTax = 0;
+            var taxRateLabel = '';
+
+            if (netGift <= 0) {
+                fullTax = 0;
+                taxRateLabel = '免稅';
+            } else if (netGift <= 25000000) {
+                fullTax = Math.round(netGift * 0.10);
+                taxRateLabel = '10%';
+            } else if (netGift <= 50000000) {
+                fullTax = Math.round(netGift * 0.15 - 1250000);
+                taxRateLabel = '15%';
+            } else {
+                fullTax = Math.round(netGift * 0.20 - 3750000);
+                taxRateLabel = '20%';
+            }
+
+            var prevNetGift = Math.max(prevGift - EXEMPTION - deduction, 0);
+            var prevTax = 0;
+            if (prevNetGift > 0) {
+                if (prevNetGift <= 25000000) {
+                    prevTax = Math.round(prevNetGift * 0.10);
+                } else if (prevNetGift <= 50000000) {
+                    prevTax = Math.round(prevNetGift * 0.15 - 1250000);
+                } else {
+                    prevTax = Math.round(prevNetGift * 0.20 - 3750000);
+                }
+            }
+
+            var taxDue = Math.max(fullTax - prevTax, 0);
+
+            document.getElementById('rGiftTotal').textContent = 'NT$ ' + fmt(giftTotal);
+            document.getElementById('rExemption').textContent = '- NT$ ' + fmt(EXEMPTION);
+            document.getElementById('rDeduction').textContent = '- NT$ ' + fmt(deduction);
+            document.getElementById('rNetGift').textContent = 'NT$ ' + fmt(netGift);
+            document.getElementById('rTaxRate').textContent = taxRateLabel;
+            document.getElementById('totalTax').textContent = 'NT$ ' + fmt(taxDue);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() { calculate(); });
+    </script>
+
+</body>
+
+</html>

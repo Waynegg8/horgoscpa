@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"></noscript>
+
+  <!-- Module Preload (eliminate JS waterfall) -->
+  <link rel="modulepreload" href="/assets/js/modules/components.js">
+  <link rel="modulepreload" href="/assets/js/modules/ui-effects.js">
+  <link rel="modulepreload" href="/assets/js/modules/faq.js">
+  <link rel="modulepreload" href="/assets/js/modules/content-loader.js">
+    <title>營業稅申報實務 | 霍爾果斯會計師事務所</title>
+    <meta name="description" content="從開立發票到申報繳納，營業稅完全攻略。深入解析一般營業人與小規模營業人差異、進項扣抵規定、零稅率適用與常見違規罰則。">
+    <meta property="og:title" content="營業稅申報實務 | 霍爾果斯會計師事務所">
+    <meta property="og:description" content="從開立發票到申報繳納，營業稅完全攻略。深入解析進項扣抵、零稅率適用與常見違規罰則。">
+    <meta property="og:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <meta property="og:url" content="https://www.horgoscpa.com/articles/business-tax-guide">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="營業稅申報實務 | 霍爾果斯會計師事務所">
+    <meta name="twitter:description" content="從開立發票到申報繳納，營業稅完全攻略。深入解析進項扣抵、零稅率適用與常見違規罰則。">
+    <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <!-- Content Automation Tags -->
+    <meta name="date" content="2026.03.11">
+    <meta name="category" content="Tax">
+    <meta name="cover" content="/assets/images/hero.jpg">
+    <!-- Critical CSS (inline) -->
+  <style>:root{--font-serif:'Playfair Display',serif;--font-sans:'Lato','Noto Sans TC',sans-serif;--text-d1:4rem;--text-h1:2.75rem;--text-h2:2rem;--text-h3:1.35rem;--text-body:.95rem;--text-sm:.85rem;--leading-tight:1.3;--leading-base:1.9;--leading-loose:2.1;--bg-base:#FDFBF7;--bg-surface:#FFF;--bg-inverse:#1A1A1A;--color-brand:#B48E55;--color-brand-dark:#8A6D3B;--color-brand-light:rgba(180,142,85,.1);--text-primary:#2C2C2C;--text-body:#555;--text-muted:#999;--border-line:#E5E5E5;--border-gold:rgba(180,142,85,.4);--space-1:8px;--space-2:16px;--space-4:40px;--space-8:100px;--space-16:200px;--container-width:1200px;--header-height:100px}@media(max-width:768px){:root{--text-d1:2.8rem;--text-h1:2.2rem;--space-16:60px;--space-8:32px}}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background-color:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-base);overflow-x:hidden;-webkit-font-smoothing:antialiased}h1,h2,h3,h4,h5,h6{font-family:var(--font-serif);font-weight:600;line-height:var(--leading-tight);color:var(--text-primary);margin-bottom:var(--space-2)}.display-text{font-size:var(--text-d1);font-weight:700;letter-spacing:-.02em}.eyebrow{font-family:var(--font-sans);text-transform:uppercase;letter-spacing:.15em;font-size:var(--text-sm);font-weight:700}.container{max-width:var(--container-width);margin:0 auto;padding:0 var(--space-4);width:100%}.text-gold{color:var(--color-brand)}.text-center{text-align:center}.section-gap{padding:var(--space-16) 0}</style>
+  <link rel="stylesheet" href="/assets/css/common.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/assets/css/common.css"></noscript>
+    <link rel="stylesheet" href="/assets/css/organisms.css" media="print" onload="this.media='all'">
+
+    <noscript><link rel="stylesheet" href="/assets/css/organisms.css"></noscript>
+    <link rel="icon" href="/favicon.ico">
+  <!-- Google Analytics (deferred) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    function loadGTM() {
+      if (loadGTM.done) return; loadGTM.done = true;
+      var s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5';
+      s.onload = function () { gtag('js', new Date()); gtag('config', 'G-RKMCS9WVS5'); };
+      document.head.appendChild(s);
+    }
+    setTimeout(loadGTM, 3500);
+    ['mouseover','touchstart','scroll','keydown'].forEach(function(e){
+      addEventListener(e, loadGTM, {once:true,passive:true});
+    });
+  </script>
+    <style>
+        .article-hero {
+            padding: 100px 0;
+            background-color: var(--bg-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .article-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 60px;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 80px 20px;
+        }
+
+        .article-content {
+            font-family: var(--font-serif);
+            font-size: 1.15rem;
+            line-height: 1.9;
+            color: var(--text-primary);
+        }
+
+        .article-sidebar {
+            position: sticky;
+            top: 120px;
+            align-self: start;
+            padding-left: 40px;
+            border-left: 1px solid var(--border-line);
+        }
+
+        .drop-cap::first-letter {
+            float: left;
+            font-size: 4.5rem;
+            line-height: 0.85;
+            margin-right: 15px;
+            margin-top: 5px;
+            color: var(--color-brand);
+            font-family: var(--font-serif);
+        }
+
+        .pull-quote {
+            border-top: 2px solid var(--color-brand);
+            border-bottom: 2px solid var(--color-brand);
+            padding: 30px 0;
+            margin: 50px 0;
+            font-size: 1.6rem;
+            font-style: italic;
+            text-align: center;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 900px) {
+            .article-container {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .article-sidebar {
+                border-left: none;
+                border-top: 1px solid var(--border-line);
+                padding-left: 0;
+                padding-top: 40px;
+                position: static;
+            }
+        }
+    </style>
+  <style>
+    .page-header{padding:180px 0 80px;text-align:center;background-color:var(--bg-base)}
+    .page-header h1{font-size:2.5rem;font-weight:500;margin-top:10px;
+      letter-spacing:.05em;color:var(--text-primary)}
+    .page-header p{max-width:600px;margin:20px auto;
+      color:var(--text-body);font-family:var(--font-sans)}
+  </style>
+</head>
+
+<body>
+
+    <!-- Navbar (Injected by main.js) -->
+    <div id="nav-placeholder"></div>
+
+    <!-- Magazine Hero (Light & Airy) -->
+    <header class="article-hero"
+        style="background-color: var(--bg-base); color: var(--text-primary); margin-top: 0; padding-top: 180px; padding-bottom: 60px; height: auto; min-height: auto;">
+        <div class="container text-center">
+            <span class="eyebrow text-gold" style="letter-spacing: 0.3em;">BUSINESS TAX PRACTICE</span>
+            <h1 class="display-text" style="color: var(--text-primary); font-size: 3.5rem; margin-top: 20px;">營業稅申報實務</h1>
+            <p
+                style="color: var(--text-body); margin-top: 20px; font-family: var(--font-serif); font-style: italic; font-size: 1.2rem;">
+                從開立發票到申報繳納，營業稅完全攻略
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="article-container">
+
+        <!-- Left: Article Body -->
+        <article class="article-content">
+            <!-- Metadata -->
+            <div
+                style="margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 20px; font-family: var(--font-sans); font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.1em;">
+                <span>Mar 11, 2026</span>
+                <span style="margin: 0 10px;">/</span>
+                <span>Tax Practice</span>
+                <span style="margin: 0 10px;">/</span>
+                <span>7 Min Read</span>
+            </div>
+
+            <!-- Content with Drop Cap -->
+            <p class="drop-cap">
+                營業稅是台灣企業在日常營運中最頻繁接觸的稅目之一。從設立公司、取得稅籍登記的那一天起，營業人就必須開始面對發票的開立、進項的蒐集，以及每兩個月一次的營業稅申報。營業稅的全名為「加值型及非加值型營業稅」，其核心精神是對商品或服務在流通過程中每一個「加值」的環節課稅。也就是說，營業人繳納的稅額是「銷項稅額」減去「進項稅額」的差額，而非對營業總額直接課徵。這種「加值型」的設計，確保了稅負只對每個環節的增值部分課稅，避免了重複課稅的問題。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">1. 營業稅基本概念</h2>
+            <p>
+                台灣的營業稅法正式名稱為《加值型及非加值型營業稅法》，適用於在中華民國境內銷售貨物或勞務的營業人，以及進口貨物的收貨人或持有人。營業稅的課稅基礎是「銷售額」，而稅額的計算方式則因營業人的類型而有所不同。
+            </p>
+            <p style="margin-top: 20px;">
+                對於使用統一發票的一般營業人而言，營業稅的計算公式非常直觀：<strong>應納稅額 = 銷項稅額 - 進項稅額</strong>。所謂銷項稅額，就是營業人在銷售貨物或勞務時，依規定稅率（通常為5%）向買方收取的稅額；進項稅額則是營業人在購入貨物或勞務時，支付給賣方的稅額。兩者的差額就是營業人應繳納給國庫的稅額。
+            </p>
+            <p style="margin-top: 20px;">
+                舉個簡單的例子：某貿易公司以含稅 105 萬元進貨（其中 5 萬元為進項稅額），再以含稅 210 萬元售出（其中 10 萬元為銷項稅額）。該公司的應納營業稅額為 10 萬 - 5 萬 = 5 萬元，恰好是其加值部分（100 萬元）的 5%。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">2. 一般營業人 vs 小規模營業人</h2>
+            <p>
+                營業稅法將營業人區分為「使用統一發票的營業人」（一般營業人）與「免用統一發票的小規模營業人」，兩者在稅率、申報方式與稽徵程序上都有顯著差異。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">一般營業人</h3>
+            <p>
+                使用統一發票的一般營業人，適用的稅率為銷售額的<strong>5%</strong>。營業人必須在每次銷售時開立統一發票，並妥善保存進貨時取得的進項發票。每兩個月為一期，營業人須在申報期限內彙整該期的銷項與進項資料，計算應納或溢付稅額，向國稅局辦理申報。一般營業人有義務設置帳簿、記載會計事項，並保存相關憑證。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">小規模營業人</h3>
+            <p>
+                小規模營業人是指規模狹小、交易零星、每月銷售額未達使用統一發票標準（目前為每月銷售額 20 萬元）的營業人，例如小吃攤、雜貨店等。小規模營業人免用統一發票，稅率為<strong>1%</strong>（一般買賣業）或<strong>2%</strong>（服務業等），由國稅局按季（每3個月）查定銷售額，直接寄發繳款書給營業人繳納，營業人不需自行申報。
+            </p>
+            <p style="margin-top: 20px;">
+                值得注意的是，小規模營業人若取得一般營業人開立的進項發票，可以申報扣抵。扣抵的方式是每季向國稅局申報進項憑證，核准後可扣抵查定稅額的<strong>10%</strong>。雖然扣抵比例不高，但對於進貨金額較大的小規模營業人來說，仍有一定的節稅效果。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">3. 申報方式與期限</h2>
+            <p>
+                一般營業人的營業稅申報期間為每兩個月一期，具體的申報期限如下：
+            </p>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;">1-2 月期：<strong>3月15日前</strong>申報</li>
+                <li style="margin-bottom: 10px;">3-4 月期：<strong>5月15日前</strong>申報</li>
+                <li style="margin-bottom: 10px;">5-6 月期：<strong>7月15日前</strong>申報</li>
+                <li style="margin-bottom: 10px;">7-8 月期：<strong>9月15日前</strong>申報</li>
+                <li style="margin-bottom: 10px;">9-10 月期：<strong>11月15日前</strong>申報</li>
+                <li style="margin-bottom: 10px;">11-12 月期：<strong>隔年1月15日前</strong>申報</li>
+            </ul>
+            <p style="margin-top: 20px;">
+                目前大多數營業人採用「網路申報」方式（透過財政部電子申報繳稅系統），也可以委託記帳及報稅代理業務人或會計師代為處理。使用電子發票的營業人，由於銷項資料已由系統自動彙整，申報作業更為便捷。若申報截止日遇到假日，則順延至下一個工作日。
+            </p>
+            <p style="margin-top: 20px;">
+                小規模營業人由國稅局<strong>每季查定</strong>銷售額並寄發繳款書，分別在每年的1月、4月、7月、10月繳納。小規模營業人不需要自行計算稅額，只需按時繳納即可。但若實際銷售額已超過使用統一發票的標準，應主動向國稅局申請改為使用統一發票，否則可能遭受處罰。
+            </p>
+
+            <!-- Luxurious Pull Quote -->
+            <div class="pull-quote">
+                "稅務合規不是成本，而是企業信譽與永續經營的基石。每一張發票、每一筆申報，都是企業誠信的展現。"
+            </div>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">4. 進項稅額扣抵規定</h2>
+            <p>
+                進項稅額的扣抵是營業稅制度中最核心的機制，直接影響營業人的實際稅負。並非所有的進項稅額都可以扣抵銷項稅額，營業稅法對此有明確的規定。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">可扣抵的進項稅額</h3>
+            <p>
+                原則上，營業人為營業目的購進貨物或勞務所支付的進項稅額，取得合法憑證（統一發票扣抵聯）後，均可申報扣抵銷項稅額。常見的可扣抵項目包括：商品進貨、原物料購入、辦公室租金、水電費、電信費、文具用品、會計師顧問費、設備購置等。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">不得扣抵的進項稅額</h3>
+            <p>
+                營業稅法第19條明確列舉了以下幾類進項稅額不得扣抵銷項稅額：
+            </p>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;"><strong>購進自用乘人小汽車：</strong>這是最常見的不得扣抵項目。營業人購入9人座以下的自用小客車（排氣量2,000cc以下），其進項稅額不得扣抵。但若為客運業、租賃業等以載客為營業項目者，則不受此限。</li>
+                <li style="margin-bottom: 10px;"><strong>交際應酬費用：</strong>與營業直接相關的交際費，其進項稅額不得扣抵。</li>
+                <li style="margin-bottom: 10px;"><strong>饋贈員工的貨物或勞務：</strong>例如員工福利品、尾牙抽獎獎品等。</li>
+                <li style="margin-bottom: 10px;"><strong>未依規定取得或保存憑證：</strong>即使確有進貨事實，但若無法提供合法的統一發票扣抵聯，該進項稅額即不得扣抵。</li>
+                <li style="margin-bottom: 10px;"><strong>兼營免稅或非加值型營業稅的進項：</strong>若營業人同時銷售應稅貨物與免稅貨物，其共同使用的進項稅額須按比例調整，免稅部分對應的進項稅額不得扣抵。</li>
+            </ul>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">5. 零稅率適用</h2>
+            <p>
+                零稅率（稅率為0%）與免稅不同。零稅率的意思是銷售時適用0%的稅率（銷項稅額為零），但營業人仍可申報扣抵其進項稅額，因此通常會產生「溢付稅額」可以申請退稅。免稅則是銷售時不課營業稅，但進項稅額也不得扣抵。
+            </p>
+            <p style="margin-top: 20px;">
+                適用零稅率的主要情形包括：
+            </p>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;"><strong>外銷貨物：</strong>銷售貨物與保稅區營業人供營運之用者，或直接外銷者，適用零稅率。這是最常見的零稅率適用情形。</li>
+                <li style="margin-bottom: 10px;"><strong>與外銷有關之勞務：</strong>例如在國內提供而在國外使用的勞務。</li>
+                <li style="margin-bottom: 10px;"><strong>銷售予保稅區營業人：</strong>銷售貨物或勞務予科學園區、加工出口區、自由貿易港區內的營業人供營運之用者。</li>
+                <li style="margin-bottom: 10px;"><strong>國際運輸與相關勞務：</strong>國際間的運輸服務及其相關的裝卸、倉儲、修繕等勞務。</li>
+            </ul>
+            <p style="margin-top: 20px;">
+                對於外銷比重較高的營業人而言，零稅率制度是非常有利的。由於銷項稅額為零，而進項稅額可以全額扣抵，因此每期申報時通常會產生「溢付稅額」，營業人可以申請退稅或留抵下期。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">6. 溢付稅額處理</h2>
+            <p>
+                當營業人某一期的進項稅額大於銷項稅額時，就會產生「溢付稅額」。溢付稅額的處理方式有兩種：
+            </p>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;"><strong>留抵下期：</strong>將溢付稅額留至下一期繼續扣抵。這是預設的處理方式，適用於溢付金額不大或暫時性溢付的情形。</li>
+                <li style="margin-bottom: 10px;"><strong>申請退稅：</strong>在特定情況下，營業人可以申請退還溢付稅額。依法可申請退稅的情形包括：因適用零稅率而溢付者、購買固定資產而溢付者、合併或轉讓時溢付者、以及連續三期以上溢付者。</li>
+            </ul>
+            <p style="margin-top: 20px;">
+                實務上，因外銷適用零稅率而產生的溢付稅額，是最常見的退稅案件。國稅局通常會在收到退稅申請後30天內完成審核。若營業人持續有零稅率的銷售，建議每期主動申請退稅，以維持健康的現金流。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">7. 常見違規與罰則</h2>
+            <p>
+                營業稅的違規行為輕則處以罰鍰，重則可能涉及刑事責任。以下是實務上最常見的幾種違規態樣：
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">漏開或短開統一發票</h3>
+            <p>
+                營業人銷售貨物或勞務時未依規定開立統一發票，或開立金額低於實際銷售額者，除補徵稅款外，處以漏稅額<strong>1倍至10倍</strong>的罰鍰。這是國稅局最常查核的違規項目之一，特別針對以現金交易為主的行業。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">虛報進項稅額</h3>
+            <p>
+                營業人以不實的進項憑證（如取得虛開的發票、以他人的進項發票充作自己的進項）申報扣抵銷項稅額者，除追繳稅款外，處以漏稅額<strong>5倍</strong>的罰鍰。情節嚴重者（如開立不實發票幫助他人逃漏稅），可能觸犯《稅捐稽徵法》第41條或第43條，面臨5年以下有期徒刑。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">逾期申報</h3>
+            <p>
+                未在規定期限內申報營業稅者，每逾2日處以應納稅額<strong>1%</strong>的滯報金，最高不超過應納稅額的<strong>30%</strong>；逾30日仍未申報者，處以應納稅額<strong>2倍</strong>以下的怠報金。此外，逾期申報也可能影響營業人的納稅信用等級，對後續的稅務行政產生不利影響。
+            </p>
+
+            <!-- Calculator CTA -->
+            <div style="margin: 50px 0; padding: 40px; background: var(--color-brand-light); border: 1px solid var(--border-gold); border-radius: 8px; text-align: center;">
+                <h3 style="font-size: 1.5rem; color: var(--text-primary); margin-bottom: 10px;">營業稅試算工具</h3>
+                <p style="font-family: var(--font-sans); font-size: 0.95rem; color: var(--text-body); margin-bottom: 20px;">輸入銷項與進項資料，快速計算當期應納或溢付稅額。</p>
+                <a href="/tools/business-tax-calculator" class="btn-solid-gold" style="display: inline-block; padding: 14px 40px; font-size: 1rem;">前往線上試算</a>
+            </div>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">8. 結語</h2>
+            <p>
+                營業稅是企業營運中最基礎也最重要的稅務合規事項。雖然每期5%的稅率看似不高，但若在進項管理、發票開立、申報程序上出了差錯，累積下來的補稅金額與罰鍰可能相當驚人。對於剛設立的新創公司或初次擔任財務人員的同仁而言，建議在初期就建立良好的發票管理與帳務處理流程，必要時委託專業的記帳士或會計師協助，確保每一期的申報都正確無誤。
+            </p>
+            <p style="margin-top: 20px;">
+                特別是對於有外銷業務或兼營免稅項目的營業人，進項稅額的分攤與零稅率退稅的申請，涉及較為複雜的計算與文件準備。這些領域的專業知識，往往是一般企業主較不熟悉的範疇，也正是專業會計師能夠提供最大價值的地方。定期的稅務健檢，不僅能避免違規風險，更能確保企業充分享受法律賦予的權益。
+            </p>
+
+            <hr style="margin: 60px 0; border: 0; border-top: 1px solid #eee;">
+
+            <div style="font-family: var(--font-sans);">
+                <h4 style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.9rem; color: #888;">Share this
+                    article</h4>
+                <div style="margin-top: 15px; display: flex; gap: 20px;">
+                    <a href="#"
+                        onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), 'facebook-share', 'width=580,height=296'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#b48e55'" onmouseout="this.style.color='#1a1a1a'">Facebook</a>
+
+                    <a href="#"
+                        onclick="window.open('https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(window.location.href), 'line-share', 'width=500,height=500'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#06C755'" onmouseout="this.style.color='#1a1a1a'">Line</a>
+
+                    <a href="#"
+                        onclick="window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(window.location.href), 'linkedin-share', 'width=580,height=480'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#0077b5'" onmouseout="this.style.color='#1a1a1a'">LinkedIn</a>
+                </div>
+            </div>
+        </article>
+
+
+        <!-- Right: Sidebar -->
+        <aside class="article-sidebar">
+
+            <!-- Author Widget -->
+            <div style="margin-bottom: 50px;">
+                <h4
+                    style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.85rem; color: #b48e55; margin-bottom: 20px;">
+                    關於作者</h4>
+                <div style="display: flex; align-items: start;">
+                    <div
+                        style="width: 60px; height: 60px; background: #eee; border-radius: 50%; margin-right: 15px; overflow: hidden;">
+                        <picture>
+                          <source srcset="/assets/images/accountant-liu-900w.webp" type="image/webp">
+                          <img src="/assets/images/accountant-liu.jpg" alt="Partner"
+                            width="2925" height="3762"
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                        </picture>
+                    </div>
+                    <div>
+                        <h5 style="font-size: 1rem; margin: 0 0 5px 0;">劉韋辰 會計師</h5>
+                        <p style="font-size: 0.85rem; color: #666; line-height: 1.5; margin: 0;">
+                            主持會計師 (CPA)<br>專精於各類營業人稅務規劃與申報。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Widget -->
+            <div style="background: #FDFBF7; padding: 30px; border: 1px solid #eee; text-align: center;">
+                <h4 style="font-family: var(--font-serif); font-size: 1.4rem; color: #1a1a1a; margin-bottom: 15px;">
+                    需要專業協助？</h4>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 25px; line-height: 1.6;">
+                    營業稅申報看似簡單，卻有許多眉角需要注意。</p>
+                <a href="/booking.html" class="btn-solid-gold"
+                    style="width: 100%; box-sizing: border-box; display: block; padding: 12px 0;">立即諮詢</a>
+            </div>
+
+            <!-- Related Links -->
+            <div style="margin-top: 50px;">
+                <h4
+                    style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.85rem; color: #b48e55; margin-bottom: 20px;">
+                    Related Topics</h4>
+                <ul id="related-articles-list" style="list-style: none; padding: 0;">
+                    <!-- JS will inject content here -->
+                </ul>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script type="module" src="/assets/js/main.js"></script>
+
+</body>
+
+</html>

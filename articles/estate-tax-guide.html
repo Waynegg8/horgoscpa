@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"></noscript>
+
+  <!-- Module Preload (eliminate JS waterfall) -->
+  <link rel="modulepreload" href="/assets/js/modules/components.js">
+  <link rel="modulepreload" href="/assets/js/modules/ui-effects.js">
+  <link rel="modulepreload" href="/assets/js/modules/faq.js">
+  <link rel="modulepreload" href="/assets/js/modules/content-loader.js">
+    <title>遺產稅申報指南 | 霍爾果斯會計師事務所</title>
+    <meta name="description" content="扣除額全解析，從申報到節稅一次搞定。完整解析遺產稅免稅額、扣除額、稅率級距、配偶剩餘財產差額分配請求權與申報流程。">
+    <meta property="og:title" content="遺產稅申報指南 | 霍爾果斯會計師事務所">
+    <meta property="og:description" content="扣除額全解析，從申報到節稅一次搞定。完整解析遺產稅免稅額、扣除額、稅率級距與申報流程。">
+    <meta property="og:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <meta property="og:url" content="https://www.horgoscpa.com/articles/estate-tax-guide">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="遺產稅申報指南 | 霍爾果斯會計師事務所">
+    <meta name="twitter:description" content="扣除額全解析，從申報到節稅一次搞定。完整解析遺產稅免稅額、扣除額、稅率級距與申報流程。">
+    <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <!-- Content Automation Tags -->
+    <meta name="date" content="2026.03.11">
+    <meta name="category" content="Tax">
+    <meta name="cover" content="/assets/images/hero.jpg">
+    <!-- Critical CSS (inline) -->
+  <style>:root{--font-serif:'Playfair Display',serif;--font-sans:'Lato','Noto Sans TC',sans-serif;--text-d1:4rem;--text-h1:2.75rem;--text-h2:2rem;--text-h3:1.35rem;--text-body:.95rem;--text-sm:.85rem;--leading-tight:1.3;--leading-base:1.9;--leading-loose:2.1;--bg-base:#FDFBF7;--bg-surface:#FFF;--bg-inverse:#1A1A1A;--color-brand:#B48E55;--color-brand-dark:#8A6D3B;--color-brand-light:rgba(180,142,85,.1);--text-primary:#2C2C2C;--text-body:#555;--text-muted:#999;--border-line:#E5E5E5;--border-gold:rgba(180,142,85,.4);--space-1:8px;--space-2:16px;--space-4:40px;--space-8:100px;--space-16:200px;--container-width:1200px;--header-height:100px}@media(max-width:768px){:root{--text-d1:2.8rem;--text-h1:2.2rem;--space-16:60px;--space-8:32px}}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background-color:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-base);overflow-x:hidden;-webkit-font-smoothing:antialiased}h1,h2,h3,h4,h5,h6{font-family:var(--font-serif);font-weight:600;line-height:var(--leading-tight);color:var(--text-primary);margin-bottom:var(--space-2)}.display-text{font-size:var(--text-d1);font-weight:700;letter-spacing:-.02em}.eyebrow{font-family:var(--font-sans);text-transform:uppercase;letter-spacing:.15em;font-size:var(--text-sm);font-weight:700}.container{max-width:var(--container-width);margin:0 auto;padding:0 var(--space-4);width:100%}.text-gold{color:var(--color-brand)}.text-center{text-align:center}.section-gap{padding:var(--space-16) 0}</style>
+  <link rel="stylesheet" href="/assets/css/common.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/assets/css/common.css"></noscript>
+    <link rel="stylesheet" href="/assets/css/organisms.css" media="print" onload="this.media='all'">
+
+    <noscript><link rel="stylesheet" href="/assets/css/organisms.css"></noscript>
+    <link rel="icon" href="/favicon.ico">
+  <!-- Google Analytics (deferred) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    function loadGTM() {
+      if (loadGTM.done) return; loadGTM.done = true;
+      var s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5';
+      s.onload = function () { gtag('js', new Date()); gtag('config', 'G-RKMCS9WVS5'); };
+      document.head.appendChild(s);
+    }
+    setTimeout(loadGTM, 3500);
+    ['mouseover','touchstart','scroll','keydown'].forEach(function(e){
+      addEventListener(e, loadGTM, {once:true,passive:true});
+    });
+  </script>
+    <style>
+        .article-hero {
+            padding: 100px 0;
+            background-color: var(--bg-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .article-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 60px;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 80px 20px;
+        }
+
+        .article-content {
+            font-family: var(--font-serif);
+            font-size: 1.15rem;
+            line-height: 1.9;
+            color: var(--text-primary);
+        }
+
+        .article-sidebar {
+            position: sticky;
+            top: 120px;
+            align-self: start;
+            padding-left: 40px;
+            border-left: 1px solid var(--border-line);
+        }
+
+        .drop-cap::first-letter {
+            float: left;
+            font-size: 4.5rem;
+            line-height: 0.85;
+            margin-right: 15px;
+            margin-top: 5px;
+            color: var(--color-brand);
+            font-family: var(--font-serif);
+        }
+
+        .pull-quote {
+            border-top: 2px solid var(--color-brand);
+            border-bottom: 2px solid var(--color-brand);
+            padding: 30px 0;
+            margin: 50px 0;
+            font-size: 1.6rem;
+            font-style: italic;
+            text-align: center;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 900px) {
+            .article-container {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .article-sidebar {
+                border-left: none;
+                border-top: 1px solid var(--border-line);
+                padding-left: 0;
+                padding-top: 40px;
+                position: static;
+            }
+        }
+    </style>
+  <style>
+    .page-header{padding:180px 0 80px;text-align:center;background-color:var(--bg-base)}
+    .page-header h1{font-size:2.5rem;font-weight:500;margin-top:10px;
+      letter-spacing:.05em;color:var(--text-primary)}
+    .page-header p{max-width:600px;margin:20px auto;
+      color:var(--text-body);font-family:var(--font-sans)}
+  </style>
+</head>
+
+<body>
+
+    <!-- Navbar (Injected by main.js) -->
+    <div id="nav-placeholder"></div>
+
+    <!-- Magazine Hero (Light & Airy) -->
+    <header class="article-hero"
+        style="background-color: var(--bg-base); color: var(--text-primary); margin-top: 0; padding-top: 180px; padding-bottom: 60px; height: auto; min-height: auto;">
+        <div class="container text-center">
+            <span class="eyebrow text-gold" style="letter-spacing: 0.3em;">ESTATE TAX GUIDE</span>
+            <h1 class="display-text" style="color: var(--text-primary); font-size: 3.5rem; margin-top: 20px;">遺產稅申報指南</h1>
+            <p
+                style="color: var(--text-body); margin-top: 20px; font-family: var(--font-serif); font-style: italic; font-size: 1.2rem;">
+                扣除額全解析，從申報到節稅一次搞定
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="article-container">
+
+        <!-- Left: Article Body -->
+        <article class="article-content">
+            <!-- Metadata -->
+            <div
+                style="margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 20px; font-family: var(--font-sans); font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.1em;">
+                <span>Mar 11, 2026</span>
+                <span style="margin: 0 10px;">/</span>
+                <span>Tax Guide</span>
+                <span style="margin: 0 10px;">/</span>
+                <span>9 Min Read</span>
+            </div>
+
+            <!-- Content with Drop Cap -->
+            <p class="drop-cap">
+                遺產稅是許多家庭在面臨親人離世時，除了悲傷之外還必須處理的重要稅務課題。台灣的遺產稅制度採用「總遺產稅制」，也就是以被繼承人（過世者）死亡時的全部遺產總額為課稅基礎，扣除免稅額、各項扣除額後，依累進稅率計算應納稅額。對於遺產規模較大的家庭而言，遺產稅可能是一筆相當可觀的支出，但透過合法的扣除額運用與事前規劃，可以有效降低稅負。本文將從基本概念出發，完整解析遺產稅的申報流程與節稅要點。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">1. 遺產稅基本概念</h2>
+            <p>
+                依據《遺產及贈與稅法》規定，凡是經常居住在中華民國境內的國民死亡時，其在境內及境外的全部財產，均應課徵遺產稅。對於經常居住在境外的中華民國國民，或是非中華民國國民，則僅就其在境內的遺產課稅。
+            </p>
+            <p style="margin-top: 20px;">
+                遺產稅的納稅義務人依法定順序為：遺囑執行人、繼承人及受遺贈人、依法選定的遺產管理人。實務上，大多數案件是由繼承人共同申報。需要特別注意的是，即使繼承人之間對遺產分配有爭議，仍須在法定期限內先行申報遺產稅，否則將面臨逾期罰鍰。
+            </p>
+            <p style="margin-top: 20px;">
+                並非所有的身故案件都需要申報遺產稅。若被繼承人的遺產總額未超過免稅額（目前為 1,333 萬元），且無需適用特殊扣除規定者，繼承人可以向國稅局申請「免稅證明」而無須繳稅。但即便不需繳稅，辦理不動產移轉登記時仍需取得國稅局核發的遺產稅免稅證明書或繳清證明書。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">2. 免稅額與扣除額一覽（115年）</h2>
+            <p>
+                遺產稅的計算公式為：應納稅額 =（遺產總額 - 免稅額 - 扣除額）× 適用稅率 - 累進差額。以下整理民國115年適用的免稅額與各項扣除額：
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">免稅額</h3>
+            <p>
+                每一被繼承人的遺產免稅額為<strong>新台幣 1,333 萬元</strong>。若被繼承人為軍警公教人員因執行職務死亡者，免稅額加倍為 2,666 萬元。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">扣除額</h3>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;"><strong>配偶扣除額：</strong>553 萬元。被繼承人遺有配偶者，自遺產總額中扣除。</li>
+                <li style="margin-bottom: 10px;"><strong>直系血親卑親屬扣除額：</strong>每人 56 萬元。包括子女、孫子女等。其中有未成年者，並得按其年齡距屆滿成年的年數，每年加扣 56 萬元。</li>
+                <li style="margin-bottom: 10px;"><strong>父母扣除額：</strong>每人 138 萬元。被繼承人遺有父母者適用。</li>
+                <li style="margin-bottom: 10px;"><strong>重度以上身心障礙扣除額：</strong>每人 693 萬元。繼承人或受遺贈人中有重度以上身心障礙者適用。</li>
+                <li style="margin-bottom: 10px;"><strong>受被繼承人扶養之兄弟姊妹、祖父母扣除額：</strong>每人 56 萬元。兄弟姊妹中未成年者，同樣得按年數每年加扣 56 萬元。</li>
+                <li style="margin-bottom: 10px;"><strong>喪葬費扣除額：</strong>138 萬元。不須檢附實際支出憑證，一律定額扣除。</li>
+            </ul>
+            <p style="margin-top: 20px;">
+                除了上述人的扣除額外，被繼承人生前未償的債務（如房貸、信用貸款），以及依法應納未納的稅捐，也可以從遺產總額中扣除。此外，被繼承人的配偶行使「剩餘財產差額分配請求權」所取得的金額，也可自遺產總額中扣除，這是最重要的節稅工具之一（詳見第5節）。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">3. 稅率級距</h2>
+            <p>
+                遺產稅採累進稅率，依課稅遺產淨額的多寡適用不同稅率：
+            </p>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;"><strong>5,000 萬元以下：</strong>稅率 10%</li>
+                <li style="margin-bottom: 10px;"><strong>超過 5,000 萬元至 1 億元：</strong>稅率 15%（累進差額 250 萬元）</li>
+                <li style="margin-bottom: 10px;"><strong>超過 1 億元：</strong>稅率 20%（累進差額 750 萬元）</li>
+            </ul>
+            <p style="margin-top: 20px;">
+                相較於許多國家動輒40%至55%的最高遺產稅率，台灣的遺產稅最高稅率20%在國際上屬於較為溫和的水準。然而，由於台灣的不動產佔遺產比例往往很高，且不動產的流動性較差，繼承人可能面臨「有遺產但沒有現金繳稅」的困境。遺產稅法對此提供了實物抵繳與分期繳納的規定。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">4. 常見遺產項目與計價方式</h2>
+            <p>
+                遺產的範圍非常廣泛，舉凡被繼承人死亡時所遺留的一切有經濟價值的財產，包括動產、不動產、權利等，都屬於遺產的範疇。以下說明幾種最常見遺產項目的計價方式：
+            </p>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;"><strong>土地：</strong>以死亡日當期的公告土地現值計算，而非市場價格。</li>
+                <li style="margin-bottom: 10px;"><strong>房屋：</strong>以死亡日的房屋評定現值計算。由於房屋評定現值通常遠低於市價，因此不動產在遺產稅申報中的價值往往低於其實際市值。</li>
+                <li style="margin-bottom: 10px;"><strong>上市櫃股票：</strong>以死亡日的收盤價計算。若死亡日為非交易日，則以死亡日前最後一個交易日的收盤價為準。</li>
+                <li style="margin-bottom: 10px;"><strong>未上市櫃股票：</strong>以該公司的資產淨值（每股淨值）計算，計算方式較為複雜，通常需要取得公司的財務報表。</li>
+                <li style="margin-bottom: 10px;"><strong>銀行存款：</strong>以死亡日的帳戶餘額計算，包括活期存款與定期存款（含已到期未提領的利息）。</li>
+                <li style="margin-bottom: 10px;"><strong>保險給付：</strong>被繼承人死亡時，受益人所領取的人壽保險金，在每一受益人 3,330 萬元以內的部分，免計入遺產總額。超過部分則需計入。</li>
+            </ul>
+
+            <!-- Luxurious Pull Quote -->
+            <div class="pull-quote">
+                "遺產規劃不是為了逃避責任，而是為了讓家人在最脆弱的時刻，不必為稅務問題而增添煩惱。"
+            </div>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">5. 配偶剩餘財產差額分配請求權</h2>
+            <p>
+                在所有的遺產稅節稅工具中，「配偶剩餘財產差額分配請求權」可以說是效果最顯著的一項。依據《民法》第1030-1條規定，法定財產制關係消滅時（包括配偶一方死亡），夫或妻現存的婚後財產，扣除婚姻關係存續中所負債務後，如有剩餘，其雙方剩餘財產的差額，應平均分配。
+            </p>
+            <p style="margin-top: 20px;">
+                舉例來說：丈夫死亡時，其婚後財產淨額為 8,000 萬元，妻子的婚後財產淨額為 2,000 萬元。差額為 6,000 萬元，妻子可以請求差額的一半，即 3,000 萬元。這 3,000 萬元可以從丈夫的遺產總額中扣除，大幅降低課稅遺產淨額。
+            </p>
+            <p style="margin-top: 20px;">
+                這項請求權的行使不需要透過法院訴訟，只要生存配偶在遺產稅申報時一併主張即可。國稅局在核定遺產稅時，會將此金額從遺產總額中扣除。需要注意的是，繼承、受贈的財產以及慰撫金不列入婚後財產的計算範圍。
+            </p>
+            <p style="margin-top: 20px;">
+                在實務上，配偶剩餘財產差額分配請求權經常能將課稅遺產淨額降低數千萬元甚至上億元，是高資產家庭在遺產稅規劃中最核心的工具。建議夫妻雙方在生前就做好財產登記與文件保存，以利日後順利行使此項權利。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">6. 申報流程與期限</h2>
+            <p>
+                遺產稅的申報期限為被繼承人死亡之日起<strong>6個月內</strong>，向被繼承人死亡時戶籍所在地的國稅局辦理申報。若因特殊原因無法在6個月內完成申報，可以在期限屆滿前，向國稅局申請延期，最多可延長<strong>3個月</strong>。
+            </p>
+            <p style="margin-top: 20px;">
+                申報時需要準備的文件相當多，主要包括：
+            </p>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;">遺產稅申報書</li>
+                <li style="margin-bottom: 10px;">被繼承人的除戶戶籍謄本</li>
+                <li style="margin-bottom: 10px;">全體繼承人的現戶戶籍謄本</li>
+                <li style="margin-bottom: 10px;">被繼承人的財產歸屬資料清單（可向國稅局申請）</li>
+                <li style="margin-bottom: 10px;">被繼承人的金融遺產資料（可透過「金融遺產一站式查詢」服務取得）</li>
+                <li style="margin-bottom: 10px;">各項扣除額的證明文件（如身心障礙證明、未償債務證明等）</li>
+                <li style="margin-bottom: 10px;">配偶行使剩餘財產差額分配請求權的相關文件</li>
+            </ul>
+            <p style="margin-top: 20px;">
+                國稅局收到申報書後，通常會在2至6個月內完成審核並核發稅額繳款書。繼承人在收到繳款書後，應在繳納期限內完成繳稅。繳清遺產稅後，國稅局會核發遺產稅繳清證明書，繼承人憑此證明書方可辦理不動產、存款、股票等遺產的過戶手續。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">7. 常見錯誤</h2>
+            <p>
+                在多年的實務經驗中，我們發現繼承人在遺產稅申報時最常犯的錯誤包括以下幾種：
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">漏報遺產</h3>
+            <p>
+                最常見的漏報項目包括：被繼承人在不同銀行的存款帳戶、死亡前2年內的贈與（依法視為遺產）、海外資產、未上市公司股權、債權等。建議繼承人務必利用國稅局提供的「金融遺產一站式查詢」服務，全面清查被繼承人的金融資產。另外，被繼承人死亡前2年內贈與給配偶、直系血親卑親屬、法定繼承人等的財產，均須併入遺產總額申報。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">低估遺產價值</h3>
+            <p>
+                特別是在未上市櫃股票、合夥或獨資事業的資產估值方面，容易因計算方式不正確而低估價值。國稅局對此類資產的查核日益嚴格，若經查核發現低估，除補稅外還可能加徵罰鍰。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">逾期申報</h3>
+            <p>
+                超過6個月的申報期限（含延期3個月）未申報者，除了可能被國稅局逕行核定遺產稅額外，還會被處以應納稅額2倍以下的罰鍰。逕行核定的結果通常對納稅義務人不利，因為國稅局可能不會主動考量有利於納稅義務人的扣除項目。
+            </p>
+
+            <!-- Calculator CTA -->
+            <div style="margin: 50px 0; padding: 40px; background: var(--color-brand-light); border: 1px solid var(--border-gold); border-radius: 8px; text-align: center;">
+                <h3 style="font-size: 1.5rem; color: var(--text-primary); margin-bottom: 10px;">遺產稅試算工具</h3>
+                <p style="font-family: var(--font-sans); font-size: 0.95rem; color: var(--text-body); margin-bottom: 20px;">輸入遺產總額與繼承人資訊，快速估算應納遺產稅額。</p>
+                <a href="/tools/estate-tax-calculator" class="btn-solid-gold" style="display: inline-block; padding: 14px 40px; font-size: 1rem;">前往線上試算</a>
+            </div>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">8. 結語</h2>
+            <p>
+                遺產稅的申報涉及複雜的法規與繁瑣的文件準備，對於處於喪親之痛中的家屬而言，往往是一項沉重的負擔。然而，正確的申報不僅是法律義務，更是保障繼承人權益的重要步驟。善用配偶剩餘財產差額分配請求權、各項法定扣除額，以及在生前做好適當的財產規劃，都能在合法範圍內有效降低遺產稅的負擔。
+            </p>
+            <p style="margin-top: 20px;">
+                建議家屬在被繼承人過世後，儘早委託專業會計師協助處理遺產稅申報事宜。專業團隊不僅能確保申報的正確性與完整性，更能在法律允許的範圍內，為繼承人爭取最大的節稅空間。面對人生中最艱難的時刻，讓專業的人來處理專業的事，您可以專注於陪伴家人、度過難關。
+            </p>
+
+            <hr style="margin: 60px 0; border: 0; border-top: 1px solid #eee;">
+
+            <div style="font-family: var(--font-sans);">
+                <h4 style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.9rem; color: #888;">Share this
+                    article</h4>
+                <div style="margin-top: 15px; display: flex; gap: 20px;">
+                    <a href="#"
+                        onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), 'facebook-share', 'width=580,height=296'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#b48e55'" onmouseout="this.style.color='#1a1a1a'">Facebook</a>
+
+                    <a href="#"
+                        onclick="window.open('https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(window.location.href), 'line-share', 'width=500,height=500'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#06C755'" onmouseout="this.style.color='#1a1a1a'">Line</a>
+
+                    <a href="#"
+                        onclick="window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(window.location.href), 'linkedin-share', 'width=580,height=480'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#0077b5'" onmouseout="this.style.color='#1a1a1a'">LinkedIn</a>
+                </div>
+            </div>
+        </article>
+
+
+        <!-- Right: Sidebar -->
+        <aside class="article-sidebar">
+
+            <!-- Author Widget -->
+            <div style="margin-bottom: 50px;">
+                <h4
+                    style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.85rem; color: #b48e55; margin-bottom: 20px;">
+                    關於作者</h4>
+                <div style="display: flex; align-items: start;">
+                    <div
+                        style="width: 60px; height: 60px; background: #eee; border-radius: 50%; margin-right: 15px; overflow: hidden;">
+                        <picture>
+                          <source srcset="/assets/images/accountant-liu-900w.webp" type="image/webp">
+                          <img src="/assets/images/accountant-liu.jpg" alt="Partner"
+                            width="2925" height="3762"
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                        </picture>
+                    </div>
+                    <div>
+                        <h5 style="font-size: 1rem; margin: 0 0 5px 0;">劉韋辰 會計師</h5>
+                        <p style="font-size: 0.85rem; color: #666; line-height: 1.5; margin: 0;">
+                            主持會計師 (CPA)<br>擔任法院檢查人，具豐富家族傳承與遺產規劃經驗。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Widget -->
+            <div style="background: #FDFBF7; padding: 30px; border: 1px solid #eee; text-align: center;">
+                <h4 style="font-family: var(--font-serif); font-size: 1.4rem; color: #1a1a1a; margin-bottom: 15px;">
+                    需要專業協助？</h4>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 25px; line-height: 1.6;">
+                    遺產稅申報涉及複雜的法規，讓專業團隊為您處理。</p>
+                <a href="/booking.html" class="btn-solid-gold"
+                    style="width: 100%; box-sizing: border-box; display: block; padding: 12px 0;">立即諮詢</a>
+            </div>
+
+            <!-- Related Links -->
+            <div style="margin-top: 50px;">
+                <h4
+                    style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.85rem; color: #b48e55; margin-bottom: 20px;">
+                    Related Topics</h4>
+                <ul id="related-articles-list" style="list-style: none; padding: 0;">
+                    <!-- JS will inject content here -->
+                </ul>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script type="module" src="/assets/js/main.js"></script>
+
+</body>
+
+</html>

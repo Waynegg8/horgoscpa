@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"></noscript>
+
+  <!-- Module Preload (eliminate JS waterfall) -->
+  <link rel="modulepreload" href="/assets/js/modules/components.js">
+  <link rel="modulepreload" href="/assets/js/modules/ui-effects.js">
+  <link rel="modulepreload" href="/assets/js/modules/faq.js">
+  <link rel="modulepreload" href="/assets/js/modules/content-loader.js">
+    <title>土地增值稅解析 | 霍爾果斯會計師事務所</title>
+    <meta name="description" content="漲價歸公原則下的稅務規劃指南，了解一般稅率、自用住宅稅率、長期持有減徵與重購退稅等完整規定。">
+    <meta property="og:title" content="土地增值稅解析 | 霍爾果斯會計師事務所">
+    <meta property="og:description" content="漲價歸公原則下的稅務規劃指南，了解一般稅率、自用住宅稅率、長期持有減徵與重購退稅。">
+    <meta property="og:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <meta property="og:url" content="https://www.horgoscpa.com/articles/land-value-tax-guide">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="土地增值稅解析 | 霍爾果斯會計師事務所">
+    <meta name="twitter:description" content="漲價歸公原則下的稅務規劃指南，了解一般稅率、自用住宅稅率、長期持有減徵與重購退稅。">
+    <meta name="twitter:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <!-- Content Automation Tags -->
+    <meta name="date" content="2026.03.11">
+    <meta name="category" content="Tax Guide">
+    <meta name="cover" content="/assets/images/hero.jpg">
+    <!-- Critical CSS (inline) -->
+  <style>:root{--font-serif:'Playfair Display',serif;--font-sans:'Lato','Noto Sans TC',sans-serif;--text-d1:4rem;--text-h1:2.75rem;--text-h2:2rem;--text-h3:1.35rem;--text-body:.95rem;--text-sm:.85rem;--leading-tight:1.3;--leading-base:1.9;--leading-loose:2.1;--bg-base:#FDFBF7;--bg-surface:#FFF;--bg-inverse:#1A1A1A;--color-brand:#B48E55;--color-brand-dark:#8A6D3B;--color-brand-light:rgba(180,142,85,.1);--text-primary:#2C2C2C;--text-body:#555;--text-muted:#999;--border-line:#E5E5E5;--border-gold:rgba(180,142,85,.4);--space-1:8px;--space-2:16px;--space-4:40px;--space-8:100px;--space-16:200px;--container-width:1200px;--header-height:100px}@media(max-width:768px){:root{--text-d1:2.8rem;--text-h1:2.2rem;--space-16:60px;--space-8:32px}}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background-color:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-base);overflow-x:hidden;-webkit-font-smoothing:antialiased}h1,h2,h3,h4,h5,h6{font-family:var(--font-serif);font-weight:600;line-height:var(--leading-tight);color:var(--text-primary);margin-bottom:var(--space-2)}.display-text{font-size:var(--text-d1);font-weight:700;letter-spacing:-.02em}.eyebrow{font-family:var(--font-sans);text-transform:uppercase;letter-spacing:.15em;font-size:var(--text-sm);font-weight:700}.container{max-width:var(--container-width);margin:0 auto;padding:0 var(--space-4);width:100%}.text-gold{color:var(--color-brand)}.text-center{text-align:center}.section-gap{padding:var(--space-16) 0}</style>
+  <link rel="stylesheet" href="/assets/css/common.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/assets/css/common.css"></noscript>
+    <link rel="stylesheet" href="/assets/css/organisms.css" media="print" onload="this.media='all'">
+
+    <noscript><link rel="stylesheet" href="/assets/css/organisms.css"></noscript>
+    <link rel="icon" href="/favicon.ico">
+  <!-- Google Analytics (deferred) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    function loadGTM() {
+      if (loadGTM.done) return; loadGTM.done = true;
+      var s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5';
+      s.onload = function () { gtag('js', new Date()); gtag('config', 'G-RKMCS9WVS5'); };
+      document.head.appendChild(s);
+    }
+    setTimeout(loadGTM, 3500);
+    ['mouseover','touchstart','scroll','keydown'].forEach(function(e){
+      addEventListener(e, loadGTM, {once:true,passive:true});
+    });
+  </script>
+  <style>
+    .article-hero { padding: 100px 0; background-color: var(--bg-base); display: flex; align-items: center; justify-content: center; position: relative; }
+    .article-container { display: grid; grid-template-columns: 1fr 300px; gap: 60px; max-width: 1000px; margin: 0 auto; padding: 80px 20px; }
+    .article-content { font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.9; color: var(--text-primary); }
+    .article-sidebar { position: sticky; top: 120px; align-self: start; padding-left: 40px; border-left: 1px solid var(--border-line); }
+    .drop-cap::first-letter { float: left; font-size: 4.5rem; line-height: 0.85; margin-right: 15px; margin-top: 5px; color: var(--color-brand); font-family: var(--font-serif); }
+    .pull-quote { border-top: 2px solid var(--color-brand); border-bottom: 2px solid var(--color-brand); padding: 30px 0; margin: 50px 0; font-size: 1.6rem; font-style: italic; text-align: center; color: #1a1a1a; line-height: 1.4; }
+    @media (max-width: 900px) {
+        .article-container { grid-template-columns: 1fr; gap: 40px; }
+        .article-sidebar { border-left: none; border-top: 1px solid var(--border-line); padding-left: 0; padding-top: 40px; position: static; }
+    }
+  </style>
+  <style>
+    .page-header{padding:180px 0 80px;text-align:center;background-color:var(--bg-base)}
+    .page-header h1{font-size:2.5rem;font-weight:500;margin-top:10px;letter-spacing:.05em;color:var(--text-primary)}
+    .page-header p{max-width:600px;margin:20px auto;color:var(--text-body);font-family:var(--font-sans)}
+  </style>
+</head>
+
+<body>
+
+    <!-- Navbar (Injected by main.js) -->
+    <div id="nav-placeholder"></div>
+
+    <!-- Magazine Hero (Light & Airy) -->
+    <header class="article-hero"
+        style="background-color: var(--bg-base); color: var(--text-primary); margin-top: 0; padding-top: 180px; padding-bottom: 60px; height: auto; min-height: auto;">
+        <div class="container text-center">
+            <span class="eyebrow text-gold" style="letter-spacing: 0.3em;">LAND VALUE TAX</span>
+            <h1 class="display-text" style="color: var(--text-primary); font-size: 3.5rem; margin-top: 20px;">
+                土地增值稅解析</h1>
+            <p
+                style="color: var(--text-body); margin-top: 20px; font-family: var(--font-serif); font-style: italic; font-size: 1.2rem;">
+                漲價歸公原則下的稅務規劃指南
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="article-container">
+
+        <!-- Left: Article Body -->
+        <article class="article-content">
+            <!-- Metadata -->
+            <div
+                style="margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 20px; font-family: var(--font-sans); font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.1em;">
+                <span>Mar 11, 2026</span>
+                <span style="margin: 0 10px;">/</span>
+                <span>Tax Guide</span>
+                <span style="margin: 0 10px;">/</span>
+                <span>7 Min Read</span>
+            </div>
+
+            <!-- Content with Drop Cap -->
+            <p class="drop-cap">
+                土地增值稅是台灣不動產交易中最重要的稅目之一，其法理基礎源自孫中山先生「漲價歸公」的思想——土地價值的上漲並非地主個人努力所致，而是整體社會進步與公共建設投資的結果，因此土地增值的利益應部分回歸社會。對於擁有不動產或計畫進行土地交易的民眾而言，深入理解土地增值稅的計算方式與優惠規定，是降低交易成本、做好稅務規劃的關鍵。本文將從基本概念到實務操作，為您完整解析土地增值稅的各項規定。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">1. 土地增值稅基本概念</h2>
+            <p>
+                土地增值稅是對「已規定地價之土地」，在所有權移轉時，就其土地漲價總數額所課徵的稅。簡單來說，就是對土地從取得到出售期間的增值部分課稅。
+            </p>
+            <p style="margin-top: 15px;">
+                課徵時機包括以下幾種情形：
+            </p>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;"><strong>土地買賣</strong>：最常見的課徵情形，在所有權移轉登記時課徵</li>
+                <li style="margin-bottom: 10px;"><strong>土地交換</strong>：以交換時的公告現值計算</li>
+                <li style="margin-bottom: 10px;"><strong>政府照價收買或區段徵收</strong>：政府取得土地時亦需計算</li>
+                <li style="margin-bottom: 10px;"><strong>設定典權</strong>：出典土地時視同移轉</li>
+                <li style="margin-bottom: 10px;"><strong>信託土地移轉</strong>：受益人變更或信託終止時可能觸發</li>
+            </ul>
+            <p style="margin-top: 15px;">
+                值得注意的是，土地增值稅是以「公告土地現值」作為計算基礎，而非實際的市場交易價格。公告土地現值由各縣市政府每年公告一次，通常低於市場價格。這意味著，即使您以高於公告現值的價格出售土地，土地增值稅仍以公告現值計算。
+            </p>
+            <p style="margin-top: 15px;">
+                此外，繼承取得的土地在繼承時免課土地增值稅，但日後出售時，仍須以被繼承人原始取得時的公告現值作為前次移轉現值來計算增值。贈與則須課徵土地增值稅，以贈與時的公告現值計算。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">2. 一般稅率：累進課徵</h2>
+            <p>
+                土地增值稅的一般稅率採「累進稅率」設計，依據土地漲價倍數的不同，分為三個級距：
+            </p>
+            <div style="overflow-x:auto;margin:30px 0;">
+            <table style="width:100%;border-collapse:collapse;font-family:var(--font-sans);font-size:.9rem;">
+            <thead><tr style="background:#1a1a1a;color:#fff;"><th style="padding:12px 16px;text-align:left;">漲價倍數</th><th style="padding:12px 16px;text-align:left;">稅率</th><th style="padding:12px 16px;text-align:left;">說明</th></tr></thead>
+            <tbody>
+            <tr style="border-bottom:1px solid #eee;"><td style="padding:12px 16px;">未超過原規定地價或前次移轉現值100%</td><td style="padding:12px 16px;">20%</td><td style="padding:12px 16px;">漲價在1倍以內</td></tr>
+            <tr style="border-bottom:1px solid #eee;background:#fafafa;"><td style="padding:12px 16px;">超過100%，未超過200%</td><td style="padding:12px 16px;">30%</td><td style="padding:12px 16px;">漲價在1~2倍之間</td></tr>
+            <tr style="border-bottom:1px solid #eee;"><td style="padding:12px 16px;">超過200%</td><td style="padding:12px 16px;">40%</td><td style="padding:12px 16px;">漲價超過2倍</td></tr>
+            </tbody>
+            </table>
+            </div>
+            <p>
+                計算方式是「分段累進」，即漲價總數額的不同部分分別適用不同稅率。例如，土地漲價總數額為原地價的2.5倍，前1倍部分適用20%、1倍至2倍的部分適用30%、超過2倍的部分適用40%。
+            </p>
+            <p style="margin-top: 15px;">
+                <strong>計算公式：</strong>
+            </p>
+            <p style="margin-top: 10px; padding: 15px; background: #f9f9f9; border-left: 3px solid var(--color-brand); font-family: var(--font-sans); font-size: 0.95rem;">
+                土地增值稅 = 漲價總數額 × 稅率 - 累進差額
+            </p>
+            <p style="margin-top: 15px;">
+                其中，「漲價總數額」= 申報移轉現值 - 前次移轉現值 ×（台灣地區消費者物價總指數/100）- 土地改良費用。物價指數的調整是為了排除通貨膨脹的影響，使增值稅的課徵更為合理。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">3. 自用住宅用地優惠稅率</h2>
+            <p>
+                為保障自住需求，土地增值稅對自用住宅用地提供優惠稅率，一律按 <strong>10%</strong> 課徵，遠低於一般稅率的20%~40%。但使用此優惠有嚴格的條件限制：
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">一生一次</h3>
+            <p>
+                都市土地面積不超過300平方公尺（約90.75坪）、非都市土地不超過700平方公尺（約211.75坪）。土地所有權人、配偶、直系親屬設有戶籍，且出售前1年內無出租或營業。土地所有權人一生只能使用一次此優惠。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">一生一屋</h3>
+            <p>
+                已使用過一生一次的人，若符合以下條件仍可再次適用10%優惠：土地所有權人與配偶、未成年子女名下僅持有一處自用住宅用地；設有戶籍且持有並居住連續滿6年；出售前5年無出租或營業。都市土地面積不超過150平方公尺（約45.375坪）。
+            </p>
+            <p style="margin-top: 15px;">
+                自用住宅優惠稅率的稅負差異非常可觀。舉例而言，若土地漲價總數額為500萬元，適用一般稅率可能需繳納100萬至200萬元的土增稅，但適用10%自用住宅優惠稅率則僅需繳納50萬元。因此，在出售不動產前，務必先確認是否符合自用住宅的適用條件。
+            </p>
+
+            <!-- Luxurious Pull Quote -->
+            <div class="pull-quote">
+                "土地增值稅的規劃不是在簽約那一刻才開始，而是在持有的每一天都在累積。提前佈局戶籍與自用條件，才能在交易時享受最大稅務優惠。"
+            </div>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">4. 長期持有減徵優惠</h2>
+            <p>
+                為鼓勵土地長期持有、減少投機行為，土地增值稅對長期持有的土地提供減徵優惠。適用一般稅率課徵的土地，依持有年限可享有以下減徵：
+            </p>
+            <ul style="margin-top: 20px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;"><strong>持有20年以上，未滿30年</strong>：就應納稅額減徵 20%</li>
+                <li style="margin-bottom: 10px;"><strong>持有30年以上，未滿40年</strong>：就應納稅額減徵 30%</li>
+                <li style="margin-bottom: 10px;"><strong>持有40年以上</strong>：就應納稅額減徵 40%</li>
+            </ul>
+            <p style="margin-top: 15px;">
+                需要注意的是，長期持有減徵僅適用於「一般稅率」課徵的土地，不適用於自用住宅用地10%優惠稅率的情形。此外，持有期間的起算點是以前次移轉登記日（或原規定地價日）為起點。
+            </p>
+            <p style="margin-top: 15px;">
+                對於繼承取得的土地，持有期間可合併計算被繼承人的持有年限。例如，父親持有30年後由子女繼承，子女再持有5年後出售，持有期間合計為35年，可享30%減徵。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">5. 消費者物價指數調整</h2>
+            <p>
+                土地增值稅計算中一個非常重要但常被忽略的因素，就是「消費者物價總指數」的調整。由於土地持有期間可能長達數十年，其間物價水準已有大幅變動，若不調整將導致「名目增值」大於「實質增值」，使納稅人承受不合理的稅負。
+            </p>
+            <p style="margin-top: 15px;">
+                計算方式是將前次移轉現值乘以「物價指數調整倍數」後，再與本次移轉現值相減。物價指數調整倍數 = 本次移轉年月之物價指數 / 前次移轉年月之物價指數。
+            </p>
+            <p style="margin-top: 15px;">
+                您可以至內政部地政司或各縣市稅捐處網站查詢歷年消費者物價總指數。在土地增值稅試算時，正確帶入物價指數可能大幅降低漲價總數額，進而減少應納稅額。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">6. 重購退稅</h2>
+            <p>
+                土地增值稅的「重購退稅」制度，是另一個重要的節稅工具。當土地所有權人出售自用住宅用地後，於2年內重新購買自用住宅用地時，可申請退還已繳納的土地增值稅。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">小換大：全額退稅</h3>
+            <p>
+                重購土地的地價（以公告土地現值計算）超過出售土地的地價扣除土地增值稅後之餘額者，可申請「全額退還」已繳的土地增值稅。換言之，買進的土地價值大於賣出的淨價時，可全額退稅。
+            </p>
+
+            <h3 style="font-size: 1.4rem; margin-top: 30px; color: var(--color-brand);">大換小：比例退稅</h3>
+            <p>
+                若重購的土地地價低於原出售土地地價扣除增值稅後的餘額，則依「不足支付部分」的比例退還已繳稅款。
+            </p>
+            <p style="margin-top: 15px;">
+                <strong>重購退稅條件：</strong>
+            </p>
+            <ul style="margin-top: 15px; padding-left: 20px; list-style-type: disc;">
+                <li style="margin-bottom: 10px;">出售與重購土地均須為「自用住宅用地」</li>
+                <li style="margin-bottom: 10px;">重購與出售的時間差在2年以內（先買後賣或先賣後買皆可）</li>
+                <li style="margin-bottom: 10px;">重購的土地在5年內不得移轉或改作他用，否則將追繳原退還之稅款</li>
+                <li style="margin-bottom: 10px;">土地所有權人或其配偶、直系親屬於新購土地設有戶籍</li>
+            </ul>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">7. 計算範例</h2>
+            <p>
+                讓我們透過一個具體的例子來理解土地增值稅的實際計算：
+            </p>
+            <p style="margin-top: 15px; padding: 20px; background: #f9f9f9; border-left: 3px solid var(--color-brand); font-family: var(--font-sans); font-size: 0.95rem; line-height: 1.7;">
+                <strong>案例：</strong>王先生於民國90年以公告現值每平方公尺20,000元取得100平方公尺的土地，115年出售時公告現值為每平方公尺50,000元。假設物價指數調整倍數為1.4。<br><br>
+                <strong>Step 1</strong>：計算前次移轉現值（經物價調整）<br>
+                = 20,000 × 100 × 1.4 = 2,800,000 元<br><br>
+                <strong>Step 2</strong>：計算本次移轉現值<br>
+                = 50,000 × 100 = 5,000,000 元<br><br>
+                <strong>Step 3</strong>：計算漲價總數額<br>
+                = 5,000,000 - 2,800,000 = 2,200,000 元<br><br>
+                <strong>Step 4</strong>：計算漲價倍數<br>
+                = 2,200,000 / 2,800,000 ≈ 78.6%（未超過100%）<br><br>
+                <strong>Step 5</strong>：適用稅率20%<br>
+                = 2,200,000 × 20% = 440,000 元<br><br>
+                <strong>如適用自用住宅10%</strong>：<br>
+                = 2,200,000 × 10% = 220,000 元<br><br>
+                差額達 220,000 元，凸顯自用住宅優惠的重要性。
+            </p>
+            <p style="margin-top: 15px;">
+                此外，若王先生持有已滿25年（民國90年至115年），適用一般稅率時還可享有20%減徵：440,000 × (1 - 20%) = 352,000 元。
+            </p>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">8. 線上試算工具</h2>
+            <p>
+                土地增值稅的計算涉及多重變數，包括前次移轉現值、物價指數、持有年限、是否自用等。我們提供免費的線上試算工具，只需輸入基本資訊即可快速得出稅額估算。
+            </p>
+
+            <div style="background:var(--color-brand-light);border:1px solid var(--color-brand);padding:20px 30px;margin:40px 0;text-align:center;">
+                <p style="margin-bottom:10px;font-family:var(--font-sans);">立即使用我們的免費工具進行試算</p>
+                <a href="/tools/land-value-tax-calculator" class="btn-solid-gold">前往土增稅試算</a>
+            </div>
+
+            <h2 style="margin-top: 50px; font-size: 1.8rem;">結語</h2>
+            <p>
+                土地增值稅在不動產交易成本中占有相當大的比重，特別是持有數十年的土地，其增值稅額往往高得驚人。然而，透過正確的稅務規劃——善用自用住宅優惠稅率、把握長期持有減徵、適時運用重購退稅——可以大幅降低稅務負擔。
+            </p>
+            <p style="margin-top: 15px;">
+                建議在進行不動產交易前，務必先行試算土地增值稅額，並與專業會計師討論最佳的交易時機與節稅策略。提前規劃戶籍設置、確認自用住宅條件、評估重購退稅的可行性，都是降低土地增值稅的有效手段。
+            </p>
+
+            <hr style="margin: 60px 0; border: 0; border-top: 1px solid #eee;">
+
+            <div style="font-family: var(--font-sans);">
+                <h4 style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.9rem; color: #888;">Share this
+                    article</h4>
+                <div style="margin-top: 15px; display: flex; gap: 20px;">
+                    <a href="#"
+                        onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), 'facebook-share', 'width=580,height=296'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#b48e55'" onmouseout="this.style.color='#1a1a1a'">Facebook</a>
+
+                    <a href="#"
+                        onclick="window.open('https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(window.location.href), 'line-share', 'width=500,height=500'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#06C755'" onmouseout="this.style.color='#1a1a1a'">Line</a>
+
+                    <a href="#"
+                        onclick="window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(window.location.href), 'linkedin-share', 'width=580,height=480'); return false;"
+                        style="color: #1a1a1a; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+                        onmouseover="this.style.color='#0077b5'" onmouseout="this.style.color='#1a1a1a'">LinkedIn</a>
+                </div>
+            </div>
+        </article>
+
+
+        <!-- Right: Sidebar -->
+        <aside class="article-sidebar">
+
+            <!-- Author Widget -->
+            <div style="margin-bottom: 50px;">
+                <h4
+                    style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.85rem; color: #b48e55; margin-bottom: 20px;">
+                    關於作者</h4>
+                <div style="display: flex; align-items: start;">
+                    <div
+                        style="width: 60px; height: 60px; background: #eee; border-radius: 50%; margin-right: 15px; overflow: hidden;">
+                        <picture>
+                          <source srcset="/assets/images/accountant-liu-900w.webp" type="image/webp">
+                          <img src="/assets/images/accountant-liu.jpg" alt="Partner"
+                            width="2925" height="3762"
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                        </picture>
+                    </div>
+                    <div>
+                        <h5 style="font-size: 1rem; margin: 0 0 5px 0;">劉韋辰 會計師</h5>
+                        <p style="font-size: 0.85rem; color: #666; line-height: 1.5; margin: 0;">
+                            主持會計師 (CPA)<br>專精於不動產稅務規劃與土地增值稅計算。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Widget -->
+            <div style="background: #FDFBF7; padding: 30px; border: 1px solid #eee; text-align: center;">
+                <h4 style="font-family: var(--font-serif); font-size: 1.4rem; color: #1a1a1a; margin-bottom: 15px;">
+                    需要專業協助？</h4>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 25px; line-height: 1.6;">
+                    土地交易涉及複雜的稅務計算，讓我們為您精準規劃。</p>
+                <a href="/booking.html" class="btn-solid-gold"
+                    style="width: 100%; box-sizing: border-box; display: block; padding: 12px 0;">立即預約諮詢</a>
+            </div>
+
+            <!-- Related Links -->
+            <div style="margin-top: 50px;">
+                <h4
+                    style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.85rem; color: #b48e55; margin-bottom: 20px;">
+                    Related Topics</h4>
+                <ul id="related-articles-list" style="list-style: none; padding: 0;">
+                    <!-- JS will inject content here -->
+                </ul>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script type="module" src="/assets/js/main.js"></script>
+
+</body>
+
+</html>

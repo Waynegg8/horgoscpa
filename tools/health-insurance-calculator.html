@@ -282,8 +282,7 @@
                         <small>影響負責人最低投保金額</small>
                     </label>
                     <select id="companySize" class="calc-select" onchange="calculate()">
-                        <option value="1">僅負責人（1人公司）</option>
-                        <option value="lt5">未滿 5 人</option>
+                        <option value="lt5">未滿 5 人（含 1 人公司）</option>
                         <option value="gte5">5 人以上</option>
                     </select>
                 </div>
@@ -334,7 +333,7 @@
                 <div><strong style="color:#fff;">補充保費率</strong><br><span style="color:#ccc;">2.11%（獎金超過投保金額 4 倍時適用）</span></div>
                 <div><strong style="color:#fff;">適用對象</strong><br><span style="color:#ccc;">第一類第一至三目被保險人</span></div>
                 <div><strong style="color:#fff;">負責人（第一類第二目）</strong><br><span style="color:#ccc;">全額自付 100%，無政府補助</span></div>
-                <div><strong style="color:#fff;">負責人最低投保金額</strong><br><span style="color:#ccc;">1人公司 36,300 / 未滿5人 40,100 / 5人以上 45,800</span></div>
+                <div><strong style="color:#fff;">負責人最低投保金額</strong><br><span style="color:#ccc;">未滿5人（含1人公司）42,000 / 5人以上 45,800</span></div>
                 <div><strong style="color:#fff;">職業工會（第二類）</strong><br><span style="color:#ccc;">自付 60%、政府 40%（全民健康保險法 §27）</span></div>
             </div>
             <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：全民健康保險法 §18、§21、§23；全民健康保險投保金額分級表（115年1月1日施行）</div>
@@ -404,8 +403,7 @@
         }
 
         const BOSS_MIN_BRACKETS = {
-            '1': 36300,    // 1人公司
-            'lt5': 40100,  // 員工未滿5人
+            'lt5': 42000,  // 未滿5人（含1人公司）：第一類平均投保金額（115年）
             'gte5': 45800, // 員工5人以上
         };
 
@@ -413,7 +411,7 @@
             'employee': '',
             'boss': '<strong>負責人（第一類第二目）注意事項：</strong><br>'
                 + '① 全額自付 100%，無雇主負擔、無政府補助（全民健康保險法 §27）<br>'
-                + '② 最低投保金額依公司規模：1人公司 36,300 元 / 未滿5人 40,100 元 / 5人以上 45,800 元<br>'
+                + '② 最低投保金額依公司規模：未滿5人 42,000 元 / 5人以上 45,800 元<br>'
                 + '③ 眷屬保費同樣 100% 自付，最多計 3 口<br>'
                 + '④ 健保費全額可列為公司費用',
             'union': '<strong>職業工會投保（第二類）注意事項：</strong><br>'
@@ -502,7 +500,7 @@
 
             if (isBoss) {
                 const size = document.getElementById('companySize').value;
-                const minLabel = size === '1' ? '36,300' : size === 'lt5' ? '40,100' : '45,800';
+                const minLabel = size === 'lt5' ? '42,000' : '45,800';
                 html += `
                     <div class="result-row">
                         <span class="result-label"><strong>負責人全額自付</strong> (100% &times; ${headCount} 人)<br><span style="font-size:.75rem;color:#888;">最低投保金額 ${minLabel} 元</span></span>
