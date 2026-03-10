@@ -1,6 +1,13 @@
 [
   {
     "type": "tool",
+    "description": "依據勞基法，線上驗證排班是否符合正常工時及三種變形工時規定。即時法規檢查，避免違法風險。",
+    "title": "彈性工時排班驗證系統",
+    "category": "tool",
+    "link": "/tools/labor-scheduler"
+  },
+  {
+    "type": "tool",
     "description": "線上試算工具，協助您快速估算公司設立所需的規費與代辦成本。",
     "title": "公司設立成本試算",
     "category": "tool",

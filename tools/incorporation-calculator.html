@@ -275,6 +275,18 @@
 
     <div class="calculator-container section-gap">
 
+        <!-- Legal Requirements Info -->
+        <div id="reqInfo" style="background:linear-gradient(135deg,#1a1a1a,#2c2c2c);color:#fff;padding:30px;margin-bottom:30px;font-family:var(--font-sans);font-size:.88rem;line-height:1.7;">
+            <h3 style="color:var(--color-brand);font-family:var(--font-serif);font-size:1.15rem;margin-bottom:14px;">有限公司 — 法定要求</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">
+                <div><strong style="color:#fff;">股東人數</strong><br><span style="color:#ccc;">1 人以上（公司法 §98）</span></div>
+                <div><strong style="color:#fff;">董事</strong><br><span style="color:#ccc;">不設董事會，置董事 1-3 人</span></div>
+                <div><strong style="color:#fff;">監察人</strong><br><span style="color:#ccc;">不設監察人（股東有監察權）</span></div>
+                <div><strong style="color:#fff;">最低資本額</strong><br><span style="color:#ccc;">無限制（2009 年修法取消）</span></div>
+            </div>
+            <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：公司法第 2、98-113 條</div>
+        </div>
+
         <!-- Calculator Form -->
         <div class="calculator-card">
 
@@ -287,7 +299,7 @@
                         公司型態
                         <small>選擇您計畫設立的公司類型</small>
                     </label>
-                    <select id="companyType" class="calc-select" onchange="calculate()">
+                    <select id="companyType" class="calc-select" onchange="onTypeChange()">
                         <option value="limited">有限公司</option>
                         <option value="stock">股份有限公司</option>
                     </select>
@@ -296,7 +308,7 @@
                 <div class="calc-row">
                     <label class="calc-label" for="capital">
                         資本額 (新台幣)
-                        <small>股東出資總額</small>
+                        <small id="capitalDesc">股東出資總額（資本總額）</small>
                     </label>
                     <input type="number" id="capital" class="calc-input" value="1000000" min="0" step="10000"
                         onchange="calculate()" oninput="calculate()">
@@ -305,10 +317,30 @@
                 <div class="calc-row">
                     <label class="calc-label" for="directors">
                         董事人數
-                        <small>股份有限公司至少需 3 人</small>
+                        <small id="directorDesc">有限公司：1-3 人，須為股東</small>
                     </label>
                     <input type="number" id="directors" class="calc-input" value="1" min="1" max="20"
                         onchange="calculate()" oninput="calculate()">
+                </div>
+
+                <div class="calc-row" id="supervisorRow" style="display:none;">
+                    <label class="calc-label" for="supervisors">
+                        監察人人數
+                        <small>股份有限公司至少需 1 人（不得兼任董事）</small>
+                    </label>
+                    <input type="number" id="supervisors" class="calc-input" value="1" min="1" max="10"
+                        onchange="calculate()" oninput="calculate()">
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="eFiling">
+                        電子申辦
+                        <small>線上申請可減免部分規費（公司登記規費收費準則 §6）</small>
+                    </label>
+                    <select id="eFiling" class="calc-select" onchange="calculate()">
+                        <option value="yes" selected>是（線上申辦）</option>
+                        <option value="no">否（臨櫃申辦）</option>
+                    </select>
                 </div>
 
             </div>
@@ -326,18 +358,18 @@
                 </div>
 
                 <div class="calc-checkbox-row">
-                    <input type="checkbox" id="serviceCPA" onchange="calculate()">
+                    <input type="checkbox" id="serviceCPA" checked onchange="calculate()">
                     <label class="calc-checkbox-label" for="serviceCPA">
                         資本額簽證 (會計師簽證)
-                        <small>資本額 25 萬以上需會計師驗資簽證</small>
+                        <small>公司設立皆須會計師驗資簽證（公司法 §7）</small>
                     </label>
                 </div>
 
                 <div class="calc-checkbox-row">
                     <input type="checkbox" id="serviceAddress" onchange="calculate()">
                     <label class="calc-checkbox-label" for="serviceAddress">
-                        商業登記地址租用
-                        <small>提供合法商業登記地址 (年租方案)</small>
+                        登記地址租用
+                        <small>提供合法公司登記地址（年租方案）</small>
                     </label>
                 </div>
 
@@ -345,11 +377,14 @@
                     <input type="checkbox" id="serviceSeal" onchange="calculate()">
                     <label class="calc-checkbox-label" for="serviceSeal">
                         公司大小章製作
-                        <small>包含公司章、負責人章</small>
+                        <small>包含公司章（方章）、負責人章（圓章）</small>
                     </label>
                 </div>
 
             </div>
+
+            <!-- Validation warnings -->
+            <div id="warnings" style="display:none;background:#fef2f2;border:1px solid #fecaca;padding:16px 20px;font-size:.88rem;color:#991b1b;line-height:1.6;"></div>
 
         </div>
 
@@ -369,7 +404,8 @@
 
         <p class="disclaimer">
             * 以上為預估金額，實際費用可能因個案情況略有差異。<br>
-            * 規費依政府公告為準，代辦費用以本所報價為準。<br>
+            * 政府規費依公司登記規費收費準則（111.11.24 修正）為準。<br>
+            * 資本額簽證為公司設立法定程序，所有公司皆須辦理。<br>
             * 如需精確報價，請預約諮詢。
         </p>
 
@@ -392,96 +428,196 @@
 
     <script type="module" src="/assets/js/main.js"></script>
     <script>
-        // Fee Constants (2024 rates, adjust as needed)
-        const FEES = {
-            // 政府規費
-            nameReservation: 150,          // 公司名稱預查
-            registrationBase: 1000,        // 設立登記基本費
-            registrationPerCapital: 1,     // 每 4000 元資本額加 1 元 (最低 1000)
-            taxRegistration: 0,            // 稅籍登記 (免費)
+        /* ==========================================================
+           公司設立成本試算
+           法源：公司法、公司登記規費收費準則（111.11.24 修正）
+           ========================================================== */
 
-            // 代辦服務費
-            agencyLimited: 8000,           // 有限公司代辦
-            agencyStock: 12000,            // 股份有限公司代辦
-
-            // 會計師簽證 (依資本額級距)
-            cpaSignatureBase: 3000,        // 100萬以下基本費
-            cpaSignaturePer100W: 500,      // 每增加100萬加收
-
-            // 其他服務
-            addressRental: 12000,          // 地址租用 (年)
-            sealMaking: 1500,              // 大小章製作
+        // 政府規費（依公司登記規費收費準則）
+        const GOV_FEES = {
+            nameReservation: 300,           // 名稱預查（臨櫃）§2
+            nameReservationOnline: 150,     // 名稱預查（電子）§2 + §6 減收150
+            registrationMin: 1000,          // 設立登記最低規費 §3
+            registrationPerUnit: 1,         // 每4,000元資本額收1元 §3
+            registrationUnit: 4000,         // 計算單位
+            eFilingDiscount: 300,           // 電子申辦減收 §6
         };
 
-        function formatNumber(num) {
+        // 代辦服務費（本所報價）
+        const SERVICE_FEES = {
+            agencyLimited: 8000,            // 有限公司代辦
+            agencyStock: 12000,             // 股份有限公司代辦
+            cpaBase: 3000,                  // 資本額簽證基本費（100萬以下）
+            cpaPer100W: 500,                // 每增100萬加收
+            addressRental: 12000,           // 登記地址年租
+            sealMaking: 1500,               // 大小章（含公司章+負責人章）
+        };
+
+        // 法定要求
+        const LEGAL_REQ = {
+            limited: {
+                name: '有限公司',
+                law: '公司法第 2、98-113 條',
+                minShareholders: 1,
+                directorRange: '1-3 人，須為股東',
+                directorMin: 1, directorMax: 3,
+                needSupervisor: false,
+                supervisorNote: '不設監察人（股東有監察權）',
+                capitalNote: '資本總額',
+                capitalLaw: '全體股東出資總額',
+            },
+            stock: {
+                name: '股份有限公司',
+                law: '公司法第 2、128-356 條',
+                minShareholders: 2,
+                directorRange: '1 人以上（設董事會則至少 3 人）',
+                directorMin: 1, directorMax: 20,
+                needSupervisor: true,
+                supervisorNote: '至少 1 人，不得兼任董事或經理人',
+                capitalNote: '實收資本額',
+                capitalLaw: '已發行股份之股款總額',
+            }
+        };
+
+        function fmt(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function onTypeChange() {
+            const t = document.getElementById('companyType').value;
+            const req = LEGAL_REQ[t];
+
+            // Update info panel
+            const info = document.getElementById('reqInfo');
+            let html = `<h3 style="color:var(--color-brand);font-family:var(--font-serif);font-size:1.15rem;margin-bottom:14px;">${req.name} — 法定要求</h3>`;
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">';
+            html += `<div><strong style="color:#fff;">股東人數</strong><br><span style="color:#ccc;">${req.minShareholders} 人以上</span></div>`;
+            html += `<div><strong style="color:#fff;">董事</strong><br><span style="color:#ccc;">${req.directorRange}</span></div>`;
+            html += `<div><strong style="color:#fff;">監察人</strong><br><span style="color:#ccc;">${req.supervisorNote}</span></div>`;
+            html += '<div><strong style="color:#fff;">最低資本額</strong><br><span style="color:#ccc;">無限制（2009 年修法取消）</span></div>';
+            html += '</div>';
+            html += `<div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：${req.law}</div>`;
+            info.innerHTML = html;
+
+            // Update descriptions
+            document.getElementById('capitalDesc').textContent =
+                t === 'stock' ? '已發行股份之股款（實收資本額）' : '股東出資總額（資本總額）';
+            document.getElementById('directorDesc').textContent =
+                t === 'stock' ? '1 人以上；設董事會則至少 3 人（2018 修法）' : '有限公司：1-3 人，須為股東';
+
+            // Show/hide supervisor row
+            document.getElementById('supervisorRow').style.display = req.needSupervisor ? 'flex' : 'none';
+
+            // Reset director min/max
+            const dInput = document.getElementById('directors');
+            dInput.min = req.directorMin;
+            dInput.max = req.directorMax;
+
+            calculate();
         }
 
         function calculate() {
             const companyType = document.getElementById('companyType').value;
             const capital = parseInt(document.getElementById('capital').value) || 0;
             const directors = parseInt(document.getElementById('directors').value) || 1;
+            const eFiling = document.getElementById('eFiling').value === 'yes';
+            const req = LEGAL_REQ[companyType];
 
             const serviceAgency = document.getElementById('serviceAgency').checked;
             const serviceCPA = document.getElementById('serviceCPA').checked;
             const serviceAddress = document.getElementById('serviceAddress').checked;
             const serviceSeal = document.getElementById('serviceSeal').checked;
 
+            // Validation warnings
+            let warnings = [];
+            if (companyType === 'stock' && directors >= 3) {
+                // Board of directors needs at least 3
+            } else if (companyType === 'stock' && directors < 1) {
+                warnings.push('股份有限公司至少需 1 名董事');
+            }
+            if (companyType === 'limited' && directors > 3) {
+                warnings.push('有限公司董事不得超過 3 人（公司法 §108）');
+            }
+            if (companyType === 'limited' && directors > 1) {
+                // Multiple directors OK but worth noting
+            }
+            if (!serviceCPA) {
+                warnings.push('提醒：公司設立依法皆須辦理會計師資本額簽證（公司法 §7），建議勾選此項目以取得完整費用估算。');
+            }
+            if (capital <= 0) {
+                warnings.push('請輸入資本額');
+            }
+
+            const warnEl = document.getElementById('warnings');
+            if (warnings.length > 0) {
+                warnEl.style.display = 'block';
+                warnEl.innerHTML = warnings.map(w => '⚠ ' + w).join('<br>');
+            } else {
+                warnEl.style.display = 'none';
+            }
+
             let items = [];
             let total = 0;
 
-            // 1. 公司名稱預查規費
-            items.push({ label: '公司名稱預查規費', value: FEES.nameReservation });
-            total += FEES.nameReservation;
+            // 1. 公司名稱預查規費（§2）
+            const nameFee = eFiling ? GOV_FEES.nameReservationOnline : GOV_FEES.nameReservation;
+            const nameLabel = eFiling ? '公司名稱預查規費（電子申辦）' : '公司名稱預查規費（臨櫃）';
+            items.push({ label: nameLabel, value: nameFee, note: '公司登記規費收費準則 §2' });
+            total += nameFee;
 
-            // 2. 設立登記規費 (資本額每 4000 元收 1 元，最低 1000)
-            const registrationFee = Math.max(FEES.registrationBase, Math.ceil(capital / 4000));
-            items.push({ label: '設立登記規費', value: registrationFee });
-            total += registrationFee;
+            // 2. 設立登記規費（§3）：每4,000元資本額收1元，最低1,000
+            let regBase = Math.max(GOV_FEES.registrationMin, Math.ceil(capital / GOV_FEES.registrationUnit));
+            if (eFiling) regBase = Math.max(regBase - GOV_FEES.eFilingDiscount, 0);
+            const regLabel = eFiling ? '設立登記規費（電子減收 $300）' : '設立登記規費';
+            items.push({ label: regLabel, value: regBase, note: '§3：每 $4,000 資本額收 $1，最低 $1,000' });
+            total += regBase;
 
-            // 3. 代辦服務費
+            // 3. 稅籍登記（免費）
+            items.push({ label: '稅籍登記（國稅局）', value: 0, note: '免收規費' });
+
+            // 4. 代辦服務費
             if (serviceAgency) {
-                const agencyFee = companyType === 'stock' ? FEES.agencyStock : FEES.agencyLimited;
+                const agencyFee = companyType === 'stock' ? SERVICE_FEES.agencyStock : SERVICE_FEES.agencyLimited;
                 items.push({ label: '全程代辦服務費', value: agencyFee });
                 total += agencyFee;
             }
 
-            // 4. 會計師資本額簽證
+            // 5. 會計師資本額簽證（公司法 §7，所有公司皆須）
             if (serviceCPA) {
-                let cpaFee = FEES.cpaSignatureBase;
+                let cpaFee = SERVICE_FEES.cpaBase;
                 if (capital > 1000000) {
-                    cpaFee += Math.ceil((capital - 1000000) / 1000000) * FEES.cpaSignaturePer100W;
+                    cpaFee += Math.ceil((capital - 1000000) / 1000000) * SERVICE_FEES.cpaPer100W;
                 }
-                items.push({ label: '資本額簽證 (會計師)', value: cpaFee });
+                items.push({ label: '資本額簽證（會計師）', value: cpaFee, note: '公司法 §7 法定程序' });
                 total += cpaFee;
             }
 
-            // 5. 地址租用
+            // 6. 登記地址租用
             if (serviceAddress) {
-                items.push({ label: '商業登記地址租用 (年)', value: FEES.addressRental });
-                total += FEES.addressRental;
+                items.push({ label: '公司登記地址租用（年）', value: SERVICE_FEES.addressRental });
+                total += SERVICE_FEES.addressRental;
             }
 
-            // 6. 大小章製作
+            // 7. 大小章製作
             if (serviceSeal) {
-                items.push({ label: '公司大小章製作', value: FEES.sealMaking });
-                total += FEES.sealMaking;
+                items.push({ label: '公司大小章製作', value: SERVICE_FEES.sealMaking, note: '公司章 + 負責人章' });
+                total += SERVICE_FEES.sealMaking;
             }
 
             // Render results
             const container = document.getElementById('resultsContainer');
             container.innerHTML = items.map(item => `
                 <div class="result-row">
-                    <span class="result-label">${item.label}</span>
-                    <span class="result-value">NT$ ${formatNumber(item.value)}</span>
+                    <span class="result-label">${item.label}${item.note ? '<br><span style="font-size:.75rem;color:#888;">'+item.note+'</span>' : ''}</span>
+                    <span class="result-value">${item.value === 0 ? '免費' : 'NT$ ' + fmt(item.value)}</span>
                 </div>
             `).join('');
 
-            document.getElementById('totalCost').textContent = `NT$ ${formatNumber(total)}`;
+            document.getElementById('totalCost').textContent = `NT$ ${fmt(total)}`;
         }
 
-        // Initial calculation on page load
-        document.addEventListener('DOMContentLoaded', calculate);
+        // Init
+        document.addEventListener('DOMContentLoaded', () => { onTypeChange(); });
     </script>
 
 </body>

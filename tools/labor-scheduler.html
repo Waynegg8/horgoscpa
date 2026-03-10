@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>彈性工時排班驗證系統 | 霍爾果斯會計師事務所</title>
+    <meta name="description" content="依據台灣勞基法，線上驗證您的排班是否符合正常工時、二週、四週、八週變形工時規定。即時法規檢查，避免違法風險。">
+    <meta property="og:title" content="彈性工時排班驗證系統 | 霍爾果斯會計師事務所">
+    <meta property="og:description" content="依據台灣勞基法，線上驗證排班是否合規。支援正常工時及三種變形工時制度。">
+    <meta property="og:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <meta property="og:url" content="https://www.horgoscpa.com/tools/labor-scheduler">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- Critical CSS (inline) -->
+  <style>:root{--font-serif:'Playfair Display',serif;--font-sans:'Lato','Noto Sans TC',sans-serif;--text-d1:4rem;--text-h1:2.75rem;--text-h2:2rem;--text-h3:1.35rem;--text-body:.95rem;--text-sm:.85rem;--leading-tight:1.3;--leading-base:1.9;--leading-loose:2.1;--bg-base:#FDFBF7;--bg-surface:#FFF;--bg-inverse:#1A1A1A;--color-brand:#B48E55;--color-brand-dark:#8A6D3B;--color-brand-light:rgba(180,142,85,.1);--text-primary:#2C2C2C;--text-body-color:#555;--text-muted:#999;--border-line:#E5E5E5;--border-gold:rgba(180,142,85,.4);--space-1:8px;--space-2:16px;--space-4:40px;--space-8:100px;--space-16:200px;--container-width:1200px;--header-height:100px}@media(max-width:768px){:root{--text-d1:2.8rem;--text-h1:2.2rem;--space-16:60px;--space-8:32px}}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background-color:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-base);overflow-x:hidden;-webkit-font-smoothing:antialiased}h1,h2,h3,h4,h5,h6{font-family:var(--font-serif);font-weight:600;line-height:var(--leading-tight);color:var(--text-primary);margin-bottom:var(--space-2)}.display-text{font-size:var(--text-d1);font-weight:700;letter-spacing:-.02em}.eyebrow{font-family:var(--font-sans);text-transform:uppercase;letter-spacing:.15em;font-size:var(--text-sm);font-weight:700}.container{max-width:var(--container-width);margin:0 auto;padding:0 var(--space-4);width:100%}.text-gold{color:var(--color-brand)}.text-center{text-align:center}.section-gap{padding:var(--space-16) 0}</style>
+  <link rel="stylesheet" href="/assets/css/common.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/assets/css/common.css"></noscript>
+    <link rel="stylesheet" href="/assets/css/organisms.css">
+    <link rel="stylesheet" href="/assets/css/atoms.css">
+    <link rel="icon" href="/favicon.ico">
+  <!-- Google Analytics (deferred) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    function loadGTM() {
+      if (loadGTM.done) return; loadGTM.done = true;
+      var s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5';
+      s.onload = function () { gtag('js', new Date()); gtag('config', 'G-RKMCS9WVS5'); };
+      document.head.appendChild(s);
+    }
+    setTimeout(loadGTM, 3500);
+    ['mouseover','touchstart','scroll','keydown'].forEach(function(e){
+      addEventListener(e, loadGTM, {once:true,passive:true});
+    });
+  </script>
+    <style>
+        /* Scheduler Styles */
+        .scheduler-container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+        /* Type Selector Cards */
+        .type-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 40px; }
+        .type-card {
+            background: #fff; border: 2px solid var(--border-line); padding: 20px 16px;
+            cursor: pointer; transition: all 0.3s; text-align: center;
+        }
+        .type-card:hover { border-color: var(--color-brand); transform: translateY(-2px); }
+        .type-card.active { border-color: var(--color-brand); background: var(--color-brand-light); }
+        .type-card-name { font-family: var(--font-serif); font-size: 1.1rem; color: var(--text-primary); margin-bottom: 6px; }
+        .type-card-law { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px; }
+        .type-card-tag { display: inline-block; font-size: 0.75rem; padding: 2px 8px; border: 1px solid var(--color-brand); color: var(--color-brand); }
+
+        /* Rules Info Box */
+        .rules-box {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+            color: #fff; padding: 30px; margin-bottom: 30px;
+        }
+        .rules-box h3 { color: var(--color-brand); font-size: 1.2rem; margin-bottom: 16px; }
+        .rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .rule-item { font-size: 0.88rem; color: #ccc; line-height: 1.5; }
+        .rule-item strong { color: #fff; font-weight: 600; }
+        .rules-note { font-size: 0.8rem; color: #888; margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; }
+
+        /* Schedule Grid */
+        .grid-wrapper { background: #fff; border: 1px solid #eee; padding: 30px; margin-bottom: 20px; }
+        .grid-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .grid-toolbar h3 { font-size: 1.2rem; margin-bottom: 0; }
+        .grid-legend { display: flex; gap: 16px; font-size: 0.82rem; color: var(--text-muted); flex-wrap: wrap; }
+        .legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+        .legend-work { background: #f0f0f0; border: 1px solid #ccc; }
+        .legend-rest { background: #dbeafe; border: 1px solid #93c5fd; }
+        .legend-leave { background: #fce7f3; border: 1px solid #f9a8d4; }
+
+        .grid-header { display: grid; grid-template-columns: 56px repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+        .grid-header-cell { text-align: center; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); padding: 6px 0; }
+        .grid-row { display: grid; grid-template-columns: 56px repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+        .grid-week-label { display: flex; align-items: center; justify-content: center; font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+
+        .grid-cell {
+            position: relative; min-height: 52px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; border: 2px solid transparent;
+            cursor: pointer; transition: all 0.2s; border-radius: 4px; padding: 4px;
+        }
+        .grid-cell:hover { border-color: var(--color-brand); }
+        .grid-cell.selected { border-color: var(--color-brand); box-shadow: 0 0 0 2px rgba(180,142,85,0.3); }
+        .grid-cell.work { background: #f8f8f8; }
+        .grid-cell.rest { background: #dbeafe; }
+        .grid-cell.leave { background: #fce7f3; }
+        .grid-cell.violation { box-shadow: inset 0 0 0 2px #ef4444; }
+        .cell-day { font-size: 0.7rem; color: var(--text-muted); position: absolute; top: 2px; left: 5px; }
+        .cell-label { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+        .grid-cell.rest .cell-label { color: #2563eb; }
+        .grid-cell.leave .cell-label { color: #db2777; }
+
+        /* Quick Fill */
+        .quick-fill { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .quick-fill span { font-size: 0.85rem; color: var(--text-muted); }
+        .fill-btn {
+            padding: 5px 14px; font-size: 0.82rem; border: 1px solid var(--border-line);
+            background: #fff; cursor: pointer; transition: all 0.2s; font-family: var(--font-sans);
+        }
+        .fill-btn:hover { border-color: var(--color-brand); color: var(--color-brand); }
+
+        /* Edit Panel */
+        .edit-panel {
+            background: #fff; border: 1px solid #eee; padding: 24px 30px;
+            margin-bottom: 30px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
+        }
+        .edit-panel.hidden { display: none; }
+        .edit-day-info { font-weight: 600; font-size: 1rem; min-width: 100px; color: var(--text-primary); }
+        .edit-types { display: flex; gap: 8px; }
+        .edit-type-btn {
+            padding: 6px 16px; border: 1px solid var(--border-line); background: #fff;
+            cursor: pointer; font-size: 0.88rem; transition: all 0.2s; font-family: var(--font-sans);
+        }
+        .edit-type-btn:hover { border-color: var(--color-brand); }
+        .edit-type-btn.active-work { background: #f0f0f0; border-color: #666; font-weight: 600; }
+        .edit-type-btn.active-rest { background: #dbeafe; border-color: #2563eb; color: #2563eb; font-weight: 600; }
+        .edit-type-btn.active-leave { background: #fce7f3; border-color: #db2777; color: #db2777; font-weight: 600; }
+        .edit-hours { display: flex; align-items: center; gap: 8px; }
+        .edit-hours label { font-size: 0.88rem; color: #555; }
+        .hours-input {
+            width: 60px; padding: 6px 8px; border: 1px solid #ddd; font-size: 1rem;
+            text-align: center; font-family: var(--font-sans);
+        }
+        .hours-input:focus { outline: none; border-color: var(--color-brand); }
+        .hours-input:disabled { opacity: 0.4; cursor: not-allowed; }
+        .hours-unit { font-size: 0.85rem; color: var(--text-muted); }
+
+        /* Validation Panel */
+        .validation-panel { background: #fff; border: 1px solid #eee; padding: 30px; margin-bottom: 30px; }
+        .validation-panel h3 { font-size: 1.2rem; margin-bottom: 20px; }
+        .val-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+        .val-row:last-child { border-bottom: none; }
+        .val-icon { font-size: 1.1rem; flex-shrink: 0; width: 24px; text-align: center; }
+        .val-pass .val-icon { color: #16a34a; }
+        .val-fail .val-icon { color: #ef4444; }
+        .val-content { flex: 1; }
+        .val-rule { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); }
+        .val-law { font-size: 0.78rem; color: var(--text-muted); }
+        .val-detail { font-size: 0.82rem; color: #ef4444; margin-top: 3px; }
+        .val-ok { font-size: 0.82rem; color: #16a34a; margin-top: 3px; }
+
+        /* Summary Panel */
+        .summary-panel {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+            color: #fff; padding: 30px; margin-bottom: 30px;
+        }
+        .summary-panel h3 { color: var(--color-brand); font-size: 1.2rem; margin-bottom: 20px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; }
+        .summary-item { text-align: center; }
+        .summary-value { font-size: 1.8rem; font-weight: 700; color: #fff; }
+        .summary-label { font-size: 0.82rem; color: #999; margin-top: 4px; }
+        .summary-value.warn { color: #fbbf24; }
+        .summary-value.fail { color: #ef4444; }
+
+        .disclaimer { font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-top: 20px; line-height: 1.6; }
+        .cta-section { text-align: center; padding: 40px 0; }
+        .cta-text { font-family: var(--font-serif); font-size: 1.4rem; color: var(--text-primary); margin-bottom: 20px; }
+
+        @media (max-width: 768px) {
+            .type-cards { grid-template-columns: repeat(2, 1fr); }
+            .grid-wrapper { padding: 16px; }
+            .grid-header, .grid-row { grid-template-columns: 36px repeat(7, 1fr); gap: 2px; }
+            .grid-cell { min-height: 42px; }
+            .cell-day { font-size: 0.6rem; }
+            .cell-label { font-size: 0.85rem; }
+            .edit-panel { padding: 16px; gap: 12px; }
+            .rules-box { padding: 20px; }
+            .rules-grid { grid-template-columns: 1fr 1fr; }
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .type-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .type-card { padding: 14px 10px; }
+            .type-card-name { font-size: 0.95rem; }
+            .grid-header-cell { font-size: 0.7rem; }
+            .grid-week-label { font-size: 0.65rem; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="nav-placeholder"></div>
+
+    <header class="page-header" style="padding-bottom: 40px;">
+        <span class="eyebrow text-gold">TOOL</span>
+        <h1 class="display-text">彈性工時排班系統</h1>
+        <p style="max-width: 640px; margin: 20px auto 0; color: #555; font-size: 1rem;">
+            依據勞基法規定，即時驗證您的排班是否合規
+        </p>
+    </header>
+
+    <div class="scheduler-container section-gap">
+        <div id="type-selector"></div>
+        <div id="rules-info"></div>
+        <div id="grid-section"></div>
+        <div id="edit-panel" class="edit-panel hidden"></div>
+        <div id="validation-panel" class="validation-panel"></div>
+        <div id="summary-panel" class="summary-panel"></div>
+
+        <p class="disclaimer">
+            * 本工具依據勞動基準法（最新修正）建置，僅供排班規劃參考。<br>
+            * 實際適用之工時制度須經工會或勞資會議同意，並視行業別公告。<br>
+            * 如需個案諮詢，歡迎預約專業服務。
+        </p>
+
+        <div class="cta-section">
+            <p class="cta-text">需要勞務法規協助？</p>
+            <a href="/booking.html" class="btn-solid-gold">預約免費諮詢</a>
+        </div>
+
+        <div style="text-align:center; margin-top: 30px;">
+            <a href="/resources.html" style="color: #999; text-decoration: none; font-size: 0.9rem;">
+                &larr; 返回資源列表
+            </a>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script type="module" src="/assets/js/main.js"></script>
+    <script>
+    /* ============================================================
+       勞基法彈性工時排班驗證系統
+       法源：勞動基準法 第30條、第30條之1、第32條、第36條
+       ============================================================ */
+
+    const DOW = ['一','二','三','四','五','六','日'];
+
+    const TYPES = {
+        normal: {
+            name: '正常工時', law: '勞基法 §30 I',
+            periodWeeks: 1, periodDays: 7,
+            maxDailyNormal: 8, maxWeeklyNormal: 40, periodTotalNormal: 40,
+            leaveRule: { per: 7, count: 1 },   // 每7日1例假
+            restRule: { per: 7, count: 1 },     // 每7日1休息日
+            maxConsec: 6, maxDailyTotal: 12,
+            tag: '所有行業適用',
+            rules: [
+                { k: '每日正常工時上限', v: '8 小時' },
+                { k: '每週正常工時上限', v: '40 小時' },
+                { k: '每 7 日休息', v: '1 例假 + 1 休息日' },
+                { k: '最長連續工作', v: '6 日' },
+                { k: '每日總工時上限', v: '12 小時（含加班）' },
+            ]
+        },
+        twoWeek: {
+            name: '二週變形工時', law: '勞基法 §30 II',
+            periodWeeks: 2, periodDays: 14,
+            maxDailyNormal: 10, maxWeeklyNormal: 48, periodTotalNormal: 80,
+            leaveRule: { per: 7, count: 1 },
+            restRule: { per: 14, count: 2 },
+            maxConsec: 6, maxDailyTotal: 12,
+            tag: '所有行業適用',
+            rules: [
+                { k: '每日正常工時上限', v: '10 小時' },
+                { k: '每週正常工時上限', v: '48 小時' },
+                { k: '二週正常工時合計', v: '80 小時' },
+                { k: '例假', v: '每 7 日至少 1 日' },
+                { k: '休息日', v: '每二週至少 2 日' },
+                { k: '最長連續工作', v: '6 日' },
+            ]
+        },
+        eightWeek: {
+            name: '八週變形工時', law: '勞基法 §30 III',
+            periodWeeks: 8, periodDays: 56,
+            maxDailyNormal: 8, maxWeeklyNormal: 48, periodTotalNormal: 320,
+            leaveRule: { per: 7, count: 1 },
+            restRule: { per: 56, count: 8 },
+            maxConsec: 6, maxDailyTotal: 12,
+            tag: '指定行業適用',
+            rules: [
+                { k: '每日正常工時上限', v: '8 小時' },
+                { k: '每週正常工時上限', v: '48 小時' },
+                { k: '八週正常工時合計', v: '320 小時' },
+                { k: '例假', v: '每 7 日至少 1 日' },
+                { k: '休息日', v: '每八週至少 8 日' },
+                { k: '最長連續工作', v: '6 日' },
+            ]
+        },
+        fourWeek: {
+            name: '四週變形工時', law: '勞基法 §30-1',
+            periodWeeks: 4, periodDays: 28,
+            maxDailyNormal: 10, maxWeeklyNormal: null, periodTotalNormal: 160,
+            leaveRule: { per: 14, count: 2 },
+            restRule: { per: 28, count: 4 },
+            maxConsec: 12, maxDailyTotal: 12,
+            tag: '指定行業適用',
+            rules: [
+                { k: '每日正常工時上限', v: '10 小時' },
+                { k: '無每週上限', v: '以四週 160 小時為限' },
+                { k: '例假', v: '每二週至少 2 日' },
+                { k: '休息日', v: '每四週至少 4 日' },
+                { k: '最長連續工作', v: '12 日' },
+                { k: '加班限制', v: '正常 10h 之日，加班上限 2h' },
+            ]
+        }
+    };
+
+    /* ---- State ---- */
+    let S = { type: 'normal', days: [], sel: -1 };
+
+    /* ---- Default Schedule ---- */
+    function makeDefault(t) {
+        const n = TYPES[t].periodDays;
+        const days = [];
+        for (let i = 0; i < n; i++) {
+            const dow = i % 7;
+            if (dow === 6) days.push({ type: 'leave', hours: 0 });
+            else if (dow === 5) days.push({ type: 'rest', hours: 0 });
+            else days.push({ type: 'work', hours: 8 });
+        }
+        return days;
+    }
+
+    function make6Day(t) {
+        const n = TYPES[t].periodDays;
+        const maxH = TYPES[t].maxDailyNormal;
+        const days = [];
+        for (let i = 0; i < n; i++) {
+            const dow = i % 7;
+            if (dow === 6) days.push({ type: 'leave', hours: 0 });
+            else if (dow === 5) days.push({ type: 'work', hours: Math.min(maxH, 8) });
+            else days.push({ type: 'work', hours: 8 });
+        }
+        return days;
+    }
+
+    /* ---- Render: Type Selector ---- */
+    function renderTypes() {
+        const el = document.getElementById('type-selector');
+        el.innerHTML = '<div class="type-cards">' +
+            Object.entries(TYPES).map(([k, v]) =>
+                `<div class="type-card${S.type===k?' active':''}" onclick="setType('${k}')">
+                    <div class="type-card-name">${v.name}</div>
+                    <div class="type-card-law">${v.law}</div>
+                    <span class="type-card-tag">${v.tag}</span>
+                </div>`
+            ).join('') + '</div>';
+    }
+
+    /* ---- Render: Rules Info ---- */
+    function renderInfo() {
+        const t = TYPES[S.type];
+        document.getElementById('rules-info').innerHTML =
+            `<div class="rules-box">
+                <h3>${t.name} — 法規摘要</h3>
+                <div class="rules-grid">${t.rules.map(r =>
+                    `<div class="rule-item"><strong>${r.k}</strong><br>${r.v}</div>`
+                ).join('')}</div>
+                <div class="rules-note">
+                    法源依據：${t.law}｜變形工時需經工會或勞資會議同意
+                    ${t.tag==='指定行業適用' ? '｜須為勞動部公告指定行業' : ''}
+                </div>
+            </div>`;
+    }
+
+    /* ---- Render: Grid ---- */
+    function renderGrid() {
+        const t = TYPES[S.type];
+        const weeks = t.periodWeeks;
+        const violatedDays = getViolatedDays();
+
+        let html = '<div class="grid-wrapper">';
+        html += '<div class="grid-toolbar"><h3>排班表</h3>';
+        html += '<div class="grid-legend">';
+        html += '<span><span class="legend-dot legend-work"></span>工作日</span>';
+        html += '<span><span class="legend-dot legend-rest"></span>休息日</span>';
+        html += '<span><span class="legend-dot legend-leave"></span>例假</span>';
+        html += '</div></div>';
+
+        // Quick fill
+        html += '<div class="quick-fill"><span>快速填入：</span>';
+        html += '<button class="fill-btn" onclick="quickFill(\'5day\')">週休二日</button>';
+        html += '<button class="fill-btn" onclick="quickFill(\'6day\')">排休一日</button>';
+        html += '<button class="fill-btn" onclick="quickFill(\'clear\')">全部清空</button>';
+        html += '</div>';
+
+        // Header
+        html += '<div class="grid-header"><div class="grid-header-cell"></div>';
+        DOW.forEach(d => { html += `<div class="grid-header-cell">${d}</div>`; });
+        html += '</div>';
+
+        // Rows
+        for (let w = 0; w < weeks; w++) {
+            html += '<div class="grid-row">';
+            html += `<div class="grid-week-label">W${w+1}</div>`;
+            for (let d = 0; d < 7; d++) {
+                const idx = w * 7 + d;
+                const day = S.days[idx];
+                const sel = idx === S.sel ? ' selected' : '';
+                const vio = violatedDays.has(idx) ? ' violation' : '';
+                const cls = day.type === 'leave' ? 'leave' : day.type === 'rest' ? 'rest' : 'work';
+                const label = day.type === 'leave' ? '例' : day.type === 'rest' ? '休' : day.hours + 'h';
+                html += `<div class="grid-cell ${cls}${sel}${vio}" onclick="selectDay(${idx})">
+                    <span class="cell-day">${idx+1}</span>
+                    <span class="cell-label">${label}</span>
+                </div>`;
+            }
+            html += '</div>';
+        }
+        html += '</div>';
+        document.getElementById('grid-section').innerHTML = html;
+    }
+
+    /* ---- Render: Edit Panel ---- */
+    function renderEdit() {
+        const el = document.getElementById('edit-panel');
+        if (S.sel < 0) { el.className = 'edit-panel hidden'; return; }
+        el.className = 'edit-panel';
+        const day = S.days[S.sel];
+        const t = TYPES[S.type];
+        const week = Math.floor(S.sel / 7) + 1;
+        const dow = DOW[S.sel % 7];
+        const isWork = day.type === 'work';
+
+        el.innerHTML =
+            `<div class="edit-day-info">第 ${S.sel+1} 天（W${week} ${dow}）</div>
+            <div class="edit-types">
+                <button class="edit-type-btn${day.type==='work'?' active-work':''}" onclick="setDayType('work')">工作日</button>
+                <button class="edit-type-btn${day.type==='rest'?' active-rest':''}" onclick="setDayType('rest')">休息日</button>
+                <button class="edit-type-btn${day.type==='leave'?' active-leave':''}" onclick="setDayType('leave')">例假</button>
+            </div>
+            <div class="edit-hours">
+                <label>正常工時</label>
+                <input type="number" class="hours-input" value="${isWork ? day.hours : 0}"
+                    min="1" max="${t.maxDailyNormal}" step="0.5"
+                    ${isWork?'':'disabled'} onchange="setHours(this.value)" oninput="setHours(this.value)">
+                <span class="hours-unit">小時 (上限 ${t.maxDailyNormal}h)</span>
+            </div>`;
+    }
+
+    /* ---- Validation Engine ---- */
+    function validate() {
+        const t = TYPES[S.type];
+        const results = [];
+
+        // 1. Daily normal hours
+        { let fails = [];
+          S.days.forEach((d, i) => {
+              if (d.type === 'work' && d.hours > t.maxDailyNormal)
+                  fails.push(`第${i+1}天 ${d.hours}h`);
+          });
+          results.push({
+              pass: fails.length === 0,
+              rule: `每日正常工時不超過 ${t.maxDailyNormal} 小時`,
+              law: t.name === '正常工時' ? '§30 I' : (S.type === 'fourWeek' ? '§30-1' : '§30 II/III'),
+              detail: fails.length ? '違規：' + fails.join('、') : `所有工作日皆在 ${t.maxDailyNormal}h 以內`
+          });
+        }
+
+        // 2. Weekly normal hours (if applicable)
+        if (t.maxWeeklyNormal) {
+            let fails = [];
+            for (let w = 0; w < t.periodWeeks; w++) {
+                let sum = 0;
+                for (let d = 0; d < 7; d++) {
+                    const day = S.days[w*7+d];
+                    if (day.type === 'work') sum += day.hours;
+                }
+                if (sum > t.maxWeeklyNormal) fails.push(`W${w+1}: ${sum}h`);
+            }
+            results.push({
+                pass: fails.length === 0,
+                rule: `每週正常工時不超過 ${t.maxWeeklyNormal} 小時`,
+                law: '§30',
+                detail: fails.length ? '違規：' + fails.join('、') : '各週皆符合'
+            });
+        }
+
+        // 3. Period total normal hours
+        { let total = 0;
+          S.days.forEach(d => { if (d.type === 'work') total += d.hours; });
+          const pass = total <= t.periodTotalNormal;
+          results.push({
+              pass,
+              rule: `${t.periodWeeks > 1 ? t.periodWeeks + '週' : '每週'}正常工時合計不超過 ${t.periodTotalNormal} 小時`,
+              law: S.type === 'fourWeek' ? '§30-1' : '§30',
+              detail: pass ? `合計 ${total}h（剩餘 ${t.periodTotalNormal - total}h）` : `合計 ${total}h，超過 ${total - t.periodTotalNormal}h`
+          });
+        }
+
+        // 4. Regular leave (例假)
+        { const r = t.leaveRule;
+          let fails = [];
+          const blocks = Math.ceil(t.periodDays / r.per);
+          for (let b = 0; b < blocks; b++) {
+              let count = 0;
+              for (let d = b * r.per; d < Math.min((b+1) * r.per, t.periodDays); d++) {
+                  if (S.days[d].type === 'leave') count++;
+              }
+              if (count < r.count) {
+                  const from = b * r.per + 1, to = Math.min((b+1) * r.per, t.periodDays);
+                  fails.push(`第${from}-${to}天：${count}/${r.count}日`);
+              }
+          }
+          const perLabel = r.per === 7 ? '每 7 日' : `每 ${r.per} 日`;
+          results.push({
+              pass: fails.length === 0,
+              rule: `${perLabel}至少 ${r.count} 日例假`,
+              law: '§36',
+              detail: fails.length ? '不足：' + fails.join('、') : '所有區間皆符合'
+          });
+        }
+
+        // 5. Rest days (休息日)
+        { const r = t.restRule;
+          let count = 0;
+          S.days.forEach(d => { if (d.type === 'rest') count++; });
+
+          if (r.per === 7) {
+              // Per-week check
+              let fails = [];
+              for (let w = 0; w < t.periodWeeks; w++) {
+                  let wc = 0;
+                  for (let d = w*7; d < (w+1)*7; d++) {
+                      if (S.days[d].type === 'rest') wc++;
+                  }
+                  if (wc < r.count) fails.push(`W${w+1}: ${wc}/${r.count}日`);
+              }
+              results.push({
+                  pass: fails.length === 0,
+                  rule: `每 7 日至少 ${r.count} 日休息日`,
+                  law: '§36',
+                  detail: fails.length ? '不足：' + fails.join('、') : '各週皆符合'
+              });
+          } else {
+              // Period check
+              const pass = count >= r.count;
+              const perLabel = r.per === 14 ? '二週' : r.per === 28 ? '四週' : '八週';
+              results.push({
+                  pass,
+                  rule: `每${perLabel}至少 ${r.count} 日休息日`,
+                  law: '§36',
+                  detail: pass ? `共 ${count} 日休息日` : `僅 ${count} 日，尚缺 ${r.count - count} 日`
+              });
+          }
+        }
+
+        // 6. Consecutive work days
+        { let maxStreak = 0, curStreak = 0, streakStart = 0, worstStart = 0;
+          S.days.forEach((d, i) => {
+              if (d.type === 'work') {
+                  if (curStreak === 0) streakStart = i;
+                  curStreak++;
+                  if (curStreak > maxStreak) { maxStreak = curStreak; worstStart = streakStart; }
+              } else { curStreak = 0; }
+          });
+          const pass = maxStreak <= t.maxConsec;
+          results.push({
+              pass,
+              rule: `連續工作不超過 ${t.maxConsec} 日`,
+              law: S.type === 'fourWeek' ? '§30-1 + §36' : '§36',
+              detail: pass
+                  ? (maxStreak > 0 ? `最長連續 ${maxStreak} 日` : '無連續工作日')
+                  : `連續 ${maxStreak} 日（第${worstStart+1}至${worstStart+maxStreak}天）`
+          });
+        }
+
+        return results;
+    }
+
+    function getViolatedDays() {
+        const t = TYPES[S.type];
+        const set = new Set();
+        // Daily hours violation
+        S.days.forEach((d, i) => {
+            if (d.type === 'work' && d.hours > t.maxDailyNormal) set.add(i);
+        });
+        // Consecutive violation
+        let curStreak = 0, streakStart = 0;
+        S.days.forEach((d, i) => {
+            if (d.type === 'work') {
+                if (curStreak === 0) streakStart = i;
+                curStreak++;
+                if (curStreak > t.maxConsec) {
+                    for (let j = streakStart; j <= i; j++) set.add(j);
+                }
+            } else { curStreak = 0; }
+        });
+        return set;
+    }
+
+    /* ---- Render: Validation ---- */
+    function renderValidation() {
+        const results = validate();
+        const el = document.getElementById('validation-panel');
+        const allPass = results.every(r => r.pass);
+        el.innerHTML =
+            `<h3>法規驗證結果 ${allPass ? '<span style="color:#16a34a;font-size:0.9rem;font-family:var(--font-sans)">— 全部通過</span>' : '<span style="color:#ef4444;font-size:0.9rem;font-family:var(--font-sans)">— 有違規項目</span>'}</h3>` +
+            results.map(r =>
+                `<div class="val-row ${r.pass?'val-pass':'val-fail'}">
+                    <div class="val-icon">${r.pass?'&#10003;':'&#10007;'}</div>
+                    <div class="val-content">
+                        <div class="val-rule">${r.rule}</div>
+                        <div class="val-law">${r.law}</div>
+                        <div class="${r.pass?'val-ok':'val-detail'}">${r.detail}</div>
+                    </div>
+                </div>`
+            ).join('');
+    }
+
+    /* ---- Render: Summary ---- */
+    function renderSummary() {
+        const t = TYPES[S.type];
+        let totalH = 0, workDays = 0, restDays = 0, leaveDays = 0;
+        S.days.forEach(d => {
+            if (d.type === 'work') { totalH += d.hours; workDays++; }
+            else if (d.type === 'rest') restDays++;
+            else leaveDays++;
+        });
+        const avgWeek = (totalH / t.periodWeeks).toFixed(1);
+        const otCapacity = workDays * (t.maxDailyTotal) - totalH;
+        const results = validate();
+        const violations = results.filter(r => !r.pass).length;
+
+        document.getElementById('summary-panel').innerHTML =
+            `<h3>排班摘要</h3>
+            <div class="summary-grid">
+                <div class="summary-item"><div class="summary-value">${totalH}h</div><div class="summary-label">正常工時合計</div></div>
+                <div class="summary-item"><div class="summary-value">${avgWeek}h</div><div class="summary-label">平均每週工時</div></div>
+                <div class="summary-item"><div class="summary-value">${workDays}</div><div class="summary-label">工作日</div></div>
+                <div class="summary-item"><div class="summary-value">${leaveDays + restDays}</div><div class="summary-label">休假日（例假${leaveDays}＋休息${restDays}）</div></div>
+                <div class="summary-item"><div class="summary-value${violations>0?' fail':''}">${violations}</div><div class="summary-label">違規項目</div></div>
+                <div class="summary-item"><div class="summary-value">${otCapacity}h</div><div class="summary-label">加班容量（日上限12h）</div></div>
+            </div>`;
+    }
+
+    /* ---- Master Render ---- */
+    function render() {
+        renderTypes(); renderInfo(); renderGrid(); renderEdit(); renderValidation(); renderSummary();
+    }
+
+    /* ---- Event Handlers ---- */
+    function setType(t) { S.type = t; S.sel = -1; S.days = makeDefault(t); render(); }
+    function selectDay(i) { S.sel = (S.sel === i) ? -1 : i; renderGrid(); renderEdit(); }
+    function setDayType(type) {
+        if (S.sel < 0) return;
+        S.days[S.sel].type = type;
+        if (type !== 'work') S.days[S.sel].hours = 0;
+        else if (S.days[S.sel].hours === 0) S.days[S.sel].hours = 8;
+        render();
+    }
+    function setHours(val) {
+        if (S.sel < 0) return;
+        const h = parseFloat(val) || 0;
+        S.days[S.sel].hours = Math.max(0, Math.min(TYPES[S.type].maxDailyNormal, h));
+        renderGrid(); renderValidation(); renderSummary();
+    }
+    function quickFill(pattern) {
+        const t = S.type;
+        if (pattern === '5day') S.days = makeDefault(t);
+        else if (pattern === '6day') S.days = make6Day(t);
+        else if (pattern === 'clear') {
+            S.days = Array.from({ length: TYPES[t].periodDays }, () => ({ type: 'work', hours: 8 }));
+        }
+        S.sel = -1;
+        render();
+    }
+
+    /* ---- Init ---- */
+    document.addEventListener('DOMContentLoaded', () => {
+        S.type = 'normal'; S.days = makeDefault('normal'); S.sel = -1;
+        render();
+    });
+    </script>
+
+</body>
+
+</html>
