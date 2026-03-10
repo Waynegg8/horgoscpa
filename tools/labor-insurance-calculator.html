@@ -343,35 +343,37 @@
             govShare: 0.10,             // 政府 10%
         };
 
-        // 全職勞工投保薪資級距（月薪 >= 基本工資 29,500）
-        const FULL_TIME_BRACKETS = [29500, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
-
-        // 部分工時勞工投保薪資級距（月薪 < 基本工資）
-        const PART_TIME_BRACKETS = [11100, 12540, 13500, 15840, 16500, 17280, 17880, 19047, 20008, 21009, 22000, 23100, 24000, 25250, 26400, 27600];
+        // 投保薪資分級表（115年1月1日起適用）
+        // 完整級距：部分工時 + 全職共 28 級
+        const ALL_BRACKETS = [
+            // 部分工時（月薪 < 基本工資 29,500）
+            11100, 12540, 13500, 15840, 16500, 17280, 17880, 19047,
+            20008, 21009, 22000, 23100, 24000, 25250, 26400, 27600, 28590,
+            // 全職 11 級（基本工資以上）
+            29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800
+        ];
+        const MIN_FULL_TIME = 29500; // 基本工資
 
         function fmt(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        function matchBracket(salary, brackets) {
-            // Find the smallest bracket >= actual salary
-            for (let i = 0; i < brackets.length; i++) {
-                if (brackets[i] >= salary) {
-                    return brackets[i];
-                }
+        function matchBracket(salary, isFullTime) {
+            // 全職勞工不得低於基本工資級距
+            const effective = isFullTime ? Math.max(salary, MIN_FULL_TIME) : salary;
+            for (let i = 0; i < ALL_BRACKETS.length; i++) {
+                if (ALL_BRACKETS[i] >= effective) return ALL_BRACKETS[i];
             }
-            // If salary > max bracket, use max bracket
-            return brackets[brackets.length - 1];
+            return ALL_BRACKETS[ALL_BRACKETS.length - 1]; // max: 45,800
         }
 
         function calculate() {
             const salary = parseInt(document.getElementById('salary').value) || 0;
             const workerType = document.getElementById('workerType').value;
             const hasEmploymentIns = document.getElementById('employmentIns').value === 'yes';
+            const isFullTime = workerType === 'full-time';
 
-            // Select bracket table based on worker type
-            const brackets = workerType === 'full-time' ? FULL_TIME_BRACKETS : PART_TIME_BRACKETS;
-            const bracket = matchBracket(salary, brackets);
+            const bracket = matchBracket(salary, isFullTime);
 
             // Calculate premiums
             const laborPremium = bracket * RATES.laborInsurance;
