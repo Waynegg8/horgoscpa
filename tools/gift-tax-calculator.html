@@ -407,7 +407,7 @@
                 taxRateLabel = '20%';
             }
 
-            var prevNetGift = Math.max(prevGift - EXEMPTION - deduction, 0);
+            var prevNetGift = Math.max(prevGift - EXEMPTION, 0);
             var prevTax = 0;
             if (prevNetGift > 0) {
                 if (prevNetGift <= 25000000) {

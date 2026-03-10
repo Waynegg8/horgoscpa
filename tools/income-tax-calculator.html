@@ -401,7 +401,7 @@
                 <div class="calc-row">
                     <label class="calc-label" for="childCount">
                         6歲以下幼兒人數
-                        <small>適用稅率20%以上者不適用（排富條款）</small>
+                        <small>適用稅率超過20%者不適用（排富條款）</small>
                     </label>
                     <select id="childCount" class="calc-select" onchange="calculate()">
                         <option value="0">0 人</option>
@@ -440,7 +440,7 @@
                 <div class="calc-row">
                     <label class="calc-label" for="ltcCount">
                         長期照顧人數
-                        <small>適用稅率20%以上者不適用（排富條款）</small>
+                        <small>適用稅率超過20%者不適用（排富條款）</small>
                     </label>
                     <select id="ltcCount" class="calc-select" onchange="calculate()">
                         <option value="0">0 人</option>
@@ -507,7 +507,7 @@
         <p class="disclaimer">
             * 本試算依115年度綜合所得稅課稅級距及免稅額計算。<br>
             * 股利所得可選擇合併計稅或分開計稅（28%），本工具未包含股利稅額試算。<br>
-            * 幼兒學前及長期照顧特別扣除額適用排富條款（適用稅率20%以上者不適用）。<br>
+            * 幼兒學前及長期照顧特別扣除額適用排富條款（適用稅率超過20%者不適用）。<br>
             * 實際稅額以國稅局核定為準。
         </p>
 
@@ -643,8 +643,8 @@
                 }
             }
 
-            // 排富條款：適用稅率20%以上，幼兒學前及長照扣除額不適用
-            if (preCheckRate >= 0.20) {
+            // 排富條款：適用稅率超過20%（即30%以上），幼兒學前及長照扣除額不適用
+            if (preCheckRate > 0.20) {
                 childDeduction = 0;
                 ltcDeduction = 0;
             }
