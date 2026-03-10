@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>各類所得扣繳稅額試算 | 霍爾果斯會計師事務所</title>
+    <meta name="description" content="線上各類所得扣繳稅額試算工具，快速查詢居住者與非居住者扣繳稅率、起扣點及應扣稅額，含二代健保補充保費計算。">
+    <meta property="og:title" content="各類所得扣繳稅額試算 | 霍爾果斯會計師事務所">
+    <meta property="og:description" content="線上各類所得扣繳稅額試算工具，快速查詢各類所得扣繳稅率與應扣稅額。">
+    <meta property="og:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <meta property="og:url" content="https://www.horgoscpa.com/tools/withholding-tax-calculator">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- Critical CSS (inline) -->
+  <style>:root{--font-serif:'Playfair Display',serif;--font-sans:'Lato','Noto Sans TC',sans-serif;--text-d1:4rem;--text-h1:2.75rem;--text-h2:2rem;--text-h3:1.35rem;--text-body:.95rem;--text-sm:.85rem;--leading-tight:1.3;--leading-base:1.9;--leading-loose:2.1;--bg-base:#FDFBF7;--bg-surface:#FFF;--bg-inverse:#1A1A1A;--color-brand:#B48E55;--color-brand-dark:#8A6D3B;--color-brand-light:rgba(180,142,85,.1);--text-primary:#2C2C2C;--text-body:#555;--text-muted:#999;--border-line:#E5E5E5;--border-gold:rgba(180,142,85,.4);--space-1:8px;--space-2:16px;--space-4:40px;--space-8:100px;--space-16:200px;--container-width:1200px;--header-height:100px}@media(max-width:768px){:root{--text-d1:2.8rem;--text-h1:2.2rem;--space-16:60px;--space-8:32px}}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background-color:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-base);overflow-x:hidden;-webkit-font-smoothing:antialiased}h1,h2,h3,h4,h5,h6{font-family:var(--font-serif);font-weight:600;line-height:var(--leading-tight);color:var(--text-primary);margin-bottom:var(--space-2)}.display-text{font-size:var(--text-d1);font-weight:700;letter-spacing:-.02em}.eyebrow{font-family:var(--font-sans);text-transform:uppercase;letter-spacing:.15em;font-size:var(--text-sm);font-weight:700}.container{max-width:var(--container-width);margin:0 auto;padding:0 var(--space-4);width:100%}.text-gold{color:var(--color-brand)}.text-center{text-align:center}.section-gap{padding:var(--space-16) 0}</style>
+  <link rel="stylesheet" href="/assets/css/common.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/assets/css/common.css"></noscript>
+    <link rel="stylesheet" href="/assets/css/organisms.css">
+    <link rel="stylesheet" href="/assets/css/atoms.css">
+    <link rel="icon" href="/favicon.ico">
+  <!-- Google Analytics (deferred) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    function loadGTM() {
+      if (loadGTM.done) return; loadGTM.done = true;
+      var s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5';
+      s.onload = function () { gtag('js', new Date()); gtag('config', 'G-RKMCS9WVS5'); };
+      document.head.appendChild(s);
+    }
+    setTimeout(loadGTM, 3500);
+    ['mouseover','touchstart','scroll','keydown'].forEach(function(e){
+      addEventListener(e, loadGTM, {once:true,passive:true});
+    });
+  </script>
+    <style>
+        /* Calculator Specific Styles */
+        .calculator-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .calculator-card {
+            background: #fff;
+            border: 1px solid #eee;
+            padding: 50px;
+            margin-bottom: 40px;
+        }
+
+        .calc-section {
+            margin-bottom: 40px;
+        }
+
+        .calc-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .calc-section-title {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .calc-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .calc-label {
+            flex: 1;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: var(--text-body);
+        }
+
+        .calc-label small {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .calc-input {
+            width: 180px;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            text-align: right;
+            transition: border-color 0.3s;
+        }
+
+        .calc-input:focus {
+            outline: none;
+            border-color: var(--color-brand);
+        }
+
+        .calc-select {
+            width: 180px;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            background: #fff;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .calc-select:focus {
+            outline: none;
+            border-color: var(--color-brand);
+        }
+
+        /* Results Section */
+        .results-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+            color: #fff;
+            padding: 50px;
+            margin-bottom: 40px;
+        }
+
+        .results-title {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            color: var(--color-brand);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: var(--font-sans);
+        }
+
+        .result-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #ccc;
+        }
+
+        .result-value {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .result-total {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-brand);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-total-label {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .result-total-value {
+            font-family: var(--font-sans);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-brand);
+        }
+
+        .disclaimer {
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .cta-text {
+            font-family: var(--font-serif);
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+
+            .calculator-card,
+            .results-card {
+                padding: 30px 20px;
+            }
+
+            .calc-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .calc-input,
+            .calc-select {
+                width: 100%;
+            }
+
+            .result-total {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <div id="nav-placeholder"></div>
+
+    <!-- Page Header -->
+    <header class="page-header" style="padding-bottom: 40px;">
+        <span class="eyebrow text-gold">WITHHOLDING TAX CALCULATOR</span>
+        <h1 class="display-text">各類所得扣繳稅額試算</h1>
+        <p class="text-body" style="max-width: 600px; margin: 20px auto 0;">
+            快速查詢各類所得扣繳稅率與應扣稅額
+        </p>
+    </header>
+
+    <div class="calculator-container section-gap">
+
+        <!-- Calculator Form -->
+        <div class="calculator-card">
+
+            <div class="calc-section">
+                <h3 class="calc-section-title">扣繳稅額試算</h3>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="residentStatus">
+                        納稅義務人身分
+                        <small>影響適用扣繳稅率及起扣點</small>
+                    </label>
+                    <select id="residentStatus" class="calc-select" onchange="onResidentChange()">
+                        <option value="resident">中華民國境內居住者（居住者）</option>
+                        <option value="nonresident">非中華民國境內居住者（非居住者）</option>
+                    </select>
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="incomeType">
+                        所得類別
+                        <small>不同所得類別適用不同稅率</small>
+                    </label>
+                    <select id="incomeType" class="calc-select" onchange="onIncomeTypeChange()">
+                        <!-- Options built dynamically -->
+                    </select>
+                </div>
+
+                <div id="incomeHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:20px;font-size:.88rem;line-height:1.7;color:var(--text-body);display:none;"></div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="amount">
+                        給付金額
+                        <small>每次給付金額（新台幣）</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="amount" class="calc-input" value="50,000"
+                        onchange="formatInput(this); calculate()" oninput="formatInput(this); calculate()">
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Results -->
+        <div class="results-card">
+            <h3 class="results-title">扣繳稅額試算結果</h3>
+
+            <div id="resultsContainer">
+                <!-- Dynamic content inserted here -->
+            </div>
+
+            <div class="result-total">
+                <span class="result-total-label">合計應扣金額</span>
+                <span class="result-total-value" id="totalDeduction">NT$ 0</span>
+            </div>
+            <div class="result-total" id="netPayRow" style="margin-top: 15px; padding-top: 15px; border-top: none;">
+                <span class="result-total-label">實付金額</span>
+                <span class="result-total-value" id="netPay" style="color: #fff;">NT$ 0</span>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div style="background:linear-gradient(135deg,#1a1a1a,#2c2c2c);color:#fff;padding:30px;margin-bottom:30px;font-family:var(--font-sans);font-size:.88rem;line-height:1.7;">
+            <h3 style="color:var(--color-brand);font-family:var(--font-serif);font-size:1.15rem;margin-bottom:14px;">扣繳稅率速查</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">
+                <div><strong style="color:#fff;">居住者 — 薪資（兼職）</strong><br><span style="color:#ccc;">5%，起扣點 NT$88,501</span></div>
+                <div><strong style="color:#fff;">居住者 — 其他各類所得</strong><br><span style="color:#ccc;">10%，起扣點 NT$20,000</span></div>
+                <div><strong style="color:#fff;">非居住者 — 薪資</strong><br><span style="color:#ccc;">18%（月薪 &le; 基本工資 1.5 倍免扣繳）</span></div>
+                <div><strong style="color:#fff;">非居住者 — 股利</strong><br><span style="color:#ccc;">21%，無起扣點</span></div>
+                <div><strong style="color:#fff;">非居住者 — 其他各類</strong><br><span style="color:#ccc;">20%，無起扣點</span></div>
+                <div><strong style="color:#fff;">二代健保補充保費</strong><br><span style="color:#ccc;">2.11%（兼職薪資 &ge; NT$29,500、執行業務/利息/租金 &ge; NT$20,000）</span></div>
+            </div>
+            <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：各類所得扣繳率標準、全民健康保險法 §31</div>
+        </div>
+
+        <p class="disclaimer">
+            * 薪資所得（固定薪資）應依「薪資所得扣繳稅額表」查表辦理，本工具僅適用兼職或非固定薪資。<br>
+            * 法源：各類所得扣繳率標準、全民健康保險法 §31。<br>
+            * 實際應扣稅額以國稅局規定為準。
+        </p>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <p class="cta-text">需要扣繳申報或稅務諮詢？</p>
+            <a href="/booking.html" class="btn-solid-gold">預約免費諮詢</a>
+        </div>
+
+        <div style="text-align:center; margin-top: 30px;">
+            <a href="/resources.html" class="btn-text" style="color: #999; text-decoration: none; font-size: 0.9rem;">
+                &larr; 返回資源列表
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script type="module" src="/assets/js/main.js"></script>
+    <script>
+        /* ==========================================================
+           各類所得扣繳稅額試算（Income Withholding Tax Calculator）
+           法源：各類所得扣繳率標準、全民健康保險法 §31
+           ========================================================== */
+
+        function formatInput(el) {
+            const raw = el.value.replace(/[^\d]/g, '');
+            if (raw) {
+                el.value = parseInt(raw).toLocaleString('en-US');
+            }
+        }
+        function parseAmount(id) {
+            return parseInt(document.getElementById(id).value.replace(/,/g, '')) || 0;
+        }
+
+        const RESIDENT_RATES = {
+            'salary':       { rate: 0.05, threshold: 88501, label: '薪資所得（兼職/非固定）' },
+            'manuscript':   { rate: 0.10, threshold: 20000, label: '稿費、版稅、演講費' },
+            'professional': { rate: 0.10, threshold: 20000, label: '執行業務報酬' },
+            'interest':     { rate: 0.10, threshold: 20000, label: '利息所得' },
+            'rent':         { rate: 0.10, threshold: 20000, label: '租金收入' },
+            'commission':   { rate: 0.10, threshold: 20000, label: '佣金' },
+            'prize':        { rate: 0.10, threshold: 20000, label: '競技競賽獎金' },
+            'royalty':      { rate: 0.10, threshold: 20000, label: '權利金' },
+        };
+
+        const NON_RESIDENT_RATES = {
+            'salary':       { rate: 0.18, threshold: 44250, label: '薪資所得' },
+            'professional': { rate: 0.20, threshold: 0, label: '執行業務報酬' },
+            'interest':     { rate: 0.20, threshold: 0, label: '利息所得' },
+            'rent':         { rate: 0.20, threshold: 0, label: '租金收入' },
+            'commission':   { rate: 0.20, threshold: 0, label: '佣金' },
+            'prize':        { rate: 0.20, threshold: 0, label: '競技競賽獎金' },
+            'royalty':      { rate: 0.20, threshold: 0, label: '權利金' },
+            'dividend':     { rate: 0.21, threshold: 0, label: '股利所得' },
+        };
+
+        // 二代健保補充保費（僅適用居住者特定所得類別）
+        const NHI_SUPP_RATE = 0.0211;
+        const NHI_SUPP_TYPES_RESIDENT = {
+            'salary':       29500,   // 兼職薪資 threshold = 基本工資
+            'manuscript':   20000,   // 稿費/演講費屬執行業務收入
+            'professional': 20000,
+            'interest':     20000,
+            'rent':         20000,
+        };
+
+        // 動態提示文字
+        const RESIDENT_HINTS = {
+            'salary':       '兼職或非經常性薪資，按給付額扣取 5%。每次給付未達薪資扣繳稅額表無配偶及受扶養親屬者之起扣標準（目前為 NT$88,501）免扣繳。',
+            'manuscript':   '稿費、版稅、樂譜、作曲、編劇、漫畫及演講之鐘點費，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
+            'professional': '會計師、律師、醫師等執行業務報酬，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
+            'interest':     '金融機構存款利息、公債利息等，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
+            'rent':         '給付個人之租金，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
+            'commission':   '佣金、仲介費等，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
+            'prize':        '政府舉辦或經政府核准之獎金，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
+            'royalty':      '專利權、商標權等權利金，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
+        };
+
+        const NON_RESIDENT_HINTS = {
+            'salary':       '非居住者薪資按給付額扣取 18%。全月薪資給付總額未超過基本工資 1.5 倍（NT$44,250）者，免予扣繳。',
+            'dividend':     '給付非居住者之股利，按 21% 就源扣繳，不適用合併/分開計稅。',
+            'professional': '給付非居住者之執行業務報酬，按給付額扣取 20%，無起扣點。',
+            'interest':     '給付非居住者之利息所得，按給付額扣取 20%，無起扣點。',
+            'rent':         '給付非居住者之租金收入，按給付額扣取 20%，無起扣點。',
+            'commission':   '給付非居住者之佣金，按給付額扣取 20%，無起扣點。',
+            'prize':        '給付非居住者之競技競賽獎金，按給付額扣取 20%，無起扣點。',
+            'royalty':      '給付非居住者之權利金，按給付額扣取 20%，無起扣點。',
+        };
+
+        function fmt(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function getIsResident() {
+            return document.getElementById('residentStatus').value === 'resident';
+        }
+
+        function getRateTable() {
+            return getIsResident() ? RESIDENT_RATES : NON_RESIDENT_RATES;
+        }
+
+        function buildIncomeOptions() {
+            const select = document.getElementById('incomeType');
+            const table = getRateTable();
+            const prevValue = select.value;
+            select.innerHTML = '';
+
+            for (const [key, info] of Object.entries(table)) {
+                const opt = document.createElement('option');
+                opt.value = key;
+                const pct = (info.rate * 100).toFixed(0);
+                opt.textContent = `${info.label} — ${pct}%`;
+                select.appendChild(opt);
+            }
+
+            // Try to preserve previous selection if it exists in new list
+            if (table[prevValue]) {
+                select.value = prevValue;
+            }
+        }
+
+        function updateHint() {
+            const hint = document.getElementById('incomeHint');
+            const type = document.getElementById('incomeType').value;
+            const isResident = getIsResident();
+            const hints = isResident ? RESIDENT_HINTS : NON_RESIDENT_HINTS;
+            const text = hints[type] || '';
+
+            if (text) {
+                hint.textContent = text;
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
+            }
+        }
+
+        function onResidentChange() {
+            buildIncomeOptions();
+            updateHint();
+            calculate();
+        }
+
+        function onIncomeTypeChange() {
+            updateHint();
+            calculate();
+        }
+
+        function calculate() {
+            const isResident = getIsResident();
+            const type = document.getElementById('incomeType').value;
+            const amount = parseAmount('amount');
+            const table = getRateTable();
+            const info = table[type];
+
+            if (!info) return;
+
+            const rate = info.rate;
+            const threshold = info.threshold;
+            const ratePct = (rate * 100).toFixed(0);
+
+            // 計算扣繳稅額
+            let withholdingTax = 0;
+            let belowThreshold = false;
+
+            if (threshold > 0 && amount < threshold) {
+                withholdingTax = 0;
+                belowThreshold = true;
+            } else if (amount > 0) {
+                withholdingTax = Math.round(amount * rate);
+            }
+
+            // 計算二代健保補充保費（僅居住者特定所得類別）
+            let nhiPremium = 0;
+            let nhiApplicable = false;
+
+            if (isResident && NHI_SUPP_TYPES_RESIDENT.hasOwnProperty(type)) {
+                nhiApplicable = true;
+                const nhiThreshold = NHI_SUPP_TYPES_RESIDENT[type];
+                if (amount >= nhiThreshold) {
+                    nhiPremium = Math.round(Math.min(amount, 10000000) * NHI_SUPP_RATE);
+                }
+            }
+
+            const totalDeduction = withholdingTax + nhiPremium;
+            const netAmount = amount - totalDeduction;
+
+            // 組合結果
+            const container = document.getElementById('resultsContainer');
+            const residentLabel = isResident ? '居住者' : '非居住者';
+            const thresholdDisplay = threshold > 0 ? `NT$ ${fmt(threshold)}` : '無起扣點';
+
+            let html = `
+                <div class="result-row">
+                    <span class="result-label">所得類別 / 身分</span>
+                    <span class="result-value">${info.label}（${residentLabel}）</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">給付金額</span>
+                    <span class="result-value">NT$ ${fmt(amount)}</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">起扣點</span>
+                    <span class="result-value">${thresholdDisplay}</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">扣繳稅率</span>
+                    <span class="result-value">${ratePct}%</span>
+                </div>
+                <div class="result-row" style="border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
+                <div class="result-row">
+                    <span class="result-label"><strong>應扣繳稅額</strong></span>
+                    <span class="result-value">${belowThreshold ? '免扣繳（未達起扣點）' : 'NT$ ' + fmt(withholdingTax)}</span>
+                </div>
+            `;
+
+            if (nhiApplicable) {
+                const nhiThreshold = NHI_SUPP_TYPES_RESIDENT[type];
+                html += `
+                <div class="result-row">
+                    <span class="result-label">二代健保補充保費 (2.11%)<br><span style="font-size:.75rem;color:#888;">起扣點 NT$ ${fmt(nhiThreshold)}</span></span>
+                    <span class="result-value">${nhiPremium > 0 ? 'NT$ ' + fmt(nhiPremium) : '免扣（未達起扣點）'}</span>
+                </div>
+                `;
+            }
+
+            container.innerHTML = html;
+
+            // 更新合計
+            document.getElementById('totalDeduction').textContent = `NT$ ${fmt(totalDeduction)}`;
+            document.getElementById('netPay').textContent = `NT$ ${fmt(netAmount)}`;
+        }
+
+        // Init: 頁面載入時計算
+        document.addEventListener('DOMContentLoaded', function () {
+            buildIncomeOptions();
+            updateHint();
+            calculate();
+        });
+    </script>
+
+</body>
+
+</html>

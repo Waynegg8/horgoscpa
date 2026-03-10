@@ -258,8 +258,8 @@
                         月薪資總額
                         <small>每月薪資所得總額（新台幣）</small>
                     </label>
-                    <input type="number" id="salary" class="calc-input" value="29500" min="0"
-                        onchange="calculate()" oninput="calculate()">
+                    <input type="text" inputmode="numeric" id="salary" class="calc-input" value="29,500"
+                        onchange="formatInput(this); calculate()" oninput="formatInput(this); calculate()">
                 </div>
 
                 <div class="calc-row">
@@ -370,6 +370,16 @@
            法源：全民健康保險法、投保金額分級表（115年1月1日起適用）
            ========================================================== */
 
+        function formatInput(el) {
+            const raw = el.value.replace(/[^\d]/g, '');
+            if (raw) {
+                el.value = parseInt(raw).toLocaleString('en-US');
+            }
+        }
+        function parseAmount(id) {
+            return parseInt(document.getElementById(id).value.replace(/,/g, '')) || 0;
+        }
+
         const RATES = {
             nhi: 0.0517,           // 健保費率 5.17%
             supplementary: 0.0211, // 補充保費率 2.11%
@@ -444,7 +454,7 @@
         }
 
         function calculate() {
-            const salary = parseInt(document.getElementById('salary').value) || 0;
+            const salary = parseAmount('salary');
             const dependents = parseInt(document.getElementById('dependents').value) || 0;
             const effectiveDependents = Math.min(dependents, RATES.maxDependents);
             const headCount = 1 + effectiveDependents;

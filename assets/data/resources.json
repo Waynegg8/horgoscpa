@@ -26,5 +26,33 @@
     "title": "健保費試算",
     "category": "tool",
     "link": "/tools/health-insurance-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "計算各類所得（獎金、兼職薪資、股利、利息、租金等）之二代健保補充保費。",
+    "title": "二代健保補充保費試算",
+    "category": "tool",
+    "link": "/tools/supplementary-nhi-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "比較股利合併計稅與分開計稅（28%），找出最有利的申報方式。",
+    "title": "股利所得稅負試算",
+    "category": "tool",
+    "link": "/tools/dividend-tax-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "查詢居住者及非居住者各類所得扣繳稅率，計算應扣稅額與二代健保。",
+    "title": "各類所得扣繳稅額試算",
+    "category": "tool",
+    "link": "/tools/withholding-tax-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "從營所稅到股利稅，一次試算公司盈餘分配的完整稅負與股東實領金額。",
+    "title": "盈餘分配全流程試算",
+    "category": "tool",
+    "link": "/tools/profit-distribution-calculator"
   }
 ]

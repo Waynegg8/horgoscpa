@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>盈餘分配全流程試算 | 霍爾果斯會計師事務所</title>
+    <meta name="description" content="盈餘分配全流程試算工具：從公司所得到股東實領，一次掌握營所稅、股利稅與二代健保。自動比較合併計稅與分開計稅，計算整體有效稅率。">
+    <meta property="og:title" content="盈餘分配全流程試算 | 霍爾果斯會計師事務所">
+    <meta property="og:description" content="盈餘分配全流程試算：從公司所得到股東實領，一次掌握營所稅、股利稅與二代健保。">
+    <meta property="og:image" content="https://www.horgoscpa.com/assets/images/hero.jpg">
+    <meta property="og:url" content="https://www.horgoscpa.com/tools/profit-distribution-calculator">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- Critical CSS (inline) -->
+  <style>:root{--font-serif:'Playfair Display',serif;--font-sans:'Lato','Noto Sans TC',sans-serif;--text-d1:4rem;--text-h1:2.75rem;--text-h2:2rem;--text-h3:1.35rem;--text-body:.95rem;--text-sm:.85rem;--leading-tight:1.3;--leading-base:1.9;--leading-loose:2.1;--bg-base:#FDFBF7;--bg-surface:#FFF;--bg-inverse:#1A1A1A;--color-brand:#B48E55;--color-brand-dark:#8A6D3B;--color-brand-light:rgba(180,142,85,.1);--text-primary:#2C2C2C;--text-body:#555;--text-muted:#999;--border-line:#E5E5E5;--border-gold:rgba(180,142,85,.4);--space-1:8px;--space-2:16px;--space-4:40px;--space-8:100px;--space-16:200px;--container-width:1200px;--header-height:100px}@media(max-width:768px){:root{--text-d1:2.8rem;--text-h1:2.2rem;--space-16:60px;--space-8:32px}}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background-color:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-base);overflow-x:hidden;-webkit-font-smoothing:antialiased}h1,h2,h3,h4,h5,h6{font-family:var(--font-serif);font-weight:600;line-height:var(--leading-tight);color:var(--text-primary);margin-bottom:var(--space-2)}.display-text{font-size:var(--text-d1);font-weight:700;letter-spacing:-.02em}.eyebrow{font-family:var(--font-sans);text-transform:uppercase;letter-spacing:.15em;font-size:var(--text-sm);font-weight:700}.container{max-width:var(--container-width);margin:0 auto;padding:0 var(--space-4);width:100%}.text-gold{color:var(--color-brand)}.text-center{text-align:center}.section-gap{padding:var(--space-16) 0}</style>
+  <link rel="stylesheet" href="/assets/css/common.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/assets/css/common.css"></noscript>
+    <link rel="stylesheet" href="/assets/css/organisms.css">
+    <link rel="stylesheet" href="/assets/css/atoms.css">
+    <link rel="icon" href="/favicon.ico">
+  <!-- Google Analytics (deferred) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    function loadGTM() {
+      if (loadGTM.done) return; loadGTM.done = true;
+      var s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5';
+      s.onload = function () { gtag('js', new Date()); gtag('config', 'G-RKMCS9WVS5'); };
+      document.head.appendChild(s);
+    }
+    setTimeout(loadGTM, 3500);
+    ['mouseover','touchstart','scroll','keydown'].forEach(function(e){
+      addEventListener(e, loadGTM, {once:true,passive:true});
+    });
+  </script>
+    <style>
+        /* Calculator Specific Styles */
+        .calculator-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .calculator-card {
+            background: #fff;
+            border: 1px solid #eee;
+            padding: 50px;
+            margin-bottom: 40px;
+        }
+
+        .calc-section {
+            margin-bottom: 40px;
+        }
+
+        .calc-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .calc-section-title {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .calc-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .calc-label {
+            flex: 1;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: var(--text-body);
+        }
+
+        .calc-label small {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .calc-input {
+            width: 180px;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            text-align: right;
+            transition: border-color 0.3s;
+        }
+
+        .calc-input:focus {
+            outline: none;
+            border-color: var(--color-brand);
+        }
+
+        .calc-select {
+            width: 180px;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            background: #fff;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .calc-select:focus {
+            outline: none;
+            border-color: var(--color-brand);
+        }
+
+        .input-with-suffix {
+            position: relative;
+            width: 180px;
+        }
+
+        .input-with-suffix .calc-input {
+            width: 100%;
+            padding-right: 35px;
+        }
+
+        .input-with-suffix .suffix {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+
+        /* Results Section */
+        .results-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+            color: #fff;
+            padding: 50px;
+            margin-bottom: 40px;
+        }
+
+        .results-title {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            color: var(--color-brand);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: var(--font-sans);
+        }
+
+        .result-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #ccc;
+        }
+
+        .result-value {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .result-total {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-brand);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-total-label {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .result-total-value {
+            font-family: var(--font-sans);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-brand);
+        }
+
+        .disclaimer {
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .cta-text {
+            font-family: var(--font-serif);
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        .step-header {
+            color: var(--color-brand);
+            font-size: .9rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            margin: 20px 0 10px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,.15);
+        }
+
+        .step-header:first-child {
+            border-top: none;
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        .summary-box {
+            background: rgba(180,142,85,.1);
+            border: 1px solid rgba(180,142,85,.3);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .result-indent {
+            padding-left: 20px;
+        }
+
+        @media (max-width: 600px) {
+
+            .calculator-card,
+            .results-card {
+                padding: 30px 20px;
+            }
+
+            .calc-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .calc-input,
+            .calc-select,
+            .input-with-suffix {
+                width: 100%;
+            }
+
+            .result-total {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <div id="nav-placeholder"></div>
+
+    <!-- Page Header -->
+    <header class="page-header" style="padding-bottom: 40px;">
+        <span class="eyebrow text-gold">PROFIT DISTRIBUTION CALCULATOR</span>
+        <h1 class="display-text">盈餘分配全流程試算</h1>
+        <p class="text-body" style="max-width: 600px; margin: 20px auto 0;">
+            從公司所得到股東實領，一次掌握營所稅、股利稅與二代健保
+        </p>
+    </header>
+
+    <div class="calculator-container section-gap">
+
+        <!-- Calculator Form -->
+        <div class="calculator-card">
+
+            <div class="calc-section">
+                <h3 class="calc-section-title">盈餘分配試算</h3>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="income">
+                        公司全年課稅所得額
+                        <small>營利事業當年度課稅所得（新台幣）</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="income" class="calc-input" value="3,000,000"
+                        onchange="formatInput(this); calculate()" oninput="formatInput(this); calculate()">
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="distMode">
+                        盈餘分配方式
+                        <small>選擇全數分配或自訂分配比例</small>
+                    </label>
+                    <select id="distMode" class="calc-select" onchange="onDistModeChange()">
+                        <option value="full">全數分配</option>
+                        <option value="custom">自訂比例</option>
+                    </select>
+                </div>
+
+                <div class="calc-row" id="distRatioRow" style="display:none;">
+                    <label class="calc-label" for="distRatio">
+                        分配比例
+                        <small>可分配盈餘中實際分配之百分比</small>
+                    </label>
+                    <div class="input-with-suffix">
+                        <input type="number" id="distRatio" class="calc-input" value="100" min="0" max="100"
+                            onchange="calculate()" oninput="calculate()">
+                        <span class="suffix">%</span>
+                    </div>
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="personalRate">
+                        股東個人綜所稅適用稅率
+                        <small>依個人綜合所得淨額所屬級距</small>
+                    </label>
+                    <select id="personalRate" class="calc-select" onchange="onPersonalRateChange()">
+                        <option value="0.05">5% (所得淨額 0 ~ 590,000)</option>
+                        <option value="0.12">12% (所得淨額 590,001 ~ 1,330,000)</option>
+                        <option value="0.20" selected>20% (所得淨額 1,330,001 ~ 2,660,000)</option>
+                        <option value="0.30">30% (所得淨額 2,660,001 ~ 4,980,000)</option>
+                        <option value="0.40">40% (所得淨額 4,980,001 以上)</option>
+                    </select>
+                </div>
+
+                <div id="rateHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:20px;font-size:.88rem;line-height:1.7;color:var(--text-body);"></div>
+
+            </div>
+
+        </div>
+
+        <!-- Results -->
+        <div class="results-card">
+            <h3 class="results-title">盈餘分配全流程試算結果</h3>
+
+            <div id="resultsContainer">
+                <!-- Dynamic content inserted here -->
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div style="background:linear-gradient(135deg,#1a1a1a,#2c2c2c);color:#fff;padding:30px;margin-bottom:30px;font-family:var(--font-sans);font-size:.88rem;line-height:1.7;">
+            <h3 style="color:var(--color-brand);font-family:var(--font-serif);font-size:1.15rem;margin-bottom:14px;">稅制說明</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">
+                <div><strong style="color:#fff;">營利事業所得稅率</strong><br><span style="color:#ccc;">20%（課稅所得 &le; 12 萬免稅，半數條款適用至 20 萬）</span></div>
+                <div><strong style="color:#fff;">法定盈餘公積</strong><br><span style="color:#ccc;">稅後淨利 10%（公司法 &sect;237）</span></div>
+                <div><strong style="color:#fff;">未分配盈餘稅</strong><br><span style="color:#ccc;">5%（所得稅法 &sect;66-9）</span></div>
+                <div><strong style="color:#fff;">合併計稅</strong><br><span style="color:#ccc;">股利併入綜所稅，8.5% 可抵減稅額，上限 8 萬（可退稅）</span></div>
+                <div><strong style="color:#fff;">分開計稅</strong><br><span style="color:#ccc;">股利按 28% 分離課稅</span></div>
+                <div><strong style="color:#fff;">二代健保</strong><br><span style="color:#ccc;">單次股利 &ge; NT$20,000，扣取 2.11%</span></div>
+            </div>
+            <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：所得稅法、公司法、全民健康保險法</div>
+        </div>
+
+        <p class="disclaimer">
+            * 本試算為簡化模型，假設公司僅有一位股東且無其他所得扣除項。<br>
+            * 法定盈餘公積累積達資本額時得免提。<br>
+            * 法源：所得稅法、公司法、全民健康保險法。<br>
+            * 實際稅額以國稅局核定為準。
+        </p>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <p class="cta-text">需要盈餘分配規劃或稅務諮詢？</p>
+            <a href="/booking.html" class="btn-solid-gold">預約免費諮詢</a>
+        </div>
+
+        <div style="text-align:center; margin-top: 30px;">
+            <a href="/resources.html" class="btn-text" style="color: #999; text-decoration: none; font-size: 0.9rem;">
+                &larr; 返回資源列表
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script type="module" src="/assets/js/main.js"></script>
+    <script>
+        /* ==========================================================
+           盈餘分配全流程試算 (Profit Distribution Full-Flow Calculator)
+           法源：所得稅法、公司法、全民健康保險法
+           ========================================================== */
+
+        function formatInput(el) {
+            const raw = el.value.replace(/[^\d]/g, '');
+            if (raw) {
+                el.value = parseInt(raw).toLocaleString('en-US');
+            }
+        }
+        function parseAmount(id) {
+            return parseInt(document.getElementById(id).value.replace(/,/g, '')) || 0;
+        }
+
+        const RATE_HINTS = {
+            '0.05': '低稅率級距股東，合併計稅通常最有利，可充分享受 8.5% 可抵減稅額。',
+            '0.12': '低稅率級距股東，合併計稅通常最有利，可充分享受 8.5% 可抵減稅額。',
+            '0.20': '中間稅率級距，建議比較合併與分開計稅，視股利金額而定。',
+            '0.30': '高稅率級距股東，分開計稅（28%）通常較有利。可考慮保留部分盈餘於公司，僅需繳 5% 未分配盈餘稅。',
+            '0.40': '高稅率級距股東，分開計稅（28%）通常較有利。可考慮保留部分盈餘於公司，僅需繳 5% 未分配盈餘稅。',
+        };
+
+        function fmt(num) {
+            const abs = Math.abs(num);
+            const formatted = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            return num < 0 ? '-NT$ ' + formatted : 'NT$ ' + formatted;
+        }
+
+        function fmtPlain(num) {
+            return Math.abs(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function onDistModeChange() {
+            const mode = document.getElementById('distMode').value;
+            document.getElementById('distRatioRow').style.display = mode === 'custom' ? 'flex' : 'none';
+            calculate();
+        }
+
+        function onPersonalRateChange() {
+            updateRateHint();
+            calculate();
+        }
+
+        function updateRateHint() {
+            const val = document.getElementById('personalRate').value;
+            const hint = document.getElementById('rateHint');
+            hint.textContent = RATE_HINTS[val] || '';
+        }
+
+        function calculate() {
+            const income = parseAmount('income');
+            const distMode = document.getElementById('distMode').value;
+            const distRatio = distMode === 'full' ? 100 : (parseInt(document.getElementById('distRatio').value) || 0);
+            const personalRate = parseFloat(document.getElementById('personalRate').value);
+
+            // ===== Step 1: 營利事業所得稅 (Corporate Income Tax) =====
+            let cit = 0;
+            if (income <= 120000) {
+                cit = 0;
+            } else {
+                // 所得稅法 §5: 稅率 20%
+                // 但應納稅額不得超過（課稅所得額 - 120,000）× 50%（半數條款）
+                const normalTax = Math.round(income * 0.20);
+                const halfRule = Math.round((income - 120000) * 0.50);
+                cit = Math.min(normalTax, halfRule);
+            }
+
+            // ===== Step 2: 稅後淨利 =====
+            const netIncome = income - cit;
+
+            // ===== Step 3: 法定盈餘公積 (公司法 §237: 提撥 10%) =====
+            const legalReserve = Math.round(netIncome * 0.10);
+
+            // ===== Step 4: 可分配盈餘 =====
+            const distributable = netIncome - legalReserve;
+
+            // ===== Step 5: 實際分配股利 =====
+            const actualDividend = Math.round(distributable * distRatio / 100);
+
+            // ===== Step 6: 未分配盈餘稅 (所得稅法 §66-9: 5%) =====
+            const undistributed = distributable - actualDividend;
+            const undistributedTax = Math.round(undistributed * 0.05);
+
+            // ===== Step 7: 個人股利所得稅 — 兩方案比較 =====
+            // Method A: 合併計稅 — 8.5% 可抵減稅額, 上限 8 萬 (可退稅)
+            const creditA = Math.min(Math.round(actualDividend * 0.085), 80000);
+            const taxA = Math.round(actualDividend * personalRate) - creditA;
+            // taxA can be negative (refund)
+
+            // Method B: 分開計稅 — flat 28%
+            const taxB = Math.round(actualDividend * 0.28);
+
+            // Pick the better one
+            const betterMethod = taxA <= taxB ? 'A' : 'B';
+            const personalTax = Math.min(taxA, taxB);
+
+            // ===== Step 8: 二代健保補充保費 =====
+            const nhiPremium = actualDividend >= 20000
+                ? Math.round(Math.min(actualDividend, 10000000) * 0.0211) : 0;
+
+            // ===== Step 9: 整體結果 =====
+            const totalTaxActual = cit + undistributedTax + personalTax + nhiPremium;
+            const actualReceived = actualDividend - personalTax - nhiPremium;
+            const effectiveRate = income > 0 ? (totalTaxActual / income * 100).toFixed(1) : '0.0';
+
+            const personalRatePct = Math.round(personalRate * 100);
+            const distRatioPct = distRatio;
+
+            // Build results HTML
+            let html = '';
+
+            // ── Step 1: 營利事業所得稅 ──
+            html += '<div class="step-header">\u2460 營利事業所得稅</div>';
+            html += resultRow('公司課稅所得額', fmt(income));
+            html += resultRow('營利事業所得稅 (20%)', '-NT$ ' + fmtPlain(cit));
+            html += resultRow('<strong>稅後淨利</strong>', fmt(netIncome), true);
+
+            // ── Step 2: 盈餘分配 ──
+            html += '<div class="step-header">\u2461 盈餘分配</div>';
+            html += resultRow('法定盈餘公積 (10%)', '-NT$ ' + fmtPlain(legalReserve));
+            html += resultRow('可分配盈餘', fmt(distributable));
+            html += resultRow('實際分配股利 (' + distRatioPct + '%)', fmt(actualDividend));
+            html += resultRow('未分配盈餘', fmt(undistributed));
+            html += resultRow('未分配盈餘稅 (5%)', '-NT$ ' + fmtPlain(undistributedTax));
+
+            // ── Step 3: 股東個人稅負 ──
+            html += '<div class="step-header">\u2462 股東個人稅負</div>';
+
+            // Method A
+            html += '<div style="color:#ccc;font-size:.88rem;font-weight:600;margin:10px 0 5px;">方案一：合併計稅</div>';
+            const grossTaxA = Math.round(actualDividend * personalRate);
+            html += resultRowIndent('股利 &times; 綜所稅率 ' + personalRatePct + '%', 'NT$ ' + fmtPlain(grossTaxA));
+            html += resultRowIndent('可抵減稅額 (8.5%)', '-NT$ ' + fmtPlain(creditA));
+            const taxALabel = taxA < 0 ? '合併計稅稅額（可退稅）' : '合併計稅稅額';
+            html += resultRowIndent('<strong>' + taxALabel + '</strong>', fmt(taxA));
+
+            // Method B
+            html += '<div style="color:#ccc;font-size:.88rem;font-weight:600;margin:15px 0 5px;">方案二：分開計稅</div>';
+            html += resultRowIndent('股利 &times; 28%', 'NT$ ' + fmtPlain(taxB));
+
+            // Recommendation
+            const betterLabel = betterMethod === 'A' ? '合併計稅' : '分開計稅';
+            html += '<div style="margin:15px 0 10px;padding:10px 16px;background:rgba(180,142,85,.12);border-left:3px solid var(--color-brand);font-size:.92rem;">';
+            html += '<span style="color:#ccc;">\u2192 建議採用</span> <strong style="color:var(--color-brand);">【' + betterLabel + '】</strong>';
+            html += '</div>';
+
+            html += resultRow('股利所得稅', fmt(personalTax));
+            html += resultRow('二代健保補充保費 (2.11%)', nhiPremium > 0 ? fmt(nhiPremium) : 'NT$ 0');
+
+            // ── 整體結果 ──
+            html += '<div class="summary-box">';
+            html += '<div style="color:var(--color-brand);font-size:1rem;font-weight:700;letter-spacing:.05em;margin-bottom:15px;">整體結果</div>';
+            html += resultRow('公司課稅所得額', fmt(income));
+            html += resultRow('營利事業所得稅', fmt(cit));
+            html += resultRow('未分配盈餘稅', fmt(undistributedTax));
+            html += resultRow('個人股利所得稅', fmt(personalTax));
+            html += resultRow('二代健保補充保費', fmt(nhiPremium));
+            html += '<div style="border-top:1px solid rgba(255,255,255,.25);margin:10px 0;"></div>';
+
+            // 稅負合計
+            html += '<div class="result-total" style="margin-top:10px;padding-top:10px;">';
+            html += '<span class="result-total-label">稅負合計</span>';
+            html += '<span class="result-total-value">' + fmt(totalTaxActual) + '</span>';
+            html += '</div>';
+
+            // 股東實際到手
+            html += '<div class="result-total" style="margin-top:15px;padding-top:15px;border-top:none;">';
+            html += '<span class="result-total-label">股東實際到手</span>';
+            html += '<span class="result-total-value" style="font-size:2.2rem;">' + fmt(actualReceived) + '</span>';
+            html += '</div>';
+
+            // 整體有效稅率
+            html += '<div class="result-total" style="margin-top:15px;padding-top:15px;border-top:none;">';
+            html += '<span class="result-total-label">整體有效稅率</span>';
+            html += '<span class="result-total-value" style="font-size:1.6rem;">' + effectiveRate + '%</span>';
+            html += '</div>';
+
+            html += '</div>'; // end summary-box
+
+            document.getElementById('resultsContainer').innerHTML = html;
+        }
+
+        function resultRow(label, value, bold) {
+            const style = bold ? 'font-weight:700;color:#fff;' : '';
+            return '<div class="result-row">'
+                + '<span class="result-label" style="' + style + '">' + label + '</span>'
+                + '<span class="result-value" style="' + style + '">' + value + '</span>'
+                + '</div>';
+        }
+
+        function resultRowIndent(label, value) {
+            return '<div class="result-row result-indent">'
+                + '<span class="result-label">' + label + '</span>'
+                + '<span class="result-value">' + value + '</span>'
+                + '</div>';
+        }
+
+        // Init: calculate on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateRateHint();
+            calculate();
+        });
+    </script>
+
+</body>
+
+</html>

@@ -3,6 +3,12 @@
 /video.html /resources.html 301
 /video /resources.html 301
 
+# 工具頁 pretty URL → HTML
+/tools/supplementary-nhi-calculator /tools/supplementary-nhi-calculator.html 200
+/tools/dividend-tax-calculator /tools/dividend-tax-calculator.html 200
+/tools/withholding-tax-calculator /tools/withholding-tax-calculator.html 200
+/tools/profit-distribution-calculator /tools/profit-distribution-calculator.html 200
+
 # 舊 blog 文章 → 文章專區（因全部重寫，統一導向列表）
 /blog/*.html /articles.html 301
 /blog.html /articles.html 301
