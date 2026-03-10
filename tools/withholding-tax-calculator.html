@@ -311,9 +311,9 @@
         <div style="background:linear-gradient(135deg,#1a1a1a,#2c2c2c);color:#fff;padding:30px;margin-bottom:30px;font-family:var(--font-sans);font-size:.88rem;line-height:1.7;">
             <h3 style="color:var(--color-brand);font-family:var(--font-serif);font-size:1.15rem;margin-bottom:14px;">扣繳稅率速查</h3>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">
-                <div><strong style="color:#fff;">居住者 — 薪資（兼職）</strong><br><span style="color:#ccc;">5%，起扣點 NT$88,501</span></div>
+                <div><strong style="color:#fff;">居住者 — 薪資（兼職）</strong><br><span style="color:#ccc;">5%，起扣點 NT$90,501（115年度）</span></div>
                 <div><strong style="color:#fff;">居住者 — 其他各類所得</strong><br><span style="color:#ccc;">10%，起扣點 NT$20,000</span></div>
-                <div><strong style="color:#fff;">非居住者 — 薪資</strong><br><span style="color:#ccc;">18%（月薪 &le; 基本工資 1.5 倍免扣繳）</span></div>
+                <div><strong style="color:#fff;">非居住者 — 薪資</strong><br><span style="color:#ccc;">月薪 &le; 1.5 倍基本工資：6%；超過：18%</span></div>
                 <div><strong style="color:#fff;">非居住者 — 股利</strong><br><span style="color:#ccc;">21%，無起扣點</span></div>
                 <div><strong style="color:#fff;">非居住者 — 其他各類</strong><br><span style="color:#ccc;">20%，無起扣點</span></div>
                 <div><strong style="color:#fff;">二代健保補充保費</strong><br><span style="color:#ccc;">2.11%（兼職薪資 &ge; NT$29,500、執行業務/利息/租金 &ge; NT$20,000）</span></div>
@@ -362,7 +362,7 @@
         }
 
         const RESIDENT_RATES = {
-            'salary':       { rate: 0.05, threshold: 88501, label: '薪資所得（兼職/非固定）' },
+            'salary':       { rate: 0.05, threshold: 90501, label: '薪資所得（兼職/非固定）' },
             'manuscript':   { rate: 0.10, threshold: 20000, label: '稿費、版稅、演講費' },
             'professional': { rate: 0.10, threshold: 20000, label: '執行業務報酬' },
             'interest':     { rate: 0.10, threshold: 20000, label: '利息所得' },
@@ -395,7 +395,7 @@
 
         // 動態提示文字
         const RESIDENT_HINTS = {
-            'salary':       '兼職或非經常性薪資，按給付額扣取 5%。每次給付未達薪資扣繳稅額表無配偶及受扶養親屬者之起扣標準（目前為 NT$88,501）免扣繳。',
+            'salary':       '兼職或非經常性薪資，按給付額扣取 5%。每次給付未達薪資扣繳稅額表無配偶及受扶養親屬者之起扣標準（115年度為 NT$90,501）免扣繳。',
             'manuscript':   '稿費、版稅、樂譜、作曲、編劇、漫畫及演講之鐘點費，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
             'professional': '會計師、律師、醫師等執行業務報酬，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
             'interest':     '金融機構存款利息、公債利息等，每次給付額達 NT$20,000 以上，按 10% 扣繳。',
@@ -406,7 +406,7 @@
         };
 
         const NON_RESIDENT_HINTS = {
-            'salary':       '非居住者薪資按給付額扣取 18%。全月薪資給付總額未超過基本工資 1.5 倍（NT$44,250）者，免予扣繳。',
+            'salary':       '非居住者薪資：全月給付總額未超過基本工資 1.5 倍（NT$44,250）者，按 6% 扣繳；超過者按 18% 扣繳。',
             'dividend':     '給付非居住者之股利，按 21% 就源扣繳，不適用合併/分開計稅。',
             'professional': '給付非居住者之執行業務報酬，按給付額扣取 20%，無起扣點。',
             'interest':     '給付非居住者之利息所得，按給付額扣取 20%，無起扣點。',
@@ -485,13 +485,24 @@
 
             const rate = info.rate;
             const threshold = info.threshold;
-            const ratePct = (rate * 100).toFixed(0);
+            let actualRate = rate;
+            if (!isResident && type === 'salary') {
+                actualRate = amount <= 44250 ? 0.06 : 0.18;
+            }
+            const ratePct = (actualRate * 100).toFixed(0);
 
             // 計算扣繳稅額
             let withholdingTax = 0;
             let belowThreshold = false;
 
-            if (threshold > 0 && amount < threshold) {
+            if (!isResident && type === 'salary') {
+                // 非居住者薪資：≤ 1.5 倍基本工資按 6%，超過按 18%
+                if (amount <= 44250) {
+                    withholdingTax = Math.round(amount * 0.06);
+                } else {
+                    withholdingTax = Math.round(amount * 0.18);
+                }
+            } else if (threshold > 0 && amount < threshold) {
                 withholdingTax = 0;
                 belowThreshold = true;
             } else if (amount > 0) {
