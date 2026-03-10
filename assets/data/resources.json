@@ -12,5 +12,19 @@
     "title": "公司設立成本試算",
     "category": "tool",
     "link": "/tools/incorporation-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "依據勞工保險條例及就業保險法，快速計算每月勞保及就保保費負擔。",
+    "title": "勞保費試算",
+    "category": "tool",
+    "link": "/tools/labor-insurance-calculator"
+  },
+  {
+    "type": "tool",
+    "description": "依據全民健康保險法，快速計算每月健保費負擔，支援眷屬人數試算。",
+    "title": "健保費試算",
+    "category": "tool",
+    "link": "/tools/health-insurance-calculator"
   }
 ]
