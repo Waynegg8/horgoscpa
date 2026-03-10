@@ -346,68 +346,38 @@
 
             </div>
 
-            <!-- 加值服務 -->
-            <div class="calc-section">
-                <h3 class="calc-section-title">加值服務 (選配)</h3>
-
-                <div class="calc-checkbox-row">
-                    <input type="checkbox" id="serviceAgency" onchange="calculate()">
-                    <label class="calc-checkbox-label" for="serviceAgency">
-                        全程代辦服務
-                        <small>包含名稱預查、文件準備、送件、領照等全流程代辦</small>
-                    </label>
-                </div>
-
-                <div class="calc-checkbox-row">
-                    <input type="checkbox" id="serviceCPA" checked onchange="calculate()">
-                    <label class="calc-checkbox-label" for="serviceCPA">
-                        資本額簽證 (會計師簽證)
-                        <small>公司設立皆須會計師驗資簽證（公司法 §7）</small>
-                    </label>
-                </div>
-
-                <div class="calc-checkbox-row">
-                    <input type="checkbox" id="serviceAddress" onchange="calculate()">
-                    <label class="calc-checkbox-label" for="serviceAddress">
-                        登記地址租用
-                        <small>提供合法公司登記地址（年租方案）</small>
-                    </label>
-                </div>
-
-                <div class="calc-checkbox-row">
-                    <input type="checkbox" id="serviceSeal" onchange="calculate()">
-                    <label class="calc-checkbox-label" for="serviceSeal">
-                        公司大小章製作
-                        <small>包含公司章（方章）、負責人章（圓章）</small>
-                    </label>
-                </div>
-
-            </div>
-
             <!-- Validation warnings -->
             <div id="warnings" style="display:none;background:#fef2f2;border:1px solid #fecaca;padding:16px 20px;font-size:.88rem;color:#991b1b;line-height:1.6;"></div>
 
         </div>
 
-        <!-- Results -->
+        <!-- Results: Government Fees -->
         <div class="results-card">
-            <h3 class="results-title">預估費用明細</h3>
+            <h3 class="results-title">政府規費試算</h3>
 
             <div id="resultsContainer">
                 <!-- Dynamic content inserted here -->
             </div>
 
             <div class="result-total">
-                <span class="result-total-label">預估總費用</span>
+                <span class="result-total-label">政府規費合計</span>
                 <span class="result-total-value" id="totalCost">NT$ 0</span>
             </div>
         </div>
 
+        <!-- Other Required Items -->
+        <div id="otherItems" style="background:#fff;border:1px solid #eee;padding:30px;margin-bottom:30px;">
+            <h3 style="font-family:var(--font-serif);font-size:1.2rem;margin-bottom:20px;">設立所需其他項目</h3>
+            <div id="otherItemsList" style="font-family:var(--font-sans);font-size:.92rem;color:#555;line-height:1.8;"></div>
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid #eee;text-align:center;">
+                <a href="/booking.html" class="btn-solid-gold" style="font-size:.85rem;padding:10px 30px;">洽詢服務內容與費用</a>
+            </div>
+        </div>
+
         <p class="disclaimer">
-            * 以上為預估金額，實際費用可能因個案情況略有差異。<br>
-            * 公司規費依公司登記規費收費準則（111.11.24 修正）；商號依商業登記規費收費準則（114.12.30 修正）。<br>
+            * 政府規費依公司登記規費收費準則（111.11.24 修正）及商業登記規費收費準則（114.12.30 修正）計算。<br>
             * 公司設立皆須會計師資本額簽證（公司法 §7）；商號資本額 25 萬以上須辦理。<br>
-            * 如需精確報價，請預約諮詢。
+            * 其他專業服務費用請洽本所。
         </p>
 
         <!-- CTA -->
@@ -434,7 +404,7 @@
            法源：公司法、公司登記規費收費準則（111.11.24 修正）
            ========================================================== */
 
-        // 政府規費
+        // 政府規費（依法公告金額）
         const GOV_FEES = {
             // 公司登記規費收費準則（111.11.24 修正）
             nameReservation: 300,           // 名稱預查（臨櫃）§2
@@ -446,17 +416,6 @@
             // 商業登記規費收費準則（114.12.30 修正）
             bizRegistration: 1000,          // 商業設立登記 §2
             bizEFilingRate: 0.8,            // 電子申辦 80%（減收 20%）§4
-        };
-
-        // 代辦服務費（本所報價）
-        const SERVICE_FEES = {
-            agencyLimited: 8000,            // 有限公司代辦
-            agencyStock: 12000,             // 股份有限公司代辦
-            agencyBiz: 5000,                // 商號代辦
-            cpaBase: 3000,                  // 資本額簽證基本費（100萬以下）
-            cpaPer100W: 500,                // 每增100萬加收
-            addressRental: 12000,           // 登記地址年租
-            sealMaking: 1500,               // 大小章（含公司/商號章+負責人章）
         };
 
         // 法定要求
@@ -552,21 +511,6 @@
             // Show/hide supervisor row
             document.getElementById('supervisorRow').style.display = req.needSupervisor ? 'flex' : 'none';
 
-            // Update CPA checkbox description
-            const cpaLabel = document.querySelector('label[for="serviceCPA"]');
-            if (cpaLabel) {
-                const small = cpaLabel.querySelector('small');
-                if (small) small.textContent = req.cpaMandatory
-                    ? '公司設立皆須會計師驗資簽證（公司法 §7）'
-                    : '資本額 25 萬以上須會計師驗資簽證';
-            }
-
-            // Auto-check CPA for companies, uncheck for small 商號
-            const cpaBox = document.getElementById('serviceCPA');
-            if (req.cpaMandatory) {
-                cpaBox.checked = true;
-            }
-
             // Update e-filing description
             const eLabel = document.querySelector('label[for="eFiling"] small');
             if (eLabel) {
@@ -593,11 +537,6 @@
             const req = LEGAL_REQ[companyType];
             const isBiz = companyType === 'business';
 
-            const serviceAgency = document.getElementById('serviceAgency').checked;
-            const serviceCPA = document.getElementById('serviceCPA').checked;
-            const serviceAddress = document.getElementById('serviceAddress').checked;
-            const serviceSeal = document.getElementById('serviceSeal').checked;
-
             // Validation warnings
             let warnings = [];
             if (companyType === 'stock' && directors < 1) {
@@ -605,12 +544,6 @@
             }
             if (companyType === 'limited' && directors > 3) {
                 warnings.push('有限公司董事不得超過 3 人（公司法 §108）');
-            }
-            if (req.cpaMandatory && !serviceCPA) {
-                warnings.push('提醒：公司設立依法皆須辦理會計師資本額簽證（公司法 §7），建議勾選此項目。');
-            }
-            if (isBiz && capital >= 250000 && !serviceCPA) {
-                warnings.push('提醒：商號資本額達 25 萬以上須辦理會計師資本額簽證。');
             }
             if (capital <= 0) {
                 warnings.push('請輸入資本額');
@@ -624,6 +557,7 @@
                 warnEl.style.display = 'none';
             }
 
+            // === Government fees only ===
             let items = [];
             let total = 0;
             const typeLabel = isBiz ? '商業' : '公司';
@@ -638,14 +572,11 @@
             total += nameFee;
 
             // 2. 設立登記規費
-            let regFee;
-            let regNote;
+            let regFee, regNote;
             if (isBiz) {
-                // 商業登記：固定 $1,000，電子減收 20%
                 regFee = eFiling ? Math.round(GOV_FEES.bizRegistration * GOV_FEES.bizEFilingRate) : GOV_FEES.bizRegistration;
                 regNote = eFiling ? '§2：固定 $1,000，電子減收 20%' : '§2：固定 $1,000';
             } else {
-                // 公司登記：每 $4,000 資本額收 $1，最低 $1,000
                 regFee = Math.max(GOV_FEES.registrationMin, Math.ceil(capital / GOV_FEES.registrationUnit));
                 if (eFiling) regFee = Math.max(regFee - GOV_FEES.eFilingDiscount, 0);
                 regNote = '§3：每 $4,000 資本額收 $1，最低 $1,000';
@@ -659,44 +590,7 @@
             // 3. 稅籍登記（免費）
             items.push({ label: '稅籍登記（國稅局）', value: 0, note: '免收規費' });
 
-            // 4. 代辦服務費
-            if (serviceAgency) {
-                const agencyFee = isBiz ? SERVICE_FEES.agencyBiz
-                    : companyType === 'stock' ? SERVICE_FEES.agencyStock
-                    : SERVICE_FEES.agencyLimited;
-                items.push({ label: '全程代辦服務費', value: agencyFee });
-                total += agencyFee;
-            }
-
-            // 5. 會計師資本額簽證
-            if (serviceCPA) {
-                let cpaFee = SERVICE_FEES.cpaBase;
-                if (capital > 1000000) {
-                    cpaFee += Math.ceil((capital - 1000000) / 1000000) * SERVICE_FEES.cpaPer100W;
-                }
-                const cpaNote = req.cpaMandatory ? '公司法 §7 法定程序'
-                    : '資本額 25 萬以上須辦理';
-                items.push({ label: '資本額簽證（會計師）', value: cpaFee, note: cpaNote });
-                total += cpaFee;
-            }
-
-            // 6. 登記地址租用
-            if (serviceAddress) {
-                items.push({ label: `${typeLabel}登記地址租用（年）`, value: SERVICE_FEES.addressRental });
-                total += SERVICE_FEES.addressRental;
-            }
-
-            // 7. 大小章製作
-            if (serviceSeal) {
-                items.push({
-                    label: `${typeLabel}大小章製作`,
-                    value: SERVICE_FEES.sealMaking,
-                    note: isBiz ? '商號章 + 負責人章' : '公司章 + 負責人章'
-                });
-                total += SERVICE_FEES.sealMaking;
-            }
-
-            // Render results
+            // Render government fee results
             const container = document.getElementById('resultsContainer');
             container.innerHTML = items.map(item => `
                 <div class="result-row">
@@ -706,6 +600,28 @@
             `).join('');
 
             document.getElementById('totalCost').textContent = `NT$ ${fmt(total)}`;
+
+            // === Other required items (no prices) ===
+            let others = [];
+            if (req.cpaMandatory) {
+                others.push({ item: '會計師資本額簽證', note: '法定必要程序（公司法 §7）' });
+            } else if (isBiz && capital >= 250000) {
+                others.push({ item: '會計師資本額簽證', note: '資本額達 25 萬以上須辦理' });
+            }
+            others.push({ item: `${typeLabel}大小章`, note: isBiz ? '商號章＋負責人章' : '公司章＋負責人章' });
+            if (req.isCompany) {
+                others.push({ item: '公司登記地址', note: '須有合法登記地址' });
+            } else {
+                others.push({ item: '營業地址', note: '須有實際營業場所或登記地址' });
+            }
+            others.push({ item: '代辦服務', note: '名稱預查、文件準備、送件、領照等全流程' });
+
+            document.getElementById('otherItemsList').innerHTML = others.map(o =>
+                `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+                    <span><strong>${o.item}</strong><br><span style="font-size:.82rem;color:#999;">${o.note}</span></span>
+                    <span style="color:var(--color-brand);font-weight:600;white-space:nowrap;align-self:center;">請洽本所</span>
+                </div>`
+            ).join('');
         }
 
         // Init
