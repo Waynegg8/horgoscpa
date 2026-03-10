@@ -274,6 +274,8 @@
                     </select>
                 </div>
 
+                <div id="identityHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:20px;font-size:.88rem;line-height:1.7;color:var(--text-body);display:none;"></div>
+
                 <div class="calc-row" id="companySizeRow" style="display:none;">
                     <label class="calc-label" for="companySize">
                         公司員工人數
@@ -397,9 +399,31 @@
             'gte5': 45800, // 員工5人以上
         };
 
+        const IDENTITY_HINTS = {
+            'employee': '',
+            'boss': '<strong>負責人（第一類第二目）注意事項：</strong><br>'
+                + '① 全額自付 100%，無雇主負擔、無政府補助（全民健康保險法 §27）<br>'
+                + '② 最低投保金額依公司規模：1人公司 36,300 元 / 未滿5人 40,100 元 / 5人以上 45,800 元<br>'
+                + '③ 眷屬保費同樣 100% 自付，最多計 3 口<br>'
+                + '④ 健保費全額可列為公司費用',
+            'union': '<strong>職業工會投保（第二類）注意事項：</strong><br>'
+                + '① 負擔比例：自付 60%、政府補助 40%（全民健康保險法 §27）<br>'
+                + '② 無雇主負擔<br>'
+                + '③ 眷屬隨同投保，負擔比例相同<br>'
+                + '④ 投保金額最低為基本工資 29,500 元',
+        };
+
         function onIdentityChange() {
             const val = document.getElementById('identity').value;
+            const hint = document.getElementById('identityHint');
             document.getElementById('companySizeRow').style.display = val === 'boss' ? 'flex' : 'none';
+            // 顯示身分提示
+            if (IDENTITY_HINTS[val]) {
+                hint.innerHTML = IDENTITY_HINTS[val];
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
+            }
             calculate();
         }
 

@@ -263,6 +263,8 @@
                     </select>
                 </div>
 
+                <div id="identityHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:20px;font-size:.88rem;line-height:1.7;color:var(--text-body);display:none;"></div>
+
                 <div class="calc-row" id="employmentInsRow">
                     <label class="calc-label" for="employmentIns">
                         是否適用就業保險
@@ -372,14 +374,37 @@
             return ALL_BRACKETS[ALL_BRACKETS.length - 1];
         }
 
+        const IDENTITY_HINTS = {
+            'full-time': '',
+            'part-time': '<strong>部分工時勞工</strong>：投保薪資可低於基本工資（29,500 元），依實際薪資對應級距。負擔比例同一般勞工：雇主 70%、勞工 20%、政府 10%。',
+            'boss-company': '<strong>負責人（公司投保）注意事項：</strong><br>'
+                + '① 負擔比例：被保險人自付 20%、公司負擔 70%、政府補助 10%（勞工保險條例 §15）<br>'
+                + '② 不適用就業保險（就業保險法 §5：僅受僱勞工適用）<br>'
+                + '③ 投保薪資不得低於基本工資 29,500 元，最高 45,800 元<br>'
+                + '④ 公司負擔 70% 部分可列為公司費用',
+            'boss-union': '<strong>職業工會投保注意事項：</strong><br>'
+                + '① 負擔比例：自付 60%、政府補助 40%（勞工保險條例 §15）<br>'
+                + '② 不適用就業保險<br>'
+                + '③ 投保薪資不得低於基本工資 29,500 元，最高 45,800 元<br>'
+                + '④ 無雇主負擔，保費較公司投保高',
+        };
+
         function onTypeChange() {
             const t = document.getElementById('workerType').value;
             const empInsRow = document.getElementById('employmentInsRow');
-            // 負責人不適用就業保險
+            const hint = document.getElementById('identityHint');
+            // 負責人/工會不適用就業保險
             if (t === 'boss-company' || t === 'boss-union') {
                 empInsRow.style.display = 'none';
             } else {
                 empInsRow.style.display = 'flex';
+            }
+            // 顯示身分提示
+            if (IDENTITY_HINTS[t]) {
+                hint.innerHTML = IDENTITY_HINTS[t];
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
             }
             calculate();
         }
