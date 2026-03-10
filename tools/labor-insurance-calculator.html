@@ -253,15 +253,17 @@
                 <div class="calc-row">
                     <label class="calc-label" for="workerType">
                         身分類別
-                        <small>全職勞工適用基本工資以上級距</small>
+                        <small>選擇身分以套用對應費率與負擔比例</small>
                     </label>
-                    <select id="workerType" class="calc-select" onchange="calculate()">
+                    <select id="workerType" class="calc-select" onchange="onTypeChange()">
                         <option value="full-time">一般受僱勞工</option>
                         <option value="part-time">部分工時勞工</option>
+                        <option value="boss-company">負責人（公司投保）</option>
+                        <option value="boss-union">職業工會投保</option>
                     </select>
                 </div>
 
-                <div class="calc-row">
+                <div class="calc-row" id="employmentInsRow">
                     <label class="calc-label" for="employmentIns">
                         是否適用就業保險
                         <small>15-65歲本國籍受僱勞工適用</small>
@@ -289,7 +291,7 @@
                 <span class="result-total-value" id="totalEmployeeValue">NT$ 0</span>
             </div>
 
-            <div class="result-total" style="margin-top: 15px; border-top: none;">
+            <div class="result-total" id="totalEmployerRow" style="margin-top: 15px; border-top: none;">
                 <span class="result-total-label">合計 — 雇主每月負擔</span>
                 <span class="result-total-value" id="totalEmployerValue" style="color: #fff;">NT$ 0</span>
             </div>
@@ -303,6 +305,8 @@
                 <div><strong style="color:#fff;">就業保險費率</strong><br><span style="color:#ccc;">1%</span></div>
                 <div><strong style="color:#fff;">負擔比例</strong><br><span style="color:#ccc;">雇主 70%、勞工 20%、政府 10%</span></div>
                 <div><strong style="color:#fff;">投保薪資上限</strong><br><span style="color:#ccc;">45,800 元</span></div>
+                <div><strong style="color:#fff;">負責人（公司投保）</strong><br><span style="color:#ccc;">被保險人 20%、公司 70%、政府 10%（勞工保險條例 §15）</span></div>
+                <div><strong style="color:#fff;">職業工會投保</strong><br><span style="color:#ccc;">自付 60%、政府 40%（勞工保險條例 §15）</span></div>
             </div>
             <div style="color:#ccc;margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);">
                 職業災害保險費率依行業別不同（0.04%～0.92%），全額由雇主負擔，本工具未納入計算。
@@ -348,7 +352,7 @@
         const ALL_BRACKETS = [
             // 部分工時（月薪 < 基本工資 29,500）
             11100, 12540, 13500, 15840, 16500, 17280, 17880, 19047,
-            20008, 21009, 22000, 23100, 24000, 25250, 26400, 27600, 28590,
+            20008, 21009, 22000, 23100, 24000, 25250, 26400, 27600,
             // 全職 11 級（基本工資以上）
             29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800
         ];
@@ -358,37 +362,43 @@
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
-        function matchBracket(salary, isFullTime) {
-            // 全職勞工不得低於基本工資級距
+        function matchBracket(salary, workerType) {
+            const isBoss = workerType === 'boss-company' || workerType === 'boss-union';
+            const isFullTime = workerType === 'full-time' || isBoss;
             const effective = isFullTime ? Math.max(salary, MIN_FULL_TIME) : salary;
             for (let i = 0; i < ALL_BRACKETS.length; i++) {
                 if (ALL_BRACKETS[i] >= effective) return ALL_BRACKETS[i];
             }
-            return ALL_BRACKETS[ALL_BRACKETS.length - 1]; // max: 45,800
+            return ALL_BRACKETS[ALL_BRACKETS.length - 1];
+        }
+
+        function onTypeChange() {
+            const t = document.getElementById('workerType').value;
+            const empInsRow = document.getElementById('employmentInsRow');
+            // 負責人不適用就業保險
+            if (t === 'boss-company' || t === 'boss-union') {
+                empInsRow.style.display = 'none';
+            } else {
+                empInsRow.style.display = 'flex';
+            }
+            calculate();
         }
 
         function calculate() {
             const salary = parseInt(document.getElementById('salary').value) || 0;
             const workerType = document.getElementById('workerType').value;
-            const hasEmploymentIns = document.getElementById('employmentIns').value === 'yes';
-            const isFullTime = workerType === 'full-time';
+            const hasEmploymentIns = document.getElementById('employmentIns').value === 'yes'
+                && workerType !== 'boss-company' && workerType !== 'boss-union';
+            const isBossCompany = workerType === 'boss-company';
+            const isBossUnion = workerType === 'boss-union';
 
-            const bracket = matchBracket(salary, isFullTime);
+            const bracket = matchBracket(salary, workerType);
 
-            // Calculate premiums
+            // Full premium
             const laborPremium = bracket * RATES.laborInsurance;
             const employmentPremium = hasEmploymentIns ? bracket * RATES.employmentInsurance : 0;
 
-            const laborEmployee = Math.round(laborPremium * RATES.employeeShare);
-            const laborEmployer = Math.round(laborPremium * RATES.employerShare);
-
-            const empInsEmployee = Math.round(employmentPremium * RATES.employeeShare);
-            const empInsEmployer = Math.round(employmentPremium * RATES.employerShare);
-
-            const totalEmployee = laborEmployee + empInsEmployee;
-            const totalEmployer = laborEmployer + empInsEmployer;
-
-            // Render results
+            let totalEmployee, totalEmployer;
             let html = '';
 
             // Bracket info
@@ -398,43 +408,99 @@
                     <span class="result-value">NT$ ${fmt(bracket)}</span>
                 </div>
             `;
-
-            // Divider
             html += '<div style="border-bottom: 1px solid rgba(255,255,255,0.2); margin: 5px 0;"></div>';
 
-            // Labor insurance
-            html += `
-                <div class="result-row">
-                    <span class="result-label">勞保普通事故保險費 (11.5%)<br><span style="font-size:.75rem;color:#888;">勞工負擔 (20%)</span></span>
-                    <span class="result-value">NT$ ${fmt(laborEmployee)}</span>
-                </div>
-                <div class="result-row">
-                    <span class="result-label"><span style="font-size:.75rem;color:#888;">雇主負擔 (70%)</span></span>
-                    <span class="result-value">NT$ ${fmt(laborEmployer)}</span>
-                </div>
-            `;
+            if (isBossUnion) {
+                // 工會投保：自付60%、政府40%
+                const selfPay = Math.round(laborPremium * 0.60);
+                const govPay = Math.round(laborPremium * 0.40);
+                totalEmployee = selfPay;
+                totalEmployer = 0;
 
-            // Employment insurance (only if applicable)
-            if (hasEmploymentIns) {
                 html += `
                     <div class="result-row">
-                        <span class="result-label">就業保險費 (1%)<br><span style="font-size:.75rem;color:#888;">勞工負擔 (20%)</span></span>
-                        <span class="result-value">NT$ ${fmt(empInsEmployee)}</span>
+                        <span class="result-label">勞保普通事故保險費 (11.5%)<br><span style="font-size:.75rem;color:#888;">自付 (60%)</span></span>
+                        <span class="result-value">NT$ ${fmt(selfPay)}</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label"><span style="font-size:.75rem;color:#888;">政府補助 (40%)</span></span>
+                        <span class="result-value">NT$ ${fmt(govPay)}</span>
+                    </div>
+                `;
+            } else if (isBossCompany) {
+                // 公司投保：被保險人20%、公司70%、政府10%
+                const selfPay = Math.round(laborPremium * RATES.employeeShare);
+                const companyPay = Math.round(laborPremium * RATES.employerShare);
+                const govPay = Math.round(laborPremium * RATES.govShare);
+                totalEmployee = selfPay;
+                totalEmployer = companyPay;
+
+                html += `
+                    <div class="result-row">
+                        <span class="result-label">勞保普通事故保險費 (11.5%)<br><span style="font-size:.75rem;color:#888;">負責人自付 (20%)</span></span>
+                        <span class="result-value">NT$ ${fmt(selfPay)}</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label"><span style="font-size:.75rem;color:#888;">公司負擔 (70%)（可列費用）</span></span>
+                        <span class="result-value">NT$ ${fmt(companyPay)}</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label"><span style="font-size:.75rem;color:#888;">政府補助 (10%)</span></span>
+                        <span class="result-value">NT$ ${fmt(govPay)}</span>
+                    </div>
+                `;
+            } else {
+                // 一般勞工 / 部分工時
+                const laborEmployee = Math.round(laborPremium * RATES.employeeShare);
+                const laborEmployer = Math.round(laborPremium * RATES.employerShare);
+                const empInsEmployee = Math.round(employmentPremium * RATES.employeeShare);
+                const empInsEmployer = Math.round(employmentPremium * RATES.employerShare);
+                totalEmployee = laborEmployee + empInsEmployee;
+                totalEmployer = laborEmployer + empInsEmployer;
+
+                html += `
+                    <div class="result-row">
+                        <span class="result-label">勞保普通事故保險費 (11.5%)<br><span style="font-size:.75rem;color:#888;">勞工負擔 (20%)</span></span>
+                        <span class="result-value">NT$ ${fmt(laborEmployee)}</span>
                     </div>
                     <div class="result-row">
                         <span class="result-label"><span style="font-size:.75rem;color:#888;">雇主負擔 (70%)</span></span>
-                        <span class="result-value">NT$ ${fmt(empInsEmployer)}</span>
+                        <span class="result-value">NT$ ${fmt(laborEmployer)}</span>
                     </div>
                 `;
+                if (hasEmploymentIns) {
+                    html += `
+                        <div class="result-row">
+                            <span class="result-label">就業保險費 (1%)<br><span style="font-size:.75rem;color:#888;">勞工負擔 (20%)</span></span>
+                            <span class="result-value">NT$ ${fmt(empInsEmployee)}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label"><span style="font-size:.75rem;color:#888;">雇主負擔 (70%)</span></span>
+                            <span class="result-value">NT$ ${fmt(empInsEmployer)}</span>
+                        </div>
+                    `;
+                }
             }
 
             document.getElementById('resultsContainer').innerHTML = html;
+
+            // Update totals
+            const empLabel = isBossUnion ? '合計 — 每月自付' : isBossCompany ? '合計 — 負責人自付' : '合計 — 勞工每月自付';
+            const erLabel = isBossCompany ? '合計 — 公司負擔（可列費用）' : '合計 — 雇主每月負擔';
+            document.getElementById('totalEmployee').querySelector('.result-total-label').textContent = empLabel;
             document.getElementById('totalEmployeeValue').textContent = `NT$ ${fmt(totalEmployee)}`;
-            document.getElementById('totalEmployerValue').textContent = `NT$ ${fmt(totalEmployer)}`;
+
+            if (isBossUnion) {
+                document.getElementById('totalEmployerRow').style.display = 'none';
+            } else {
+                document.getElementById('totalEmployerRow').style.display = 'flex';
+                document.getElementById('totalEmployerRow').querySelector('.result-total-label').textContent = erLabel;
+                document.getElementById('totalEmployerValue').textContent = `NT$ ${fmt(totalEmployer)}`;
+            }
         }
 
         // Init: calculate on page load
-        document.addEventListener('DOMContentLoaded', () => { calculate(); });
+        document.addEventListener('DOMContentLoaded', () => { onTypeChange(); });
     </script>
 
 </body>

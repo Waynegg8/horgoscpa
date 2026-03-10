@@ -263,6 +263,30 @@
                 </div>
 
                 <div class="calc-row">
+                    <label class="calc-label" for="identity">
+                        身分類別
+                        <small>不同身分適用不同負擔比例</small>
+                    </label>
+                    <select id="identity" class="calc-select" onchange="onIdentityChange()">
+                        <option value="employee">一般受僱勞工</option>
+                        <option value="boss">負責人</option>
+                        <option value="union">職業工會投保</option>
+                    </select>
+                </div>
+
+                <div class="calc-row" id="companySizeRow" style="display:none;">
+                    <label class="calc-label" for="companySize">
+                        公司員工人數
+                        <small>影響負責人最低投保金額</small>
+                    </label>
+                    <select id="companySize" class="calc-select" onchange="calculate()">
+                        <option value="1">僅負責人（1人公司）</option>
+                        <option value="lt5">未滿 5 人</option>
+                        <option value="gte5">5 人以上</option>
+                    </select>
+                </div>
+
+                <div class="calc-row">
                     <label class="calc-label" for="dependents">
                         眷屬人數
                         <small>超過 3 人仍以 3 人計算</small>
@@ -291,7 +315,7 @@
                 <span class="result-total-label">勞工每月自付合計</span>
                 <span class="result-total-value" id="totalEmployee">NT$ 0</span>
             </div>
-            <div class="result-total" style="margin-top: 15px; padding-top: 15px; border-top: none;">
+            <div class="result-total" id="totalEmployerRow" style="margin-top: 15px; padding-top: 15px; border-top: none;">
                 <span class="result-total-label">雇主每月負擔合計</span>
                 <span class="result-total-value" id="totalEmployer" style="color: #fff;">NT$ 0</span>
             </div>
@@ -307,6 +331,9 @@
                 <div><strong style="color:#fff;">眷屬計算</strong><br><span style="color:#ccc;">隨被保險人投保，超過 3 口以 3 口計</span></div>
                 <div><strong style="color:#fff;">補充保費率</strong><br><span style="color:#ccc;">2.11%（獎金超過投保金額 4 倍時適用）</span></div>
                 <div><strong style="color:#fff;">適用對象</strong><br><span style="color:#ccc;">第一類第一至三目被保險人</span></div>
+                <div><strong style="color:#fff;">負責人（第一類第二目）</strong><br><span style="color:#ccc;">全額自付 100%，無政府補助</span></div>
+                <div><strong style="color:#fff;">負責人最低投保金額</strong><br><span style="color:#ccc;">1人公司 36,300 / 未滿5人 40,100 / 5人以上 45,800</span></div>
+                <div><strong style="color:#fff;">職業工會（第二類）</strong><br><span style="color:#ccc;">自付 60%、政府 40%（全民健康保險法 §27）</span></div>
             </div>
             <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：全民健康保險法 §18、§21、§23；全民健康保險投保金額分級表（115年1月1日施行）</div>
         </div>
@@ -364,11 +391,30 @@
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
+        const BOSS_MIN_BRACKETS = {
+            '1': 36300,    // 1人公司
+            'lt5': 40100,  // 員工未滿5人
+            'gte5': 45800, // 員工5人以上
+        };
+
+        function onIdentityChange() {
+            const val = document.getElementById('identity').value;
+            document.getElementById('companySizeRow').style.display = val === 'boss' ? 'flex' : 'none';
+            calculate();
+        }
+
         function matchBracket(salary) {
-            if (salary <= NHI_BRACKETS[0]) return NHI_BRACKETS[0];
-            if (salary > NHI_BRACKETS[NHI_BRACKETS.length - 1]) return NHI_BRACKETS[NHI_BRACKETS.length - 1];
+            const isBoss = document.getElementById('identity').value === 'boss';
+            let effective = salary;
+            if (isBoss) {
+                const size = document.getElementById('companySize').value;
+                const minBracket = BOSS_MIN_BRACKETS[size];
+                effective = Math.max(effective, minBracket);
+            }
+            if (effective <= NHI_BRACKETS[0]) return NHI_BRACKETS[0];
+            if (effective > NHI_BRACKETS[NHI_BRACKETS.length - 1]) return NHI_BRACKETS[NHI_BRACKETS.length - 1];
             for (let i = 0; i < NHI_BRACKETS.length; i++) {
-                if (NHI_BRACKETS[i] >= salary) return NHI_BRACKETS[i];
+                if (NHI_BRACKETS[i] >= effective) return NHI_BRACKETS[i];
             }
             return NHI_BRACKETS[NHI_BRACKETS.length - 1];
         }
@@ -378,18 +424,32 @@
             const dependents = parseInt(document.getElementById('dependents').value) || 0;
             const effectiveDependents = Math.min(dependents, RATES.maxDependents);
             const headCount = 1 + effectiveDependents;
+            const identity = document.getElementById('identity').value;
+            const isBoss = identity === 'boss';
+            const isUnion = identity === 'union';
 
             const bracket = matchBracket(salary);
-
-            // 計算
             const nhiPremium = Math.round(bracket * RATES.nhi);
-            const employeePay = Math.round(nhiPremium * RATES.employeeShare * headCount);
-            const employerPay = Math.round(nhiPremium * RATES.employerShare * headCount);
-            const govPay = Math.round(nhiPremium * RATES.govShare * headCount);
 
-            // Render results
+            let employeePay, employerPay;
+
+            if (isBoss) {
+                // 負責人（第一類第二目）：全額自付 100%
+                employeePay = Math.round(nhiPremium * headCount);
+                employerPay = 0;
+            } else if (isUnion) {
+                // 職業工會（第二類）：自付 60%、政府 40%
+                employeePay = Math.round(nhiPremium * 0.60 * headCount);
+                employerPay = 0;
+            } else {
+                // 一般勞工（第一類第一目）：勞工30%、雇主60%
+                employeePay = Math.round(nhiPremium * RATES.employeeShare * headCount);
+                employerPay = Math.round(nhiPremium * RATES.employerShare * headCount);
+            }
+
             const container = document.getElementById('resultsContainer');
-            container.innerHTML = `
+
+            let html = `
                 <div class="result-row">
                     <span class="result-label">對應投保金額級距</span>
                     <span class="result-value">NT$ ${fmt(bracket)}</span>
@@ -404,22 +464,60 @@
                     <span class="result-value">NT$ ${fmt(nhiPremium)}</span>
                 </div>
                 <div class="result-row" style="border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
-                <div class="result-row">
-                    <span class="result-label"><strong>勞工每月自付</strong> (30% &times; ${headCount} 人)</span>
-                    <span class="result-value">NT$ ${fmt(employeePay)}</span>
-                </div>
-                <div class="result-row">
-                    <span class="result-label"><strong>雇主每月負擔</strong> (60% &times; ${headCount} 人)</span>
-                    <span class="result-value">NT$ ${fmt(employerPay)}</span>
-                </div>
             `;
 
+            if (isBoss) {
+                const size = document.getElementById('companySize').value;
+                const minLabel = size === '1' ? '36,300' : size === 'lt5' ? '40,100' : '45,800';
+                html += `
+                    <div class="result-row">
+                        <span class="result-label"><strong>負責人全額自付</strong> (100% &times; ${headCount} 人)<br><span style="font-size:.75rem;color:#888;">最低投保金額 ${minLabel} 元</span></span>
+                        <span class="result-value">NT$ ${fmt(employeePay)}</span>
+                    </div>
+                `;
+            } else if (isUnion) {
+                const govPay = Math.round(nhiPremium * 0.40 * headCount);
+                html += `
+                    <div class="result-row">
+                        <span class="result-label"><strong>自付</strong> (60% &times; ${headCount} 人)</span>
+                        <span class="result-value">NT$ ${fmt(employeePay)}</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label"><span style="font-size:.75rem;color:#888;">政府補助 (40% &times; ${headCount} 人)</span></span>
+                        <span class="result-value">NT$ ${fmt(govPay)}</span>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="result-row">
+                        <span class="result-label"><strong>勞工每月自付</strong> (30% &times; ${headCount} 人)</span>
+                        <span class="result-value">NT$ ${fmt(employeePay)}</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label"><strong>雇主每月負擔</strong> (60% &times; ${headCount} 人)</span>
+                        <span class="result-value">NT$ ${fmt(employerPay)}</span>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+
+            // Update totals
+            const empTotalLabel = isBoss ? '負責人每月自付合計' : isUnion ? '每月自付合計' : '勞工每月自付合計';
+            document.querySelector('#totalEmployee').closest('.result-total').querySelector('.result-total-label').textContent = empTotalLabel;
             document.getElementById('totalEmployee').textContent = `NT$ ${fmt(employeePay)}`;
-            document.getElementById('totalEmployer').textContent = `NT$ ${fmt(employerPay)}`;
+
+            const erRow = document.getElementById('totalEmployerRow');
+            if (isBoss || isUnion) {
+                erRow.style.display = 'none';
+            } else {
+                erRow.style.display = 'flex';
+                document.getElementById('totalEmployer').textContent = `NT$ ${fmt(employerPay)}`;
+            }
         }
 
         // Init: calculate on page load
-        document.addEventListener('DOMContentLoaded', () => { calculate(); });
+        document.addEventListener('DOMContentLoaded', () => { onIdentityChange(); });
     </script>
 
 </body>
