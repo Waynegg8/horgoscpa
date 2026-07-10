@@ -1,4 +1,4 @@
-const CACHE = 'horgoscpa-v2';
+const CACHE = 'fidera-v3';
 
 // Only cache fonts and core CSS on-demand (no precache to avoid blocking first load)
 const CACHE_PATTERNS = /\.(css|woff2?)(\?|$)|fonts\.gstatic\.com/;
