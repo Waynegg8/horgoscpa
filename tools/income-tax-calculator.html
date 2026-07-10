@@ -401,7 +401,7 @@
                 <div class="calc-row">
                     <label class="calc-label" for="childCount">
                         6歲以下幼兒人數
-                        <small>適用稅率超過20%者不適用（排富條款）</small>
+                        <small>第1名15萬、第2名起每人22.5萬（113年起免排富）</small>
                     </label>
                     <select id="childCount" class="calc-select" onchange="calculate()">
                         <option value="0">0 人</option>
@@ -440,7 +440,7 @@
                 <div class="calc-row">
                     <label class="calc-label" for="ltcCount">
                         長期照顧人數
-                        <small>適用稅率超過20%者不適用（排富條款）</small>
+                        <small>每人18萬；適用稅率20%以上不適用（排富）</small>
                     </label>
                     <select id="ltcCount" class="calc-select" onchange="calculate()">
                         <option value="0">0 人</option>
@@ -507,7 +507,7 @@
         <p class="disclaimer">
             * 本試算依115年度綜合所得稅課稅級距及免稅額計算。<br>
             * 股利所得可選擇合併計稅或分開計稅（28%），本工具未包含股利稅額試算。<br>
-            * 幼兒學前及長期照顧特別扣除額適用排富條款（適用稅率超過20%者不適用）。<br>
+            * 長期照顧特別扣除額適用排富條款（適用稅率20%以上不適用）；幼兒學前特別扣除額自113年度起已取消排富。<br>
             * 實際稅額以國稅局核定為準。
         </p>
 
@@ -555,10 +555,11 @@
         const STD_DEDUCTION_MARRIED = 272000;
         const SALARY_DEDUCTION_PER = 227000;
         const DISABLED_DEDUCTION_PER = 227000;
-        const CHILD_DEDUCTION_PER = 150000;
+        const CHILD_DEDUCTION_FIRST = 150000;  // 幼兒學前：第1名
+        const CHILD_DEDUCTION_REST = 225000;   // 幼兒學前：第2名起每人
         const EDU_DEDUCTION_PER = 25000;
         const SAVINGS_DEDUCTION_MAX = 270000;
-        const LTC_DEDUCTION_PER = 120000;
+        const LTC_DEDUCTION_PER = 180000;      // 長照特別扣除額（114年起 12萬→18萬）
 
         // 稅率級距
         const TAX_BRACKETS = [
@@ -624,7 +625,7 @@
             // 4. 特別扣除額
             const salaryDeduction = Math.min(salary, salaryEarners * SALARY_DEDUCTION_PER);
             const disabledDeduction = disabledCount * DISABLED_DEDUCTION_PER;
-            let childDeduction = childCount * CHILD_DEDUCTION_PER;
+            let childDeduction = childCount > 0 ? CHILD_DEDUCTION_FIRST + (childCount - 1) * CHILD_DEDUCTION_REST : 0;
             const eduDeduction = eduCount * EDU_DEDUCTION_PER;
             const savingsDeduction = Math.min(savingsInput, SAVINGS_DEDUCTION_MAX);
             let ltcDeduction = ltcCount * LTC_DEDUCTION_PER;
@@ -643,9 +644,9 @@
                 }
             }
 
-            // 排富條款：適用稅率超過20%（即30%以上），幼兒學前及長照扣除額不適用
-            if (preCheckRate > 0.20) {
-                childDeduction = 0;
+            // 長期照顧特別扣除額排富：減除後適用稅率在 20% 以上（含 20%）者不適用
+            // 幼兒學前特別扣除額自 113 年度起已取消排富，不再歸零
+            if (preCheckRate >= 0.20) {
                 ltcDeduction = 0;
             }
 
