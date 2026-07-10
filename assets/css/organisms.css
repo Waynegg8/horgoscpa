@@ -590,6 +590,17 @@
     gap: 40px;
 }
 
+/* footer 品牌區：logo 圖獨立一列，中英文名稱在下方一列（垂直堆疊） */
+.footer-brand .logo-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.footer-brand .logo-text-group {
+    margin-left: 0;
+}
+
 .footer-dark h4 {
     color: var(--color-brand);
     font-family: var(--font-sans);
