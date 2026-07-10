@@ -494,9 +494,9 @@
         <div style="background:linear-gradient(135deg,#1a1a1a,#2c2c2c);color:#fff;padding:30px;margin-bottom:30px;font-family:var(--font-sans);font-size:.88rem;line-height:1.7;">
             <h3 style="color:var(--color-brand);font-family:var(--font-serif);font-size:1.15rem;margin-bottom:14px;">115年度綜合所得稅速算參考</h3>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">
-                <div><strong style="color:#fff;">免稅額</strong><br><span style="color:#ccc;">每人 97,000 元（70歲以上 145,500 元）</span></div>
-                <div><strong style="color:#fff;">標準扣除額</strong><br><span style="color:#ccc;">單身 131,000 / 有配偶 262,000 元</span></div>
-                <div><strong style="color:#fff;">薪資所得特別扣除額</strong><br><span style="color:#ccc;">每人 218,000 元</span></div>
+                <div><strong style="color:#fff;">免稅額</strong><br><span style="color:#ccc;">每人 101,000 元（70歲以上 151,500 元）</span></div>
+                <div><strong style="color:#fff;">標準扣除額</strong><br><span style="color:#ccc;">單身 136,000 / 有配偶 272,000 元</span></div>
+                <div><strong style="color:#fff;">薪資所得特別扣除額</strong><br><span style="color:#ccc;">每人 227,000 元</span></div>
                 <div><strong style="color:#fff;">稅率級距</strong><br><span style="color:#ccc;">5% / 12% / 20% / 30% / 40%</span></div>
                 <div><strong style="color:#fff;">級距門檻</strong><br><span style="color:#ccc;">61萬 / 138萬 / 277萬 / 519萬</span></div>
                 <div><strong style="color:#fff;">申報期限</strong><br><span style="color:#ccc;">每年 5月1日 至 5月31日</span></div>
@@ -549,12 +549,12 @@
         }
 
         // 115年度常數
-        const EXEMPTION_NORMAL = 97000;
-        const EXEMPTION_SENIOR = 145500;
-        const STD_DEDUCTION_SINGLE = 131000;
-        const STD_DEDUCTION_MARRIED = 262000;
-        const SALARY_DEDUCTION_PER = 218000;
-        const DISABLED_DEDUCTION_PER = 218000;
+        const EXEMPTION_NORMAL = 101000;
+        const EXEMPTION_SENIOR = 151500;
+        const STD_DEDUCTION_SINGLE = 136000;
+        const STD_DEDUCTION_MARRIED = 272000;
+        const SALARY_DEDUCTION_PER = 227000;
+        const DISABLED_DEDUCTION_PER = 227000;
         const CHILD_DEDUCTION_PER = 150000;
         const EDU_DEDUCTION_PER = 25000;
         const SAVINGS_DEDUCTION_MAX = 270000;
@@ -564,9 +564,9 @@
         const TAX_BRACKETS = [
             { limit: 610000,   rate: 0.05, diff: 0 },
             { limit: 1380000,  rate: 0.12, diff: 42700 },
-            { limit: 2770000,  rate: 0.20, diff: 152900 },
-            { limit: 5190000,  rate: 0.30, diff: 430000 },
-            { limit: Infinity, rate: 0.40, diff: 948900 }
+            { limit: 2770000,  rate: 0.20, diff: 153100 },
+            { limit: 5190000,  rate: 0.30, diff: 430100 },
+            { limit: Infinity, rate: 0.40, diff: 949100 }
         ];
 
         function onDeductionTypeChange() {
