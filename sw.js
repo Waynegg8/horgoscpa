@@ -1,10 +1,7 @@
-const CACHE = 'fidera-v3';
-
-// Only cache fonts and core CSS on-demand (no precache to avoid blocking first load)
-const CACHE_PATTERNS = /\.(css|woff2?)(\?|$)|fonts\.gstatic\.com/;
+const CACHE = 'fidera-v4';
 
 self.addEventListener('install', (e) => {
-    // Skip precache entirely — let the first page load proceed unimpeded
+    // 立即接管，不等舊 SW 釋放
     e.waitUntil(self.skipWaiting());
 });
 
@@ -23,10 +20,10 @@ self.addEventListener('fetch', (e) => {
     if (request.method !== 'GET') return;
 
     const isFont = url.hostname === 'fonts.gstatic.com';
-    const isLocalCSS = url.origin === self.location.origin && /\.css(\?|$)/.test(url.pathname);
+    const isLocalAsset = url.origin === self.location.origin && /\.(css|js)(\?|$)/.test(url.pathname);
 
-    if (isFont || isLocalCSS) {
-        // Cache-first for fonts and CSS (stable assets)
+    if (isFont) {
+        // 字型：cache-first（穩定資源，極少變動）
         e.respondWith(
             caches.match(request).then(
                 (cached) => cached || fetch(request).then((res) => {
@@ -38,6 +35,18 @@ self.addEventListener('fetch', (e) => {
                 })
             )
         );
+    } else if (isLocalAsset) {
+        // 本站 CSS / JS：network-first 且繞過瀏覽器 HTTP 快取（cache: 'reload'），
+        // 確保每次部署後立即取得最新版本；離線時才 fallback 到 Cache Storage。
+        e.respondWith(
+            fetch(request, { cache: 'reload' }).then((res) => {
+                if (res.ok) {
+                    const clone = res.clone();
+                    caches.open(CACHE).then((c) => c.put(request, clone));
+                }
+                return res;
+            }).catch(() => caches.match(request))
+        );
     }
-    // Everything else (HTML, JS, images) — let browser handle normally
+    // 其他（HTML、圖片）— 交由瀏覽器正常處理
 });
