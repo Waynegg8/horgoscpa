@@ -51,7 +51,7 @@ const FOOTER_HTML = `
       <p>台中市西區建國路21號3樓之1</p>
       <p><a href="tel:0422205606">04-2220-5606</a></p>
       <p>週一至週五 8:30-17:30</p>
-      <p><a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a></p>
+      <p><a href="mailto:contact@fideracpas.com">contact@fideracpas.com</a></p>
     </div>
     <div class="footer-links">
       <h4>社群媒體</h4>
@@ -69,7 +69,7 @@ function buildSchema(path) {
         url: BASE_URL,
         logo: `${BASE_URL}/assets/images/logo-white.png`,
         telephone: '+886-4-2220-5606',
-        email: 'contact@horgoscpa.com',
+        email: 'contact@fideracpas.com',
         address: {
             '@type': 'PostalAddress',
             streetAddress: '建國路21號3樓之1',
