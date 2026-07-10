@@ -397,6 +397,25 @@ a.logo {
   margin-bottom: 0px;
 }
 
+.logo-text-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 20px;
+  line-height: 1.2;
+}
+
+.logo-text-zh {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  letter-spacing: 0.12em;
+  color: #FFFFFF !important;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
 .logo-text-en {
   font-family: var(--font-serif);
   font-size: 0.65rem;
@@ -404,9 +423,8 @@ a.logo {
   color: #FFFFFF !important;
   text-transform: uppercase;
   font-weight: 500;
-  margin-left: 20px;
   opacity: 0.9;
-  padding-top: 4px;
+  padding-top: 2px;
   transition: color 0.3s ease;
   text-decoration: none !important;
   border-bottom: none !important;
@@ -421,9 +439,17 @@ a.logo {
     height: 32px !important;
   }
 
-  .logo-text-en {
-    font-size: 0.55rem;
+  .logo-text-group {
     margin-left: 12px;
+  }
+
+  .logo-text-zh {
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+  }
+
+  .logo-text-en {
+    font-size: 0.5rem;
   }
 }
 

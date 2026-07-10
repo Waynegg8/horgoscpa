@@ -7,7 +7,10 @@ const NAV_HTML = `
   <a href="/index.html" class="logo">
     <div class="logo-container">
       <img src="/assets/images/logo-white.png" alt="誠遠會計師事務所" class="logo-img" style="height: 40px; width: auto;" width="48" height="48">
-      <span class="logo-text-en">Fidera CPAs</span>
+      <div class="logo-text-group">
+        <span class="logo-text-zh">誠遠會計師事務所</span>
+        <span class="logo-text-en">Fidera CPAs</span>
+      </div>
     </div>
   </a>
   <ul id="site-nav-links" class="nav-links">
@@ -28,7 +31,10 @@ const FOOTER_HTML = `
     <div class="footer-brand">
       <div class="logo-container" style="margin-bottom: 20px;">
         <img src="/assets/images/logo-white.png" alt="誠遠會計師事務所" class="logo-img" style="height: 48px; width: auto;" width="48" height="48">
-        <span class="logo-text-en">Fidera CPAs</span>
+        <div class="logo-text-group">
+          <span class="logo-text-zh">誠遠會計師事務所</span>
+          <span class="logo-text-en">Fidera CPAs</span>
+        </div>
       </div>
       <p>每一筆數字背後，<br>都有一個值得被守護的夢想。</p>
     </div>
