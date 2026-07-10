@@ -1,4 +1,4 @@
-# HorgosCPA Content Index Generator
+# Fidera CPAs Content Index Generator
 # Automatically parses HTML/Files to rebuild articles.json and resources.json
 
 # --- 1. Articles Generator ---
@@ -16,7 +16,7 @@ if (Test-Path $articlesDir) {
 
         # Extract Metadata using Regex
         $title = "Untitled"
-        if ($content -match '<title>(.*?)\s*\|\s*霍爾果斯') { $title = $matches[1] }
+        if ($content -match '<title>(.*?)\s*\|\s*誠遠') { $title = $matches[1] }
         elseif ($content -match '<title>(.*?)</title>') { $title = $matches[1] }
 
         $date = $_.LastWriteTime.ToString("yyyy.MM.dd")

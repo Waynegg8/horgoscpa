@@ -1,4 +1,4 @@
-/* HorgosCPA — UI Effects: Navbar scroll, Mobile toggle, Back-to-top */
+/* Fidera CPAs — UI Effects: Navbar scroll, Mobile toggle, Back-to-top */
 
 export function initUIEffects() {
     const nav = document.querySelector('.site-nav');

@@ -1,13 +1,13 @@
-/* HorgosCPA — Components: NAV / FOOTER injection + active link + SEO */
+/* Fidera CPAs — Components: NAV / FOOTER injection + active link + SEO */
 
-const BASE_URL = 'https://www.horgoscpa.com';
+const BASE_URL = 'https://fideracpas.com';
 
 const NAV_HTML = `
 <nav class="site-nav scrolled">
   <a href="/index.html" class="logo">
     <div class="logo-container">
-      <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 40px; width: auto;" width="124" height="56">
-      <span class="logo-text-en">HORGOS CPA FIRM</span>
+      <img src="/assets/images/logo-white.png" alt="誠遠會計師事務所" class="logo-img" style="height: 40px; width: auto;" width="48" height="48">
+      <span class="logo-text-en">Fidera CPAs</span>
     </div>
   </a>
   <ul id="site-nav-links" class="nav-links">
@@ -27,8 +27,8 @@ const FOOTER_HTML = `
   <div class="container footer-grid">
     <div class="footer-brand">
       <div class="logo-container" style="margin-bottom: 20px;">
-        <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img" style="height: 48px; width: auto;" width="124" height="56">
-        <span class="logo-text-en">HORGOS CPA FIRM</span>
+        <img src="/assets/images/logo-white.png" alt="誠遠會計師事務所" class="logo-img" style="height: 48px; width: auto;" width="48" height="48">
+        <span class="logo-text-en">Fidera CPAs</span>
       </div>
       <p>每一筆數字背後，<br>都有一個值得被守護的夢想。</p>
     </div>
@@ -58,8 +58,8 @@ const FOOTER_HTML = `
 function buildSchema(path) {
     const org = {
         '@type': 'AccountingService',
-        name: '霍爾果斯會計師事務所',
-        alternateName: 'HORGOS CPA FIRM',
+        name: '誠遠會計師事務所',
+        alternateName: 'Fidera CPAs',
         url: BASE_URL,
         logo: `${BASE_URL}/assets/images/logo-white.png`,
         telephone: '+886-4-2220-5606',
@@ -97,7 +97,7 @@ function buildSchema(path) {
         return {
             '@context': 'https://schema.org',
             '@type': 'ItemList',
-            name: '霍爾果斯會計師事務所 - 專業服務',
+            name: '誠遠會計師事務所 - 專業服務',
             itemListElement: [
                 { '@type': 'ListItem', position: 1, name: '工商登記', url: `${BASE_URL}/service-registration.html` },
                 { '@type': 'ListItem', position: 2, name: '帳務處理', url: `${BASE_URL}/service-accounting.html` },
@@ -120,7 +120,7 @@ function buildSchema(path) {
             '@type': 'Service',
             name: s.name,
             description: s.desc,
-            provider: { '@type': 'AccountingService', name: '霍爾果斯會計師事務所', url: BASE_URL },
+            provider: { '@type': 'AccountingService', name: '誠遠會計師事務所', url: BASE_URL },
             url: BASE_URL + path
         };
     }
@@ -136,10 +136,10 @@ function buildSchema(path) {
             headline: title,
             description: desc,
             image: image,
-            author: { '@type': 'Organization', name: '霍爾果斯會計師事務所', url: BASE_URL },
+            author: { '@type': 'Organization', name: '誠遠會計師事務所', url: BASE_URL },
             publisher: {
                 '@type': 'Organization',
-                name: '霍爾果斯會計師事務所',
+                name: '誠遠會計師事務所',
                 logo: { '@type': 'ImageObject', url: `${BASE_URL}/assets/images/logo-white.png` }
             },
             url: BASE_URL + path,

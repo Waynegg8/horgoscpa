@@ -1,4 +1,4 @@
-/* HorgosCPA — Content Loader: Articles, Resources, Related + filterContent */
+/* Fidera CPAs — Content Loader: Articles, Resources, Related + filterContent */
 
 // Sanitize a string for safe text node insertion (defence-in-depth)
 function safe(str) {

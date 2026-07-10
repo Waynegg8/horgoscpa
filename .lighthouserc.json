@@ -2,9 +2,9 @@
   "ci": {
     "collect": {
       "url": [
-        "https://www.horgoscpa.com/",
-        "https://www.horgoscpa.com/services.html",
-        "https://www.horgoscpa.com/booking.html"
+        "https://fideracpas.com/",
+        "https://fideracpas.com/services.html",
+        "https://fideracpas.com/booking.html"
       ],
       "numberOfRuns": 1
     },

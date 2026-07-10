@@ -1,4 +1,4 @@
-/* HorgosCPA — FAQ: fetch + accordion + FAQPage schema */
+/* Fidera CPAs — FAQ: fetch + accordion + FAQPage schema */
 
 function injectFAQSchema(data) {
     const script = document.createElement('script');

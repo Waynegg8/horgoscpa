@@ -18,4 +18,4 @@ Allow: /assets/images/*.svg
 Allow: /assets/images/*.webp
 
 # sitemap 位置
-Sitemap: https://www.horgoscpa.com/sitemap.xml
+Sitemap: https://fideracpas.com/sitemap.xml

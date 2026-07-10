@@ -1,4 +1,4 @@
-/* HorgosCPA Main — Entry Point */
+/* Fidera CPAs Main — Entry Point */
 
 import { initComponents, initSEO } from './modules/components.js';
 import { initUIEffects }           from './modules/ui-effects.js';

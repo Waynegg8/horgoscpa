@@ -1,7 +1,7 @@
-# Sitemap Generator for HorgosCPA
+# Sitemap Generator for Fidera CPAs
 # Automatically scans .html files and updates sitemap.xml
 
-$baseUrl = "https://www.horgoscpa.com"
+$baseUrl = "https://fideracpas.com"
 $sitemapPath = "sitemap.xml"
 $ignoreList = @("404.html", "articles/template.html")
 
