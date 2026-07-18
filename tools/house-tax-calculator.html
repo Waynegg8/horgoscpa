@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>房屋稅試算 | 誠遠會計師事務所</title>
+    <meta name="description" content="線上房屋稅（持有稅）試算工具，依房屋稅條例及囤房稅2.0差別稅率，輸入房屋現值與使用類別即可估算應納房屋稅。">
+    <meta property="og:title" content="房屋稅試算 | 誠遠會計師事務所">
+    <meta property="og:description" content="線上房屋稅試算工具，依房屋稅條例及囤房稅2.0差別稅率計算應納房屋稅。">
+    <meta property="og:image" content="https://fideracpas.com/assets/images/hero.jpg">
+    <meta property="og:url" content="https://fideracpas.com/tools/house-tax-calculator">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- Critical CSS (inline) -->
+  <style>:root{--font-serif:'Playfair Display',serif;--font-sans:'Lato','Noto Sans TC',sans-serif;--text-d1:4rem;--text-h1:2.75rem;--text-h2:2rem;--text-h3:1.35rem;--text-body:.95rem;--text-sm:.85rem;--leading-tight:1.3;--leading-base:1.9;--leading-loose:2.1;--bg-base:#FDFBF7;--bg-surface:#FFF;--bg-inverse:#1A1A1A;--color-brand:#B48E55;--color-brand-dark:#8A6D3B;--color-brand-light:rgba(180,142,85,.1);--text-primary:#2C2C2C;--text-body:#555;--text-muted:#999;--border-line:#E5E5E5;--border-gold:rgba(180,142,85,.4);--space-1:8px;--space-2:16px;--space-4:40px;--space-8:100px;--space-16:200px;--container-width:1200px;--header-height:100px}@media(max-width:768px){:root{--text-d1:2.8rem;--text-h1:2.2rem;--space-16:60px;--space-8:32px}}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background-color:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-base);overflow-x:hidden;-webkit-font-smoothing:antialiased}h1,h2,h3,h4,h5,h6{font-family:var(--font-serif);font-weight:600;line-height:var(--leading-tight);color:var(--text-primary);margin-bottom:var(--space-2)}.display-text{font-size:var(--text-d1);font-weight:700;letter-spacing:-.02em}.eyebrow{font-family:var(--font-sans);text-transform:uppercase;letter-spacing:.15em;font-size:var(--text-sm);font-weight:700}.container{max-width:var(--container-width);margin:0 auto;padding:0 var(--space-4);width:100%}.text-gold{color:var(--color-brand)}.text-center{text-align:center}.section-gap{padding:var(--space-16) 0}</style>
+  <link rel="stylesheet" href="/assets/css/common.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/assets/css/common.css"></noscript>
+    <link rel="stylesheet" href="/assets/css/organisms.css">
+    <link rel="stylesheet" href="/assets/css/atoms.css">
+    <link rel="icon" href="/favicon.ico">
+  <!-- Google Analytics (deferred) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    function loadGTM() {
+      if (loadGTM.done) return; loadGTM.done = true;
+      var s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5';
+      s.onload = function () { gtag('js', new Date()); gtag('config', 'G-RKMCS9WVS5'); };
+      document.head.appendChild(s);
+    }
+    setTimeout(loadGTM, 3500);
+    ['mouseover','touchstart','scroll','keydown'].forEach(function(e){
+      addEventListener(e, loadGTM, {once:true,passive:true});
+    });
+  </script>
+    <style>
+        /* Calculator Specific Styles */
+        .calculator-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .calculator-card {
+            background: #fff;
+            border: 1px solid #eee;
+            padding: 50px;
+            margin-bottom: 40px;
+        }
+
+        .calc-section {
+            margin-bottom: 40px;
+        }
+
+        .calc-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .calc-section-title {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .calc-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .calc-label {
+            flex: 1;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            color: var(--text-body);
+        }
+
+        .calc-label small {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .calc-input {
+            width: 180px;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            text-align: right;
+            transition: border-color 0.3s;
+        }
+
+        .calc-input:focus {
+            outline: none;
+            border-color: var(--color-brand);
+        }
+
+        .calc-select {
+            min-width: 180px;
+            width: auto;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            background: #fff;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .calc-select:focus {
+            outline: none;
+            border-color: var(--color-brand);
+        }
+
+        /* Results Section */
+        .results-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+            color: #fff;
+            padding: 50px;
+            margin-bottom: 40px;
+        }
+
+        .results-title {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            color: var(--color-brand);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: var(--font-sans);
+        }
+
+        .result-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #ccc;
+        }
+
+        .result-value {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .result-total {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-brand);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-total-label {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .result-total-value {
+            font-family: var(--font-sans);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-brand);
+        }
+
+        .disclaimer {
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .cta-text {
+            font-family: var(--font-serif);
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+
+            .calculator-card,
+            .results-card {
+                padding: 30px 20px;
+            }
+
+            .calc-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .calc-input,
+            .calc-select {
+                width: 100%;
+            }
+
+            .result-total {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <div id="nav-placeholder"></div>
+
+    <!-- Page Header -->
+    <header class="page-header" style="padding-bottom: 40px;">
+        <span class="eyebrow text-gold">HOUSE TAX</span>
+        <h1 class="display-text">房屋稅試算</h1>
+        <p class="text-body" style="max-width: 600px; margin: 20px auto 0;">
+            依房屋稅條例及囤房稅2.0差別稅率，估算持有房屋之應納房屋稅
+        </p>
+    </header>
+
+    <div class="calculator-container section-gap">
+
+        <!-- Calculator Form -->
+        <div class="calculator-card">
+
+            <!-- Section 1: 房屋資料 -->
+            <div class="calc-section">
+                <h3 class="calc-section-title">房屋持有資料</h3>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="houseValue">
+                        房屋現值
+                        <small>由稅捐稽徵處核定，可直接抄自房屋稅單「房屋現值」欄</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="houseValue" class="calc-input" value="0"
+                        oninput="formatInput(this); calculate()">
+                </div>
+            </div>
+
+            <!-- Section 2: 使用類別 -->
+            <div class="calc-section">
+                <h3 class="calc-section-title">使用類別與稅率</h3>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="useType">
+                        房屋使用類別
+                    </label>
+                    <select id="useType" class="calc-select" onchange="onUseTypeChange()">
+                        <optgroup label="住家用">
+                            <option value="self">自住（本人/配偶/未成年子女實際居住，全國3戶內）</option>
+                            <option value="single">全國單一自住（現值一定金額以下）</option>
+                            <option value="publicRent">公益出租人出租</option>
+                            <option value="hoard">非自住（囤房稅2.0，全國歸戶差別稅率）</option>
+                        </optgroup>
+                        <optgroup label="非住家用">
+                            <option value="business">營業用／私人醫院、診所、自由職業事務所</option>
+                            <option value="nonbiz">非營業用（人民團體等）</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div id="useHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:20px;font-size:.88rem;line-height:1.7;color:var(--text-body);display:none;"></div>
+
+                <!-- 囤房稅戶數級距（僅非自住顯示） -->
+                <div class="calc-row" id="hoardRow" style="display:none;">
+                    <label class="calc-label" for="hoardTier">
+                        全國持有非自住戶數
+                        <small>依財政部公告差別稅率參考基準（各縣市可能不同）</small>
+                    </label>
+                    <select id="hoardTier" class="calc-select" onchange="calculate()">
+                        <option value="3.2">持有 1&ndash;2 戶（3.2%）</option>
+                        <option value="3.8">持有 3&ndash;4 戶（3.8%）</option>
+                        <option value="4.2">持有 5&ndash;6 戶（4.2%）</option>
+                        <option value="4.8">持有 7 戶以上（4.8%）</option>
+                    </select>
+                </div>
+
+                <!-- 自訂稅率（各縣市自訂時可覆寫） -->
+                <div class="calc-row">
+                    <label class="calc-label" for="customRate">
+                        自訂稅率（選填）
+                        <small>若已知所在縣市實際稅率，可輸入百分比覆寫，如 3.6 代表 3.6%</small>
+                    </label>
+                    <input type="text" inputmode="decimal" id="customRate" class="calc-input" value=""
+                        placeholder="留空用標準值" oninput="calculate()">
+                </div>
+            </div>
+
+            <div style="text-align:right;margin-top:24px;">
+                <button type="button" onclick="resetForm()" style="background:none;border:1px solid var(--color-brand);color:var(--color-brand);padding:10px 24px;font-family:var(--font-sans);font-size:.9rem;cursor:pointer;transition:all .3s;">重置為預設值</button>
+            </div>
+
+        </div>
+
+        <!-- Results -->
+        <div class="results-card">
+            <h3 class="results-title">房屋稅試算結果</h3>
+
+            <div class="result-row">
+                <span class="result-label">房屋現值（稅基）</span>
+                <span class="result-value" id="rHouseValue">NT$ 0</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">使用類別</span>
+                <span class="result-value" id="rUseType">住家用—自住</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">適用稅率</span>
+                <span class="result-value" id="rTaxRate">1.2%</span>
+            </div>
+
+            <div class="result-total">
+                <span class="result-total-label">應納房屋稅（全年）</span>
+                <span class="result-total-value" id="rTax">NT$ 0</span>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div style="background:linear-gradient(135deg,#1a1a1a,#2c2c2c);color:#fff;padding:30px;margin-bottom:30px;font-family:var(--font-sans);font-size:.88rem;line-height:1.7;">
+            <h3 style="color:var(--color-brand);font-family:var(--font-serif);font-size:1.15rem;margin-bottom:14px;">房屋稅法定稅率參考（房屋稅條例 §5）</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">
+                <div><strong style="color:#fff;">住家用—自住</strong><br><span style="color:#ccc;">1.2%（全國單一自住且現值一定金額以下：1%）</span></div>
+                <div><strong style="color:#fff;">住家用—公益出租人</strong><br><span style="color:#ccc;">1.2%</span></div>
+                <div><strong style="color:#fff;">住家用—非自住（囤房稅2.0）</strong><br><span style="color:#ccc;">法定 2%&ndash;4.8%，全國歸戶差別稅率</span></div>
+                <div><strong style="color:#fff;">囤房稅參考基準級距</strong><br><span style="color:#ccc;">1&ndash;2戶 3.2% / 3&ndash;4戶 3.8% / 5&ndash;6戶 4.2% / 7戶以上 4.8%</span></div>
+                <div><strong style="color:#fff;">非住家用—營業用</strong><br><span style="color:#ccc;">法定 3%&ndash;5%（含私人醫院、診所、自由職業事務所）</span></div>
+                <div><strong style="color:#fff;">非住家用—非營業用</strong><br><span style="color:#ccc;">法定 1.5%&ndash;2.5%（人民團體等）</span></div>
+            </div>
+            <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：房屋稅條例 §5、§6；囤房稅2.0（差別稅率）自113年7月1日施行，自115年5月起開徵。差別稅率由各地方政府在法定範圍內自訂，未自訂者依財政部公告基準課徵。</div>
+        </div>
+
+        <p class="disclaimer">
+            * 房屋稅為「持有稅」，按房屋現值 &times; 適用稅率計算，全年課徵（每年5月開徵）。<br>
+            * 房屋稅屬地方稅，各縣市政府得在房屋稅條例法定範圍內自訂差別稅率，實際稅率各縣市不同，本試算採法定標準／財政部公告參考基準值。<br>
+            * 非自住住家用（囤房稅2.0）採全國歸戶、全數累進，戶數認定與適用稅率以稅捐稽徵機關核定為準。<br>
+            * 私人醫院、診所、自由職業事務所（如會計師、律師事務所）屬「非住家用—營業用」，法定稅率 3%&ndash;5%。<br>
+            * 實際應納稅額以各地方稅務局（處）核發之房屋稅單為準。
+        </p>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <p class="cta-text">需要不動產持有稅務規劃諮詢？</p>
+            <a href="/booking" class="btn-solid-gold">預約免費諮詢</a>
+        </div>
+
+        <div style="text-align:center; margin-top: 30px;">
+            <a href="/resources" class="btn-text" style="color: #999; text-decoration: none; font-size: 0.9rem;">
+                &larr; 返回資源列表
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+
+    <script type="module" src="/assets/js/main.js"></script>
+    <script>
+        /* ==========================================================
+           房屋稅試算（House Tax Calculator — 持有稅）
+           法源：房屋稅條例 §5、§6；囤房稅2.0（113.7.1 施行，115.5 開徵）
+           稅基：房屋現值 × 適用稅率
+           ========================================================== */
+
+        function formatInput(el) {
+            const raw = el.value.replace(/[^\d]/g, '');
+            if (raw) {
+                el.value = parseInt(raw).toLocaleString('en-US');
+            }
+        }
+        function parseAmount(id) {
+            return parseInt(document.getElementById(id).value.replace(/,/g, '')) || 0;
+        }
+        function fmt(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // 使用類別 → 標準稅率（%）與顯示名稱
+        // hoard 稅率由「戶數級距」子選單決定，故 rate 設 null
+        const USE_TYPES = {
+            'self':       { rate: 1.2, name: '住家用—自住', hoard: false },
+            'single':     { rate: 1.0, name: '住家用—全國單一自住', hoard: false },
+            'publicRent': { rate: 1.2, name: '住家用—公益出租人', hoard: false },
+            'hoard':      { rate: null, name: '住家用—非自住（囤房稅2.0）', hoard: true },
+            'business':   { rate: 3.0, name: '非住家用—營業用', hoard: false },
+            'nonbiz':     { rate: 1.5, name: '非住家用—非營業用', hoard: false },
+        };
+
+        const USE_HINTS = {
+            'self': '<strong>住家用—自住：</strong>本人、配偶及未成年子女於全國僅持有3戶以內，且該屋供實際居住、無出租或營業使用者，稅率 1.2%。',
+            'single': '<strong>全國單一自住：</strong>本人、配偶及未成年子女於全國僅有1戶自住房屋，且房屋現值在一定金額以下者，稅率調降為 1%。',
+            'publicRent': '<strong>公益出租人：</strong>將房屋出租予符合資格之租屋者並經認定為公益出租人，稅率 1.2%。',
+            'hoard': '<strong>住家用—非自住（囤房稅2.0）：</strong>非供自住之住家用房屋，按「全國總持有戶數」全數累進課徵差別稅率（法定 2%&ndash;4.8%）。以下級距為財政部公告參考基準，各縣市得自訂，請以稅單為準。',
+            'business': '<strong>非住家用—營業用：</strong>供營業、私人醫院、診所或自由職業事務所（如會計師、律師事務所）使用，法定稅率 3%&ndash;5%，本試算採下限 3%。',
+            'nonbiz': '<strong>非住家用—非營業用：</strong>供人民團體等非營業使用，法定稅率 1.5%&ndash;2.5%，本試算採下限 1.5%。',
+        };
+
+        function onUseTypeChange() {
+            const val = document.getElementById('useType').value;
+            const info = USE_TYPES[val];
+            const hint = document.getElementById('useHint');
+
+            // 囤房稅戶數級距列僅在非自住時顯示
+            document.getElementById('hoardRow').style.display = info.hoard ? 'flex' : 'none';
+
+            if (USE_HINTS[val]) {
+                hint.innerHTML = USE_HINTS[val];
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
+            }
+            calculate();
+        }
+
+        function calculate() {
+            const houseValue = parseAmount('houseValue');
+            const val = document.getElementById('useType').value;
+            const info = USE_TYPES[val];
+
+            // 決定適用稅率（%）：自訂 > 囤房級距 > 標準
+            let rate;
+            let rateSourceNote = '';
+            if (info.hoard) {
+                rate = parseFloat(document.getElementById('hoardTier').value);
+            } else {
+                rate = info.rate;
+            }
+
+            // 自訂稅率覆寫（防呆：需為 0<rate<=100 的數字）
+            const customRaw = document.getElementById('customRate').value.trim();
+            if (customRaw !== '') {
+                const custom = parseFloat(customRaw);
+                if (custom > 0 && custom <= 100) {
+                    rate = custom;
+                    rateSourceNote = '（自訂）';
+                }
+            }
+
+            const tax = Math.round(houseValue * (rate / 100));
+
+            // 更新結果
+            document.getElementById('rHouseValue').textContent = 'NT$ ' + fmt(houseValue);
+            document.getElementById('rUseType').textContent = info.name;
+            document.getElementById('rTaxRate').textContent = rate + '%' + rateSourceNote;
+            document.getElementById('rTax').textContent = 'NT$ ' + fmt(tax);
+        }
+
+        function resetForm() {
+            document.getElementById('houseValue').value = '0';
+            document.getElementById('useType').value = 'self';
+            document.getElementById('hoardTier').value = '3.2';
+            document.getElementById('customRate').value = '';
+            onUseTypeChange();
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => { onUseTypeChange(); });
+    </script>
+
+</body>
+
+</html>

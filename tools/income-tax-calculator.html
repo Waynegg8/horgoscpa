@@ -342,7 +342,7 @@
                 <div class="calc-row">
                     <label class="calc-label" for="business">
                         營利所得
-                        <small>股利所得請另行計算</small>
+                        <small>不含股利所得（股利請填下方「股利所得」欄位）</small>
                     </label>
                     <input type="text" inputmode="numeric" id="business" class="calc-input" value="0"
                         oninput="formatInput(this); calculate()">
@@ -354,6 +354,26 @@
                     </label>
                     <input type="text" inputmode="numeric" id="otherIncome" class="calc-input" value="0"
                         oninput="formatInput(this); calculate()">
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="dividend">
+                        股利所得
+                        <small>國內公司股利及盈餘（可選合併或分開計稅）</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="dividend" class="calc-input" value="0"
+                        oninput="formatInput(this); calculate()">
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="dividendMethod">
+                        股利計稅方式
+                        <small>合併：可抵減稅額 8.5%（每戶上限 8 萬）／分開：單一稅率 28%</small>
+                    </label>
+                    <select id="dividendMethod" class="calc-select" onchange="calculate()">
+                        <option value="combined">合併計稅（8.5% 抵減）</option>
+                        <option value="separate">分開計稅（28%）</option>
+                    </select>
                 </div>
             </div>
 
@@ -451,6 +471,24 @@
                 </div>
             </div>
 
+            <!-- Section 4: 最低稅負（基本所得額） -->
+            <div class="calc-section">
+                <h3 class="calc-section-title">最低稅負（基本所得額）</h3>
+
+                <div id="amtHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:20px;font-size:.88rem;line-height:1.7;color:var(--text-body);">
+                    <strong>應加計之基本所得額項目：</strong>海外所得（單一申報戶全年合計達 100 萬元以上者）、特定保險給付、私募證券投資信託基金受益憑證交易所得、非現金部分之捐贈金額、綜合所得淨額未計入之員工分紅等。未達門檻或無上述項目者，本區顯示「不適用」，不影響原計算。
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="amtAddItems">
+                        應加計項目合計
+                        <small>上列各項應計入基本所得額之金額合計</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="amtAddItems" class="calc-input" value="0"
+                        oninput="formatInput(this); calculate()">
+                </div>
+            </div>
+
             <div style="text-align:right;margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
                 <button type="button" onclick="resetCalculator()" style="font-family:var(--font-sans);font-size:.9rem;color:var(--text-body);background:#fff;border:1px solid #ddd;padding:10px 24px;cursor:pointer;transition:border-color .3s,color .3s;" onmouseover="this.style.borderColor='var(--color-brand)';this.style.color='var(--color-brand)';" onmouseout="this.style.borderColor='#ddd';this.style.color='var(--text-body)';">重置</button>
             </div>
@@ -485,9 +523,33 @@
                 <span class="result-label">適用稅率</span>
                 <span class="result-value" id="rTaxRate">5%</span>
             </div>
+            <div class="result-row">
+                <span class="result-label">綜合所得稅額</span>
+                <span class="result-value" id="rBracketTax">NT$ 0</span>
+            </div>
+            <div class="result-row" id="rDividendRow" style="display:none;">
+                <span class="result-label" id="rDividendLabel">股利可抵減稅額</span>
+                <span class="result-value" id="rDividendValue">NT$ 0</span>
+            </div>
+            <div class="result-row" id="rGeneralTaxRow" style="display:none;">
+                <span class="result-label">一般所得稅額</span>
+                <span class="result-value" id="rGeneralTax">NT$ 0</span>
+            </div>
+            <div class="result-row" id="rBasicIncomeRow" style="display:none;">
+                <span class="result-label">基本所得額</span>
+                <span class="result-value" id="rBasicIncome">NT$ 0</span>
+            </div>
+            <div class="result-row" id="rBasicTaxRow" style="display:none;">
+                <span class="result-label">基本稅額（20%）</span>
+                <span class="result-value" id="rBasicTax">NT$ 0</span>
+            </div>
+            <div class="result-row" id="rAmtNoteRow" style="display:none;">
+                <span class="result-label">最低稅負</span>
+                <span class="result-value" id="rAmtNote">不適用</span>
+            </div>
 
             <div class="result-total">
-                <span class="result-total-label">應納稅額</span>
+                <span class="result-total-label" id="rTaxTotalLabel">應納稅額</span>
                 <span class="result-total-value" id="rTax">NT$ 0</span>
             </div>
         </div>
@@ -501,14 +563,16 @@
                 <div><strong style="color:#fff;">薪資所得特別扣除額</strong><br><span style="color:#ccc;">每人 227,000 元</span></div>
                 <div><strong style="color:#fff;">稅率級距</strong><br><span style="color:#ccc;">5% / 12% / 20% / 30% / 40%</span></div>
                 <div><strong style="color:#fff;">級距門檻</strong><br><span style="color:#ccc;">61萬 / 138萬 / 277萬 / 519萬</span></div>
+                <div><strong style="color:#fff;">最低稅負扣除額</strong><br><span style="color:#ccc;">個人 750 萬元／稅率 20%</span></div>
                 <div><strong style="color:#fff;">申報期限</strong><br><span style="color:#ccc;">每年 5月1日 至 5月31日</span></div>
             </div>
-            <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：所得稅法 §5、§13、§17；財政部115年度綜合所得稅免稅額、扣除額及課稅級距</div>
+            <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：所得稅法 §5、§13、§15、§17；所得基本稅額條例 §12、§13；財政部115年度綜合所得稅及所得基本稅額相關免稅額、扣除額及課稅級距公告</div>
         </div>
 
         <p class="disclaimer">
             * 本試算依115年度綜合所得稅課稅級距及免稅額計算。<br>
-            * 股利所得可選擇合併計稅或分開計稅（28%），本工具未包含股利稅額試算。<br>
+            * 股利所得可選擇合併計稅（可抵減稅額 8.5%，每戶上限 8 萬元）或分開計稅（單一稅率 28%）。<br>
+            * 最低稅負（所得基本稅額）：基本稅額 =（基本所得額 − 750 萬元）× 20%，一般所得稅額與基本稅額取高者為應納。<br>
             * 長期照顧特別扣除額適用排富條款（適用稅率20%以上不適用）；幼兒學前特別扣除額自113年度起已取消排富。<br>
             * 實際稅額以國稅局核定為準。
         </p>
@@ -568,6 +632,15 @@
         const SAVINGS_DEDUCTION_MAX = 270000;
         const LTC_DEDUCTION_PER = 180000;      // 長照特別扣除額（114年起 12萬→18萬）
 
+        // 股利所得（所得稅法 §15）
+        const DIVIDEND_CREDIT_RATE = 0.085;    // 合併計稅：可抵減稅額比率 8.5%
+        const DIVIDEND_CREDIT_MAX = 80000;     // 合併計稅：每一申報戶抵減上限 8 萬元
+        const DIVIDEND_SEPARATE_RATE = 0.28;   // 分開計稅：單一稅率 28%
+
+        // 最低稅負（所得基本稅額條例 §12、§13；115年度值）
+        const AMT_DEDUCTION = 7500000;         // 個人基本所得額扣除額 750 萬元
+        const AMT_RATE = 0.20;                 // 基本稅額稅率 20%
+
         // 稅率級距
         const TAX_BRACKETS = [
             { limit: 610000,   rate: 0.05, diff: 0 },
@@ -609,6 +682,9 @@
             const rental = parseAmount('rental');
             const business = parseAmount('business');
             const otherIncome = parseAmount('otherIncome');
+            const dividend = parseAmount('dividend');
+            const dividendMethod = document.getElementById('dividendMethod').value; // combined | separate
+            const amtAddItems = parseAmount('amtAddItems');
 
             const deductionType = document.getElementById('deductionType').value;
             const itemizedDeduction = parseAmount('itemizedDeduction');
@@ -619,7 +695,9 @@
             const ltcCount = parseInt(document.getElementById('ltcCount').value) || 0;
 
             // 1. 所得總額
-            const totalIncome = salary + interest + rental + business + otherIncome;
+            //    合併計稅之股利併入綜合所得總額；分開計稅之股利不併入（另按 28% 單獨計稅）
+            const dividendCombined = dividendMethod === 'combined' ? dividend : 0;
+            const totalIncome = salary + interest + rental + business + otherIncome + dividendCombined;
 
             // 2. 免稅額
             const exemptionCount = 1 + (married ? 1 : 0) + dependents;
@@ -674,19 +752,47 @@
             let taxableIncome = totalIncome - totalExemption - deduction - totalSpecialDeduction;
             if (taxableIncome < 0) taxableIncome = 0;
 
-            // 7. 應納稅額
-            let tax = 0;
+            // 7. 綜合所得稅額（依級距速算）
+            let bracketTax = 0;
             let appliedRate = '5%';
             for (let i = 0; i < TAX_BRACKETS.length; i++) {
                 if (taxableIncome <= TAX_BRACKETS[i].limit) {
-                    tax = Math.round(taxableIncome * TAX_BRACKETS[i].rate - TAX_BRACKETS[i].diff);
+                    bracketTax = Math.round(taxableIncome * TAX_BRACKETS[i].rate - TAX_BRACKETS[i].diff);
                     appliedRate = (TAX_BRACKETS[i].rate * 100) + '%';
                     break;
                 }
             }
-            if (tax < 0) tax = 0;
+            if (bracketTax < 0) bracketTax = 0;
 
-            // 更新結果
+            // 8. 股利所得計稅
+            //    合併：可抵減稅額 = min(股利×8.5%, 8萬/戶)，自綜合所得稅額扣除（可為負→可退）
+            //    分開：股利×28% 單獨計稅，加計於一般所得稅額
+            let dividendCredit = 0;    // 合併計稅之可抵減稅額（正值代表可扣抵）
+            let dividendSepTax = 0;    // 分開計稅之股利稅額
+            if (dividend > 0 && dividendMethod === 'combined') {
+                dividendCredit = Math.min(Math.round(dividend * DIVIDEND_CREDIT_RATE), DIVIDEND_CREDIT_MAX);
+            } else if (dividend > 0 && dividendMethod === 'separate') {
+                dividendSepTax = Math.round(dividend * DIVIDEND_SEPARATE_RATE);
+            }
+
+            // 一般所得稅額 = 綜合所得稅額 − 股利可抵減稅額 + 股利分開計稅稅額（可為負→可退）
+            const generalTax = bracketTax - dividendCredit + dividendSepTax;
+
+            // 9. 最低稅負（所得基本稅額條例）
+            //    基本所得額 = 綜合所得淨額 + 應加計項目；基本稅額 =(基本所得額 − 750萬) × 20%
+            //    最終應納 = max(一般所得稅額, 基本稅額)；未輸入加計項目則不適用
+            const amtApplicable = amtAddItems > 0;
+            const basicIncome = taxableIncome + amtAddItems;
+            let basicTax = 0;
+            if (amtApplicable) {
+                basicTax = Math.round(Math.max(0, basicIncome - AMT_DEDUCTION) * AMT_RATE);
+            }
+
+            // 最終應納稅額
+            let finalTax = amtApplicable ? Math.max(generalTax, basicTax) : generalTax;
+            if (finalTax < 0) finalTax = 0; // 顯示為 0（實務上負值代表可退稅，此處以 0 呈現應納下限）
+
+            // ---- 更新結果 ----
             document.getElementById('rTotalIncome').textContent = 'NT$ ' + fmt(totalIncome);
             document.getElementById('rExemption').textContent = 'NT$ ' + fmt(totalExemption);
             document.getElementById('rDeductionLabel').textContent = deductionType === 'standard' ? '標準扣除額' : '列舉扣除額';
@@ -694,7 +800,53 @@
             document.getElementById('rSpecialDeduction').textContent = 'NT$ ' + fmt(totalSpecialDeduction);
             document.getElementById('rTaxableIncome').textContent = 'NT$ ' + fmt(taxableIncome);
             document.getElementById('rTaxRate').textContent = appliedRate;
-            document.getElementById('rTax').textContent = 'NT$ ' + fmt(tax);
+            document.getElementById('rBracketTax').textContent = 'NT$ ' + fmt(bracketTax);
+
+            // 股利列
+            const divRow = document.getElementById('rDividendRow');
+            if (dividend > 0) {
+                divRow.style.display = 'flex';
+                if (dividendMethod === 'combined') {
+                    document.getElementById('rDividendLabel').textContent = '股利可抵減稅額（8.5%）';
+                    document.getElementById('rDividendValue').textContent = '- NT$ ' + fmt(dividendCredit);
+                } else {
+                    document.getElementById('rDividendLabel').textContent = '股利分開計稅（28%）';
+                    document.getElementById('rDividendValue').textContent = '+ NT$ ' + fmt(dividendSepTax);
+                }
+            } else {
+                divRow.style.display = 'none';
+            }
+
+            // 一般所得稅額列（有股利調整時才顯示，避免與綜合所得稅額重複）
+            const genRow = document.getElementById('rGeneralTaxRow');
+            if (dividend > 0) {
+                genRow.style.display = 'flex';
+                document.getElementById('rGeneralTax').textContent = 'NT$ ' + fmt(generalTax);
+            } else {
+                genRow.style.display = 'none';
+            }
+
+            // 最低稅負列
+            const biRow = document.getElementById('rBasicIncomeRow');
+            const btRow = document.getElementById('rBasicTaxRow');
+            const noteRow = document.getElementById('rAmtNoteRow');
+            if (amtApplicable) {
+                biRow.style.display = 'flex';
+                btRow.style.display = 'flex';
+                noteRow.style.display = 'none';
+                document.getElementById('rBasicIncome').textContent = 'NT$ ' + fmt(basicIncome);
+                document.getElementById('rBasicTax').textContent = 'NT$ ' + fmt(basicTax);
+                document.getElementById('rTaxTotalLabel').textContent =
+                    basicTax > generalTax ? '應納稅額（採基本稅額）' : '應納稅額';
+            } else {
+                biRow.style.display = 'none';
+                btRow.style.display = 'none';
+                noteRow.style.display = 'flex';
+                document.getElementById('rAmtNote').textContent = '不適用';
+                document.getElementById('rTaxTotalLabel').textContent = '應納稅額';
+            }
+
+            document.getElementById('rTax').textContent = 'NT$ ' + fmt(finalTax);
         }
 
         // 重置：所有欄位回預設值並重新計算
@@ -702,8 +854,9 @@
             document.getElementById('filingStatus').value = 'single';
             document.getElementById('dependents').value = '0';
             document.getElementById('senior70').value = '0';
-            ['salary', 'salarySpouse', 'interest', 'rental', 'business', 'otherIncome', 'itemizedDeduction', 'savingsDeduction']
+            ['salary', 'salarySpouse', 'interest', 'rental', 'business', 'otherIncome', 'dividend', 'amtAddItems', 'itemizedDeduction', 'savingsDeduction']
                 .forEach(id => { document.getElementById(id).value = '0'; });
+            document.getElementById('dividendMethod').value = 'combined';
             document.getElementById('deductionType').value = 'standard';
             document.getElementById('disabledCount').value = '0';
             document.getElementById('childCount').value = '0';

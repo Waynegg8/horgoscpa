@@ -96,5 +96,19 @@
     "title": "土地增值稅試算",
     "category": "tool",
     "link": "/tools/land-value-tax-calculator"
+  },
+  {
+    "type": "tool",
+    "title": "房屋稅試算",
+    "category": "tool",
+    "description": "線上房屋稅試算工具，依房屋稅條例計算持有房屋每年應納房屋稅。支援自住、囤房稅2.0差別稅率、營業用等各使用類別。",
+    "link": "/tools/house-tax-calculator"
+  },
+  {
+    "type": "tool",
+    "title": "地價稅試算",
+    "category": "tool",
+    "description": "線上地價稅試算工具，依土地稅法計算持有土地每年應納地價稅。支援一般用地累進稅率與自用住宅優惠稅率。",
+    "link": "/tools/land-tax-calculator"
   }
 ]
