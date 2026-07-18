@@ -313,6 +313,10 @@
                     </div>
                 </div>
 
+                <div class="calc-row" style="justify-content:flex-end;">
+                    <button type="button" onclick="resetCalc()" style="padding:10px 24px;border:1px solid #ddd;background:#fff;font-family:var(--font-sans);font-size:.92rem;color:var(--text-body);cursor:pointer;transition:border-color .3s;" onmouseover="this.style.borderColor='var(--color-brand)'" onmouseout="this.style.borderColor='#ddd'">重置</button>
+                </div>
+
             </div>
 
         </div>
@@ -555,6 +559,15 @@
 
             // Update total
             document.getElementById('totalPremium').textContent = 'NT$ ' + fmt(premium);
+        }
+
+        function resetCalc() {
+            document.getElementById('incomeType').value = 'bonus';
+            document.getElementById('insuredSalary').value = '45,800';
+            document.getElementById('currentBonus').value = '0';
+            document.getElementById('previousBonus').value = '0';
+            document.getElementById('paymentAmount').value = '50,000';
+            onIncomeTypeChange();
         }
 
         // Init: setup on page load

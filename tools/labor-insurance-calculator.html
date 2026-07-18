@@ -277,6 +277,10 @@
                     </select>
                 </div>
 
+                <div class="calc-row" style="justify-content:flex-end;">
+                    <button type="button" onclick="resetCalc()" style="padding:10px 24px;border:1px solid #ddd;background:#fff;font-family:var(--font-sans);font-size:.92rem;color:var(--text-body);cursor:pointer;transition:border-color .3s;" onmouseover="this.style.borderColor='var(--color-brand)'" onmouseout="this.style.borderColor='#ddd'">重置</button>
+                </div>
+
             </div>
 
         </div>
@@ -361,7 +365,7 @@
         };
 
         // 投保薪資分級表（115年1月1日起適用）
-        // 完整級距：部分工時 + 全職共 28 級
+        // 完整級距：部分工時 + 全職共 27 級
         const ALL_BRACKETS = [
             // 部分工時（月薪 < 基本工資 29,500）
             11100, 12540, 13500, 15840, 16500, 17280, 17880, 19047,
@@ -533,6 +537,13 @@
                 document.getElementById('totalEmployerRow').querySelector('.result-total-label').textContent = erLabel;
                 document.getElementById('totalEmployerValue').textContent = `NT$ ${fmt(totalEmployer)}`;
             }
+        }
+
+        function resetCalc() {
+            document.getElementById('salary').value = '29,500';
+            document.getElementById('workerType').value = 'full-time';
+            document.getElementById('employmentIns').value = 'yes';
+            onTypeChange();
         }
 
         // Init: calculate on page load

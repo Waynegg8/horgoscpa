@@ -301,6 +301,10 @@
                     </select>
                 </div>
 
+                <div class="calc-row" style="justify-content:flex-end;">
+                    <button type="button" onclick="resetCalc()" style="padding:10px 24px;border:1px solid #ddd;background:#fff;font-family:var(--font-sans);font-size:.92rem;color:var(--text-body);cursor:pointer;transition:border-color .3s;" onmouseover="this.style.borderColor='var(--color-brand)'" onmouseout="this.style.borderColor='#ddd'">重置</button>
+                </div>
+
             </div>
 
         </div>
@@ -387,6 +391,7 @@
             employeeShare: 0.30,   // 勞工 30%
             govShare: 0.10,        // 政府 10%
             maxDependents: 3,      // 眷屬最多計3人
+            avgHouseholdFactor: 1.56, // 雇主負擔平均眷口數：本人1 + 平均眷口0.56（113年起，115續用）
         };
 
         // 投保金額分級表（115年1月1日起適用）
@@ -462,22 +467,29 @@
             const isUnion = identity === 'union';
 
             const bracket = matchBracket(salary);
-            const nhiPremium = Math.round(bracket * RATES.nhi);
+            const nhiPremium = Math.round(bracket * RATES.nhi); // 全額保費（每人，顯示用）
 
             let employeePay, employerPay;
 
+            // 依健保署「保險費負擔金額表」：先算「每人」應負擔金額並四捨五入至元，再乘以計費人數
+            // （若先算全額再乘人數會低估 1~2 元，與官方表不符）
             if (isBoss) {
                 // 負責人（第一類第二目）：全額自付 100%
-                employeePay = Math.round(nhiPremium * headCount);
+                const perPerson = Math.round(bracket * RATES.nhi);
+                employeePay = perPerson * headCount;
                 employerPay = 0;
             } else if (isUnion) {
                 // 職業工會（第二類）：自付 60%、政府 40%
-                employeePay = Math.round(nhiPremium * 0.60 * headCount);
+                const perPerson = Math.round(bracket * RATES.nhi * 0.60);
+                employeePay = perPerson * headCount;
                 employerPay = 0;
             } else {
                 // 一般勞工（第一類第一目）：勞工30%、雇主60%
-                employeePay = Math.round(nhiPremium * RATES.employeeShare * headCount);
-                employerPay = Math.round(nhiPremium * RATES.employerShare * headCount);
+                // 勞工自付：本人＋實際眷屬（每人四捨五入後×人數）
+                const empPerPerson = Math.round(bracket * RATES.nhi * RATES.employeeShare);
+                employeePay = empPerPerson * headCount;
+                // 雇主負擔：採固定平均眷口數1.56（本人1＋平均眷口0.56），與員工實際眷屬數無關
+                employerPay = Math.round(bracket * RATES.nhi * RATES.employerShare * RATES.avgHouseholdFactor);
             }
 
             const container = document.getElementById('resultsContainer');
@@ -509,7 +521,7 @@
                     </div>
                 `;
             } else if (isUnion) {
-                const govPay = Math.round(nhiPremium * 0.40 * headCount);
+                const govPay = Math.round(bracket * RATES.nhi * 0.40) * headCount;
                 html += `
                     <div class="result-row">
                         <span class="result-label"><strong>自付</strong> (60% &times; ${headCount} 人)</span>
@@ -527,7 +539,7 @@
                         <span class="result-value">NT$ ${fmt(employeePay)}</span>
                     </div>
                     <div class="result-row">
-                        <span class="result-label"><strong>雇主每月負擔</strong> (60% &times; ${headCount} 人)</span>
+                        <span class="result-label"><strong>雇主每月負擔</strong> (60% &times; 1.56，含平均眷口 0.56)</span>
                         <span class="result-value">NT$ ${fmt(employerPay)}</span>
                     </div>
                 `;
@@ -547,6 +559,14 @@
                 erRow.style.display = 'flex';
                 document.getElementById('totalEmployer').textContent = `NT$ ${fmt(employerPay)}`;
             }
+        }
+
+        function resetCalc() {
+            document.getElementById('salary').value = '29,500';
+            document.getElementById('identity').value = 'employee';
+            document.getElementById('companySize').value = 'lt5';
+            document.getElementById('dependents').value = '0';
+            onIdentityChange();
         }
 
         // Init: calculate on page load
