@@ -160,6 +160,30 @@
         .cta-section { text-align: center; padding: 40px 0; }
         .cta-text { font-family: var(--font-serif); font-size: 1.4rem; color: var(--text-primary); margin-bottom: 20px; }
 
+        /* Overtime Calculator */
+        .ot-card { background: #fff; border: 1px solid #eee; padding: 30px; margin-bottom: 30px; }
+        .ot-card h3 { font-size: 1.2rem; margin-bottom: 20px; }
+        .calc-row { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
+        .calc-row:last-child { margin-bottom: 0; }
+        .calc-label { flex: 1; font-size: 0.95rem; color: var(--text-body-color); }
+        .calc-label small { display: block; color: var(--text-muted); font-size: 0.8rem; margin-top: 4px; }
+        .calc-input, .calc-select {
+            width: 180px; padding: 10px 14px; border: 1px solid #ddd; font-family: var(--font-sans);
+            font-size: 1rem; background: #fff; transition: border-color 0.3s;
+        }
+        .calc-input { text-align: right; }
+        .calc-select { cursor: pointer; }
+        .calc-input:focus, .calc-select:focus { outline: none; border-color: var(--color-brand); }
+        .ot-result { background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%); color: #fff; padding: 30px; margin-bottom: 30px; }
+        .ot-result h3 { color: var(--color-brand); font-size: 1.2rem; margin-bottom: 20px; }
+        .ot-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .ot-row:last-of-type { border-bottom: none; }
+        .ot-label { color: #ccc; font-size: 0.9rem; }
+        .ot-value { font-weight: 600; color: #fff; }
+        .ot-total { margin-top: 20px; padding-top: 16px; border-top: 2px solid var(--color-brand); display: flex; justify-content: space-between; align-items: center; }
+        .ot-total-label { font-family: var(--font-serif); font-size: 1.2rem; color: #fff; }
+        .ot-total-value { font-size: 1.8rem; font-weight: 700; color: var(--color-brand); }
+
         @media (max-width: 768px) {
             .type-cards { grid-template-columns: repeat(2, 1fr); }
             .grid-wrapper { padding: 16px; }
@@ -171,6 +195,8 @@
             .rules-box { padding: 20px; }
             .rules-grid { grid-template-columns: 1fr 1fr; }
             .summary-grid { grid-template-columns: repeat(2, 1fr); }
+            .calc-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .calc-input, .calc-select { width: 100%; }
         }
         @media (max-width: 480px) {
             .type-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -202,9 +228,89 @@
         <div id="validation-panel" class="validation-panel"></div>
         <div id="summary-panel" class="summary-panel"></div>
 
+        <!-- 加班費試算 -->
+        <div class="ot-card">
+            <h3>加班費試算（勞基法 §24／§39）</h3>
+
+            <div class="calc-row">
+                <label class="calc-label" for="otWageMode">
+                    薪資輸入方式
+                    <small>月薪推時薪：月薪 ÷ 240（30 日 × 8 小時）</small>
+                </label>
+                <select id="otWageMode" class="calc-select" onchange="onWageModeChange()">
+                    <option value="hourly">直接輸入時薪</option>
+                    <option value="monthly">以月薪推算</option>
+                </select>
+            </div>
+
+            <div class="calc-row" id="otHourlyRow">
+                <label class="calc-label" for="otHourly">
+                    平日每小時工資額（時薪）
+                    <small>2026 年（115年）基本時薪 196 元</small>
+                </label>
+                <input type="text" inputmode="numeric" id="otHourly" class="calc-input" value="196"
+                    oninput="formatInput(this); calcOvertime()" onchange="formatInput(this); calcOvertime()">
+            </div>
+
+            <div class="calc-row" id="otMonthlyRow" style="display:none;">
+                <label class="calc-label" for="otMonthly">
+                    月薪
+                    <small>時薪 = 月薪 ÷ 240；日薪 = 月薪 ÷ 30</small>
+                </label>
+                <input type="text" inputmode="numeric" id="otMonthly" class="calc-input" value="36,000"
+                    oninput="formatInput(this); calcOvertime()" onchange="formatInput(this); calcOvertime()">
+            </div>
+
+            <div class="calc-row">
+                <label class="calc-label" for="otWeekday">
+                    平日加班時數
+                    <small>§24 I：前 2h ×4/3、第 3-4h ×5/3（延長工時每日上限 4h）</small>
+                </label>
+                <input type="number" id="otWeekday" class="calc-input" value="2" min="0" max="4" step="0.5"
+                    oninput="calcOvertime()" onchange="calcOvertime()">
+            </div>
+
+            <div class="calc-row">
+                <label class="calc-label" for="otRestday">
+                    休息日加班時數
+                    <small>§24 II：前 2h ×4/3、2h 後 ×5/3，核實計算（每日上限 12h）</small>
+                </label>
+                <input type="number" id="otRestday" class="calc-input" value="0" min="0" max="12" step="0.5"
+                    oninput="calcOvertime()" onchange="calcOvertime()">
+            </div>
+
+            <div class="calc-row">
+                <label class="calc-label" for="otHolidayLeave">
+                    例假出勤日數
+                    <small>§39/§40：出勤加倍發給（加發 1 日工資）</small>
+                </label>
+                <input type="number" id="otHolidayLeave" class="calc-input" value="0" min="0" max="14" step="1"
+                    oninput="calcOvertime()" onchange="calcOvertime()">
+            </div>
+
+            <div class="calc-row">
+                <label class="calc-label" for="otHolidayNational">
+                    國定假日出勤日數
+                    <small>§39：出勤加倍發給（加發 1 日工資；逾 8h 另計加班費）</small>
+                </label>
+                <input type="number" id="otHolidayNational" class="calc-input" value="0" min="0" max="14" step="1"
+                    oninput="calcOvertime()" onchange="calcOvertime()">
+            </div>
+        </div>
+
+        <div class="ot-result">
+            <h3>加班費試算結果</h3>
+            <div id="ot-result-body"></div>
+            <div class="ot-total">
+                <span class="ot-total-label">加班費合計</span>
+                <span class="ot-total-value" id="otTotal">NT$ 0</span>
+            </div>
+        </div>
+
         <p class="disclaimer">
             * 本工具依據勞動基準法（最新修正）建置，僅供排班規劃參考。<br>
             * 實際適用之工時制度須經工會或勞資會議同意，並視行業別公告。<br>
+            * 加班費依勞基法 §24（平日／休息日）、§39（例假、國定假日出勤加倍）計算；休息日採 107.3.1 起之核實計算。基本時薪 196 元（2026／115 年）。<br>
             * 如需個案諮詢，歡迎預約專業服務。
         </p>
 
@@ -662,10 +768,97 @@
         render();
     }
 
+    /* ============================================================
+       加班費試算
+       法源：勞動基準法 §24（平日／休息日延長工時）、§39（例假、國定假日出勤加倍）
+       休息日採核實計算（107.3.1 起刪除「做 1 給 4」時數折算，按實際工時計）
+       基本時薪：196 元（2026／115 年）
+       ============================================================ */
+    const OT = {
+        weekdayT1: 4 / 3,   // 平日前 2h：加給 1/3，總額 4/3
+        weekdayT2: 5 / 3,   // 平日第 3-4h：加給 2/3，總額 5/3
+        restT1: 4 / 3,      // 休息日前 2h：總額 4/3
+        restT2: 5 / 3,      // 休息日 2h 後：總額 5/3
+    };
+
+    function formatInput(el) {
+        const raw = el.value.replace(/[^\d]/g, '');
+        if (raw) el.value = parseInt(raw).toLocaleString('en-US');
+    }
+    function otNum(id) {
+        return parseFloat((document.getElementById(id).value + '').replace(/,/g, '')) || 0;
+    }
+    function otFmt(n) {
+        return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // 平日加班：前 2h ×4/3、第 3h 起 ×5/3
+    function weekdayPay(hourly, hours) {
+        const t1 = Math.min(hours, 2);
+        const t2 = Math.max(hours - 2, 0);
+        return hourly * (t1 * OT.weekdayT1 + t2 * OT.weekdayT2);
+    }
+    // 休息日加班：前 2h ×4/3、2h 後 ×5/3（核實計算）
+    function restdayPay(hourly, hours) {
+        const t1 = Math.min(hours, 2);
+        const t2 = Math.max(hours - 2, 0);
+        return hourly * (t1 * OT.restT1 + t2 * OT.restT2);
+    }
+
+    function onWageModeChange() {
+        const mode = document.getElementById('otWageMode').value;
+        document.getElementById('otHourlyRow').style.display = mode === 'hourly' ? 'flex' : 'none';
+        document.getElementById('otMonthlyRow').style.display = mode === 'monthly' ? 'flex' : 'none';
+        calcOvertime();
+    }
+
+    function calcOvertime() {
+        const mode = document.getElementById('otWageMode').value;
+        const hourly = mode === 'monthly' ? otNum('otMonthly') / 240 : otNum('otHourly');
+        const dailyWage = hourly * 8;
+
+        const wdHours = otNum('otWeekday');
+        const rdHours = otNum('otRestday');
+        const leaveDays = otNum('otHolidayLeave');
+        const nationalDays = otNum('otHolidayNational');
+
+        const wdPay = weekdayPay(hourly, wdHours);
+        const rdPay = restdayPay(hourly, rdHours);
+        const leavePay = dailyWage * leaveDays;      // 例假出勤加發 1 日工資
+        const nationalPay = dailyWage * nationalDays; // 國定假日出勤加發 1 日工資
+        const total = wdPay + rdPay + leavePay + nationalPay;
+
+        let html = `
+            <div class="ot-row">
+                <span class="ot-label">平日每小時工資額${mode === 'monthly' ? '（月薪 ÷ 240）' : ''}</span>
+                <span class="ot-value">NT$ ${otFmt(hourly)}</span>
+            </div>
+            <div class="ot-row">
+                <span class="ot-label">平日加班費（${wdHours}h：前2h×4/3、第3-4h×5/3）</span>
+                <span class="ot-value">NT$ ${otFmt(wdPay)}</span>
+            </div>
+            <div class="ot-row">
+                <span class="ot-label">休息日加班費（${rdHours}h：前2h×4/3、2h後×5/3）</span>
+                <span class="ot-value">NT$ ${otFmt(rdPay)}</span>
+            </div>
+            <div class="ot-row">
+                <span class="ot-label">例假出勤加給（${leaveDays} 日 × 1 日工資）</span>
+                <span class="ot-value">NT$ ${otFmt(leavePay)}</span>
+            </div>
+            <div class="ot-row">
+                <span class="ot-label">國定假日出勤加給（${nationalDays} 日 × 1 日工資）</span>
+                <span class="ot-value">NT$ ${otFmt(nationalPay)}</span>
+            </div>
+        `;
+        document.getElementById('ot-result-body').innerHTML = html;
+        document.getElementById('otTotal').textContent = `NT$ ${otFmt(total)}`;
+    }
+
     /* ---- Init ---- */
     document.addEventListener('DOMContentLoaded', () => {
         S.type = 'normal'; S.days = makeDefault('normal'); S.sel = -1;
         render();
+        onWageModeChange();
     });
     </script>
 

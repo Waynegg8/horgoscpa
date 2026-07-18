@@ -305,11 +305,31 @@
                 <h3 class="calc-section-title">查定銷售額</h3>
 
                 <div class="calc-row">
+                    <label class="calc-label" for="smallBizType">
+                        業別
+                        <small>決定營業稅起徵點（買賣業每月10萬／勞務業每月5萬）</small>
+                    </label>
+                    <select id="smallBizType" class="calc-select" onchange="calculate()">
+                        <option value="goods">買賣業（銷售貨物）</option>
+                        <option value="service">勞務業（銷售勞務）</option>
+                    </select>
+                </div>
+
+                <div class="calc-row">
                     <label class="calc-label" for="assessedSales">
                         每月查定銷售額
                         <small>國稅局核定之每月銷售額（新台幣）</small>
                     </label>
                     <input type="text" inputmode="numeric" id="assessedSales" class="calc-input" value="150,000"
+                        oninput="formatInput(this); calculate()" onchange="formatInput(this); calculate()">
+                </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="smallInputTax">
+                        本季進項稅額（憑證載明稅額）
+                        <small>取得載明稅額之進項憑證，得按 10% 於查定稅額內扣減（營業稅法 §25）</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="smallInputTax" class="calc-input" value="0"
                         oninput="formatInput(this); calculate()" onchange="formatInput(this); calculate()">
                 </div>
             </div>
@@ -345,9 +365,10 @@
                 <div><strong style="color:#fff;">統一發票開立義務</strong><br><span style="color:#ccc;">一般營業人應開立統一發票</span></div>
                 <div><strong style="color:#fff;">進項憑證保存</strong><br><span style="color:#ccc;">應保存 5 年備查</span></div>
                 <div><strong style="color:#fff;">零稅率適用</strong><br><span style="color:#ccc;">外銷貨物或勞務適用零稅率，溢付可申請退稅</span></div>
-                <div><strong style="color:#fff;">小規模免稅門檻</strong><br><span style="color:#ccc;">每月銷售額未達營業稅起徵點免徵</span></div>
+                <div><strong style="color:#fff;">小規模起徵點（114.1.1起）</strong><br><span style="color:#ccc;">買賣業每月 10 萬、勞務業每月 5 萬，未達免徵</span></div>
+                <div><strong style="color:#fff;">小規模進項扣減</strong><br><span style="color:#ccc;">載明稅額憑證按進項稅額 10% 於查定稅額內扣減（§25）</span></div>
             </div>
-            <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：加值型及非加值型營業稅法 §10、§15、§23（115年適用）</div>
+            <div style="font-size:.78rem;color:#888;margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;">法源：加值型及非加值型營業稅法 §10、§13、§15、§23、§25；小規模營業人營業稅起徵點（財政部 113.12 修正，114.1.1 起買賣業 10 萬／勞務業 5 萬）</div>
         </div>
 
         <p class="disclaimer">
@@ -397,6 +418,12 @@
         const GENERAL_RATE = 0.05;  // 一般稅率 5%
         const SMALL_RATE   = 0.01;  // 小規模查定課徵 1%
 
+        // 營業稅起徵點（114.1.1 起適用，財政部 113.12 修正）
+        // 買賣業等銷售貨物：每月銷售額 10 萬元；勞務業等銷售勞務：每月銷售額 5 萬元
+        const THRESHOLD = { goods: 100000, service: 50000 };
+        // 小規模進項稅額扣減率（營業稅法 §25：取得載明稅額憑證按進項稅額 10% 於查定稅額內扣減）
+        const SMALL_INPUT_DEDUCT_RATE = 0.10;
+
         const TYPE_HINTS = {
             'general': '<strong>一般營業人注意事項：</strong><br>'
                 + '① 應納稅額 = 銷項稅額 - 進項稅額，每 2 個月申報一次（單月 15 日前）<br>'
@@ -404,8 +431,9 @@
                 + '③ 應依規定開立統一發票並保存進項憑證',
             'small': '<strong>小規模營業人注意事項：</strong><br>'
                 + '① 每月銷售額未達 20 萬元者免用統一發票，由國稅局按季發單課徵<br>'
-                + '② 適用查定課徵稅率 1%，每季繳納一次<br>'
-                + '③ 如取得一般營業人開立之統一發票，進項稅額可扣抵查定稅額 10%',
+                + '② 每月銷售額未達起徵點（買賣業 10 萬／勞務業 5 萬，114.1.1 起）者免徵營業稅<br>'
+                + '③ 適用查定課徵稅率 1%，每季繳納一次<br>'
+                + '④ 取得載明稅額之進項憑證，得按進項稅額 10% 於查定稅額內扣減（營業稅法 §25，扣減後不得為負、不退稅）',
         };
 
         function onTypeChange() {
@@ -486,28 +514,66 @@
             } else {
                 // 小規模營業人
                 const assessed   = parseAmount('assessedSales');
-                const monthlyTax = Math.round(assessed * SMALL_RATE);
-                const quarterTax = monthlyTax * 3;
+                const bizType    = document.getElementById('smallBizType').value;
+                const inputTax   = parseAmount('smallInputTax');
+                const threshold  = THRESHOLD[bizType];
+                const bizLabel   = bizType === 'goods' ? '買賣業（貨物）' : '勞務業（勞務）';
 
                 html = `
+                    <div class="result-row">
+                        <span class="result-label">業別 / 起徵點</span>
+                        <span class="result-value">${bizLabel} / 每月 NT$ ${fmt(threshold)}</span>
+                    </div>
                     <div class="result-row">
                         <span class="result-label">每月查定銷售額</span>
                         <span class="result-value">NT$ ${fmt(assessed)}</span>
                     </div>
                     <div class="result-row" style="border-bottom: 1px solid rgba(255,255,255,0.1);"></div>
-                    <div class="result-row">
-                        <span class="result-label"><strong>每月稅額</strong>（查定銷售額 &times; 1%）</span>
-                        <span class="result-value">NT$ ${fmt(monthlyTax)}</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-label"><strong>每季應納稅額</strong>（每月稅額 &times; 3 個月）</span>
-                        <span class="result-value">NT$ ${fmt(quarterTax)}</span>
-                    </div>
                 `;
 
-                document.getElementById('totalLabel').textContent = '每季應納營業稅額';
-                document.getElementById('totalTax').textContent = `NT$ ${fmt(quarterTax)}`;
-                document.getElementById('totalTax').style.color = 'var(--color-brand)';
+                if (assessed < threshold) {
+                    // 未達起徵點 → 免徵
+                    html += `
+                        <div class="result-row">
+                            <span class="result-label"><strong>每月銷售額未達起徵點</strong><br><span style="font-size:.75rem;color:#888;">${bizLabel}起徵點每月 NT$ ${fmt(threshold)}，免徵營業稅</span></span>
+                            <span class="result-value" style="color:#6CBF6C;">免徵</span>
+                        </div>
+                    `;
+                    document.getElementById('totalLabel').textContent = '每季應納營業稅額';
+                    document.getElementById('totalTax').textContent = '免徵';
+                    document.getElementById('totalTax').style.color = '#6CBF6C';
+                } else {
+                    const monthlyTax   = Math.round(assessed * SMALL_RATE);
+                    const quarterTax   = monthlyTax * 3;
+                    const inputDeduct  = Math.round(inputTax * SMALL_INPUT_DEDUCT_RATE);
+                    // 進項扣減後不得為負（扣減以查定稅額為限，不退稅）
+                    const effectiveDeduct = Math.min(inputDeduct, quarterTax);
+                    const payable      = quarterTax - effectiveDeduct;
+
+                    html += `
+                        <div class="result-row">
+                            <span class="result-label"><strong>每月稅額</strong>（查定銷售額 &times; 1%）</span>
+                            <span class="result-value">NT$ ${fmt(monthlyTax)}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label"><strong>每季查定稅額</strong>（每月稅額 &times; 3 個月）</span>
+                            <span class="result-value">NT$ ${fmt(quarterTax)}</span>
+                        </div>
+                    `;
+
+                    if (inputTax > 0) {
+                        html += `
+                            <div class="result-row">
+                                <span class="result-label">進項稅額扣減（進項稅額 &times; 10%）<br><span style="font-size:.75rem;color:#888;">§25 於查定稅額內扣減，不得為負</span></span>
+                                <span class="result-value">- NT$ ${fmt(effectiveDeduct)}</span>
+                            </div>
+                        `;
+                    }
+
+                    document.getElementById('totalLabel').textContent = '每季應納營業稅額';
+                    document.getElementById('totalTax').textContent = `NT$ ${fmt(payable)}`;
+                    document.getElementById('totalTax').style.color = 'var(--color-brand)';
+                }
             }
 
             container.innerHTML = html;
@@ -518,7 +584,9 @@
             document.getElementById('salesAmount').value = '1,000,000';
             document.getElementById('purchaseAmount').value = '600,000';
             document.getElementById('zeroRateAmount').value = '0';
+            document.getElementById('smallBizType').value = 'goods';
             document.getElementById('assessedSales').value = '150,000';
+            document.getElementById('smallInputTax').value = '0';
             onTypeChange();
         }
 
