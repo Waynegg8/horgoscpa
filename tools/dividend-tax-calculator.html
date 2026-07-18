@@ -320,6 +320,10 @@
 
             </div>
 
+            <div style="text-align:right;margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+                <button type="button" onclick="resetCalculator()" style="font-family:var(--font-sans);font-size:.9rem;color:var(--text-body);background:#fff;border:1px solid #ddd;padding:10px 24px;cursor:pointer;transition:border-color .3s,color .3s;" onmouseover="this.style.borderColor='var(--color-brand)';this.style.color='var(--color-brand)';" onmouseout="this.style.borderColor='#ddd';this.style.color='var(--text-body)';">重置</button>
+            </div>
+
         </div>
 
         <!-- Results -->
@@ -394,10 +398,15 @@
            法源：所得稅法 §71-1（107年起適用）、全民健康保險法 §31
            ========================================================== */
 
+        // 金額欄位合理上限（防呆：避免貼上異常大值導致版面/計算失真）
+        const MAX_INPUT = 10000000000; // 100 億
+
         function formatInput(el) {
-            const raw = el.value.replace(/[^\d]/g, '');
+            let raw = el.value.replace(/[^\d]/g, '');
             if (raw) {
-                el.value = parseInt(raw).toLocaleString('en-US');
+                let n = parseInt(raw);
+                if (n > MAX_INPUT) n = MAX_INPUT;
+                el.value = n.toLocaleString('en-US');
             }
         }
         function parseAmount(id) {
@@ -520,6 +529,13 @@
             } else {
                 recEl.innerHTML = '建議採用<strong>【分開計稅】</strong>，可節省 <strong>NT$ ' + fmt(savings) + '</strong>';
             }
+        }
+
+        // 重置：股利回 500,000、稅率回 20% 並重新計算
+        function resetCalculator() {
+            document.getElementById('dividend').value = '500,000';
+            document.getElementById('taxRate').value = '0.20';
+            onTaxRateChange();
         }
 
         // Init: calculate on page load

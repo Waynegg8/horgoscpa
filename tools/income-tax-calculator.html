@@ -451,6 +451,10 @@
                 </div>
             </div>
 
+            <div style="text-align:right;margin-top:30px;padding-top:20px;border-top:1px solid #eee;">
+                <button type="button" onclick="resetCalculator()" style="font-family:var(--font-sans);font-size:.9rem;color:var(--text-body);background:#fff;border:1px solid #ddd;padding:10px 24px;cursor:pointer;transition:border-color .3s,color .3s;" onmouseover="this.style.borderColor='var(--color-brand)';this.style.color='var(--color-brand)';" onmouseout="this.style.borderColor='#ddd';this.style.color='var(--text-body)';">重置</button>
+            </div>
+
         </div>
 
         <!-- Results -->
@@ -533,10 +537,15 @@
            法源：所得稅法 §5、§13、§17（115年度申報適用）
            ========================================================== */
 
+        // 金額欄位合理上限（防呆：避免貼上異常大值導致版面/計算失真）
+        const MAX_INPUT = 10000000000; // 100 億
+
         function formatInput(el) {
-            const raw = el.value.replace(/[^\d]/g, '');
+            let raw = el.value.replace(/[^\d]/g, '');
             if (raw) {
-                el.value = parseInt(raw).toLocaleString('en-US');
+                let n = parseInt(raw);
+                if (n > MAX_INPUT) n = MAX_INPUT;
+                el.value = n.toLocaleString('en-US');
             }
         }
         function parseAmount(id) {
@@ -614,9 +623,11 @@
 
             // 2. 免稅額
             const exemptionCount = 1 + (married ? 1 : 0) + dependents;
-            const normalCount = exemptionCount - senior70;
+            // 防呆：年滿70歲人數不得超過申報總人數（本人＋配偶＋扶養），否則會算出負的一般免稅額
+            const effectiveSenior = Math.min(senior70, exemptionCount);
+            const normalCount = exemptionCount - effectiveSenior;
             const normalExemption = normalCount * EXEMPTION_NORMAL;
-            const seniorExemption = senior70 * EXEMPTION_SENIOR;
+            const seniorExemption = effectiveSenior * EXEMPTION_SENIOR;
             const totalExemption = normalExemption + seniorExemption;
 
             // 3. 一般扣除額
@@ -684,6 +695,22 @@
             document.getElementById('rTaxableIncome').textContent = 'NT$ ' + fmt(taxableIncome);
             document.getElementById('rTaxRate').textContent = appliedRate;
             document.getElementById('rTax').textContent = 'NT$ ' + fmt(tax);
+        }
+
+        // 重置：所有欄位回預設值並重新計算
+        function resetCalculator() {
+            document.getElementById('filingStatus').value = 'single';
+            document.getElementById('dependents').value = '0';
+            document.getElementById('senior70').value = '0';
+            ['salary', 'salarySpouse', 'interest', 'rental', 'business', 'otherIncome', 'itemizedDeduction', 'savingsDeduction']
+                .forEach(id => { document.getElementById(id).value = '0'; });
+            document.getElementById('deductionType').value = 'standard';
+            document.getElementById('disabledCount').value = '0';
+            document.getElementById('childCount').value = '0';
+            document.getElementById('eduCount').value = '0';
+            document.getElementById('ltcCount').value = '0';
+            onDeductionTypeChange();
+            onFilingStatusChange();
         }
 
         // Init
