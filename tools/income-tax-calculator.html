@@ -259,7 +259,7 @@
                     <label class="calc-label" for="filingStatus">
                         申報方式
                     </label>
-                    <select id="filingStatus" class="calc-select" onchange="calculate()">
+                    <select id="filingStatus" class="calc-select" onchange="onFilingStatusChange()">
                         <option value="single">單身</option>
                         <option value="married">有配偶合併申報</option>
                     </select>
@@ -307,10 +307,19 @@
 
                 <div class="calc-row">
                     <label class="calc-label" for="salary">
-                        薪資所得合計
-                        <small>本人＋配偶全年薪資所得總額</small>
+                        本人薪資所得
+                        <small>本人全年薪資所得（薪資特別扣除額每人上限 227,000）</small>
                     </label>
                     <input type="text" inputmode="numeric" id="salary" class="calc-input" value="0"
+                        oninput="formatInput(this); calculate()">
+                </div>
+
+                <div class="calc-row" id="spouseSalaryRow" style="display:none;">
+                    <label class="calc-label" for="salarySpouse">
+                        配偶薪資所得
+                        <small>配偶全年薪資所得（薪資特別扣除額另計，上限 227,000）</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="salarySpouse" class="calc-input" value="0"
                         oninput="formatInput(this); calculate()">
                 </div>
 
@@ -372,17 +381,6 @@
                 </div>
 
                 <div id="deductionHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:20px;font-size:.88rem;line-height:1.7;color:var(--text-body);display:none;"></div>
-
-                <div class="calc-row">
-                    <label class="calc-label" for="salaryEarners">
-                        有薪資所得人數
-                        <small>本人及配偶中有薪資所得之人數</small>
-                    </label>
-                    <select id="salaryEarners" class="calc-select" onchange="calculate()">
-                        <option value="1">1 人</option>
-                        <option value="2">2 人</option>
-                    </select>
-                </div>
 
                 <div class="calc-row">
                     <label class="calc-label" for="disabledCount">
@@ -570,6 +568,12 @@
             { limit: Infinity, rate: 0.40, diff: 949100 }
         ];
 
+        function onFilingStatusChange() {
+            const married = document.getElementById('filingStatus').value === 'married';
+            document.getElementById('spouseSalaryRow').style.display = married ? 'flex' : 'none';
+            calculate();
+        }
+
         function onDeductionTypeChange() {
             const val = document.getElementById('deductionType').value;
             const hint = document.getElementById('deductionHint');
@@ -589,7 +593,9 @@
             const dependents = parseInt(document.getElementById('dependents').value) || 0;
             const senior70 = parseInt(document.getElementById('senior70').value) || 0;
 
-            const salary = parseAmount('salary');
+            const salarySelf = parseAmount('salary');
+            const salarySpouse = married ? parseAmount('salarySpouse') : 0;
+            const salary = salarySelf + salarySpouse;
             const interest = parseAmount('interest');
             const rental = parseAmount('rental');
             const business = parseAmount('business');
@@ -597,7 +603,6 @@
 
             const deductionType = document.getElementById('deductionType').value;
             const itemizedDeduction = parseAmount('itemizedDeduction');
-            const salaryEarners = parseInt(document.getElementById('salaryEarners').value) || 1;
             const disabledCount = parseInt(document.getElementById('disabledCount').value) || 0;
             const childCount = parseInt(document.getElementById('childCount').value) || 0;
             const eduCount = parseInt(document.getElementById('eduCount').value) || 0;
@@ -623,7 +628,9 @@
             }
 
             // 4. 特別扣除額
-            const salaryDeduction = Math.min(salary, salaryEarners * SALARY_DEDUCTION_PER);
+            // 薪資特別扣除額：本人、配偶「各自」以 227,000 為上限（不得合併計算）
+            const salaryDeduction = Math.min(salarySelf, SALARY_DEDUCTION_PER)
+                + (married ? Math.min(salarySpouse, SALARY_DEDUCTION_PER) : 0);
             const disabledDeduction = disabledCount * DISABLED_DEDUCTION_PER;
             let childDeduction = childCount > 0 ? CHILD_DEDUCTION_FIRST + (childCount - 1) * CHILD_DEDUCTION_REST : 0;
             const eduDeduction = eduCount * EDU_DEDUCTION_PER;
@@ -680,7 +687,7 @@
         }
 
         // Init
-        document.addEventListener('DOMContentLoaded', () => { calculate(); });
+        document.addEventListener('DOMContentLoaded', () => { onFilingStatusChange(); });
     </script>
 
 </body>
