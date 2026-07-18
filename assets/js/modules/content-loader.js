@@ -234,8 +234,8 @@ export function initContentLoader() {
                 const display = articles.filter(a => currentSlug !== normalize(a.link)).slice(0, 3);
 
                 if (display.length === 0) {
-                    [{ href: '/services.html', cat: '服務項目', title: '了解我們的專業服務' },
-                     { href: '/booking.html',  cat: '預約諮詢', title: '立即預約免費諮詢' }]
+                    [{ href: '/services', cat: '服務項目', title: '了解我們的專業服務' },
+                     { href: '/booking',  cat: '預約諮詢', title: '立即預約免費諮詢' }]
                     .forEach(fb => {
                         const item = document.createElement('li');
                         item.style.marginBottom = '15px';
