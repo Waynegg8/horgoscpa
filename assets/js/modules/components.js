@@ -4,7 +4,7 @@ const BASE_URL = 'https://fideracpas.com';
 
 const NAV_HTML = `
 <nav class="site-nav scrolled">
-  <a href="/index.html" class="logo">
+  <a href="/" class="logo">
     <div class="logo-container">
       <img src="/assets/images/logo-white.png" alt="誠遠會計師事務所" class="logo-img" style="height: 40px; width: auto;" width="48" height="48">
       <div class="logo-text-group">
@@ -14,14 +14,14 @@ const NAV_HTML = `
     </div>
   </a>
   <ul id="site-nav-links" class="nav-links">
-    <li><a href="/services.html">專業服務</a></li>
-    <li><a href="/team.html">專業團隊</a></li>
-    <li><a href="/articles.html">文章專區</a></li>
-    <li><a href="/resources.html">資源專區</a></li>
-    <li><a href="/faq.html">常見問題</a></li>
-    <li><a href="/contact.html">聯絡我們</a></li>
+    <li><a href="/services">專業服務</a></li>
+    <li><a href="/team">專業團隊</a></li>
+    <li><a href="/articles">文章專區</a></li>
+    <li><a href="/resources">資源專區</a></li>
+    <li><a href="/faq">常見問題</a></li>
+    <li><a href="/contact">聯絡我們</a></li>
   </ul>
-  <a href="/booking.html" class="btn-solid-gold">預約諮詢</a>
+  <a href="/booking" class="btn-solid-gold">預約諮詢</a>
   <button class="mobile-toggle" aria-expanded="false" aria-controls="site-nav-links">選單</button>
 </nav>`;
 
@@ -40,11 +40,11 @@ const FOOTER_HTML = `
     </div>
     <div class="footer-links">
       <h4>網站地圖</h4>
-      <a href="/services.html">專業服務</a>
-      <a href="/team.html">專業團隊</a>
-      <a href="/articles.html">文章專區</a>
-      <a href="/resources.html">資源專區</a>
-      <a href="/faq.html">常見問題</a>
+      <a href="/services">專業服務</a>
+      <a href="/team">專業團隊</a>
+      <a href="/articles">文章專區</a>
+      <a href="/resources">資源專區</a>
+      <a href="/faq">常見問題</a>
     </div>
     <div class="footer-links">
       <h4>聯絡資訊</h4>
@@ -95,29 +95,29 @@ function buildSchema(path) {
         };
     }
 
-    if (path === '/contact.html') {
+    if (path === '/contact') {
         return { '@context': 'https://schema.org', ...org };
     }
 
-    if (path === '/services.html') {
+    if (path === '/services') {
         return {
             '@context': 'https://schema.org',
             '@type': 'ItemList',
             name: '誠遠會計師事務所 - 專業服務',
             itemListElement: [
-                { '@type': 'ListItem', position: 1, name: '工商登記', url: `${BASE_URL}/service-registration.html` },
-                { '@type': 'ListItem', position: 2, name: '帳務處理', url: `${BASE_URL}/service-accounting.html` },
-                { '@type': 'ListItem', position: 3, name: '稅務申報', url: `${BASE_URL}/service-tax.html` },
-                { '@type': 'ListItem', position: 4, name: '財稅簽證', url: `${BASE_URL}/service-audit.html` }
+                { '@type': 'ListItem', position: 1, name: '工商登記', url: `${BASE_URL}/service-registration` },
+                { '@type': 'ListItem', position: 2, name: '帳務處理', url: `${BASE_URL}/service-accounting` },
+                { '@type': 'ListItem', position: 3, name: '稅務申報', url: `${BASE_URL}/service-tax` },
+                { '@type': 'ListItem', position: 4, name: '財稅簽證', url: `${BASE_URL}/service-audit` }
             ]
         };
     }
 
     const serviceMap = {
-        '/service-registration.html': { name: '工商登記', desc: '一站式公司設立服務，從名稱預查、資本簽證到稅籍登記。' },
-        '/service-accounting.html':   { name: '帳務處理', desc: '專業帳務處理與稅務申報，提供清晰財務報表與主動式稅務規劃。' },
-        '/service-tax.html':          { name: '稅務申報', desc: '專業稅務申報與節稅規劃，守護每一分企業利潤。' },
-        '/service-audit.html':        { name: '財稅簽證', desc: '獨立客觀的財稅簽證服務，財務報表查核與營所稅簽證。' }
+        '/service-registration': { name: '工商登記', desc: '一站式公司設立服務，從名稱預查、資本簽證到稅籍登記。' },
+        '/service-accounting':   { name: '帳務處理', desc: '專業帳務處理與稅務申報，提供清晰財務報表與主動式稅務規劃。' },
+        '/service-tax':          { name: '稅務申報', desc: '專業稅務申報與節稅規劃，守護每一分企業利潤。' },
+        '/service-audit':        { name: '財稅簽證', desc: '獨立客觀的財稅簽證服務，財務報表查核與營所稅簽證。' }
     };
     if (serviceMap[path]) {
         const s = serviceMap[path];
@@ -131,7 +131,7 @@ function buildSchema(path) {
         };
     }
 
-    if (path.startsWith('/articles/') && !path.endsWith('/template.html')) {
+    if (path.startsWith('/articles/') && !path.endsWith('/template')) {
         const title = document.title.split('|')[0].trim();
         const desc = document.querySelector('meta[name="description"]')?.content || '';
         const image = document.querySelector('meta[property="og:image"]')?.content
@@ -209,18 +209,18 @@ export function initComponents() {
 
 // --- BreadcrumbList builder ---
 const BREADCRUMB_MAP = {
-    '/index.html':                { name: '首頁' },
-    '/services.html':             { name: '專業服務' },
-    '/service-registration.html': { name: '工商登記' },
-    '/service-accounting.html':   { name: '帳務處理' },
-    '/service-tax.html':          { name: '稅務申報' },
-    '/service-audit.html':        { name: '財稅簽證' },
-    '/team.html':                 { name: '專業團隊' },
-    '/articles.html':             { name: '文章專區' },
-    '/resources.html':            { name: '資源專區' },
-    '/faq.html':                  { name: '常見問題' },
-    '/contact.html':              { name: '聯絡我們' },
-    '/booking.html':              { name: '預約諮詢' },
+    '/index.html':            { name: '首頁' },
+    '/services':             { name: '專業服務' },
+    '/service-registration': { name: '工商登記' },
+    '/service-accounting':   { name: '帳務處理' },
+    '/service-tax':          { name: '稅務申報' },
+    '/service-audit':        { name: '財稅簽證' },
+    '/team':                 { name: '專業團隊' },
+    '/articles':             { name: '文章專區' },
+    '/resources':            { name: '資源專區' },
+    '/faq':                  { name: '常見問題' },
+    '/contact':              { name: '聯絡我們' },
+    '/booking':              { name: '預約諮詢' },
 };
 
 function buildBreadcrumb(path) {
@@ -233,7 +233,7 @@ function buildBreadcrumb(path) {
     let name = BREADCRUMB_MAP[path]?.name;
     if (!name && path.startsWith('/articles/')) {
         name = document.title.split('|')[0].trim();
-        items.push({ '@type': 'ListItem', position: 2, name: '文章專區', item: BASE_URL + '/articles.html' });
+        items.push({ '@type': 'ListItem', position: 2, name: '文章專區', item: BASE_URL + '/articles' });
         items.push({ '@type': 'ListItem', position: 3, name, item: BASE_URL + path });
     } else if (name) {
         items.push({ '@type': 'ListItem', position: 2, name, item: BASE_URL + path });
