@@ -314,6 +314,10 @@
                 </div>
             </div>
 
+            <div style="text-align:right;margin-top:24px;">
+                <button type="button" onclick="resetCalc()" style="background:none;border:1px solid #ccc;color:#666;font-family:var(--font-sans);font-size:.85rem;padding:8px 20px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--color-brand)';this.style.color='var(--color-brand)';" onmouseout="this.style.borderColor='#ccc';this.style.color='#666';">重置</button>
+            </div>
+
         </div>
 
         <!-- Results -->
@@ -507,6 +511,15 @@
             }
 
             container.innerHTML = html;
+        }
+
+        function resetCalc() {
+            document.getElementById('businessType').value = 'general';
+            document.getElementById('salesAmount').value = '1,000,000';
+            document.getElementById('purchaseAmount').value = '600,000';
+            document.getElementById('zeroRateAmount').value = '0';
+            document.getElementById('assessedSales').value = '150,000';
+            onTypeChange();
         }
 
         // Init: calculate on page load

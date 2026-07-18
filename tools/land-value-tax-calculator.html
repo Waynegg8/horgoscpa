@@ -322,6 +322,10 @@
                 </div>
             </div>
 
+            <div style="text-align:right;margin-top:24px;">
+                <button type="button" onclick="resetForm()" style="background:none;border:1px solid var(--color-brand);color:var(--color-brand);padding:10px 24px;font-family:var(--font-sans);font-size:.9rem;cursor:pointer;transition:all .3s;">重置為預設值</button>
+            </div>
+
         </div>
 
         <!-- Results -->
@@ -441,7 +445,8 @@
             const prevValue = parseAmount('prevValue');
             const currentValue = parseAmount('currentValue');
             const improvementCost = parseAmount('improvementCost');
-            const priceIndex = parseFloat(document.getElementById('priceIndex').value) || 100;
+            let priceIndex = parseFloat(document.getElementById('priceIndex').value);
+            if (!(priceIndex > 0)) priceIndex = 100; // 防呆：空值/負值/0 回退為 100（未調整）
             const taxType = document.getElementById('taxType').value;
             const holdYears = document.getElementById('holdYears').value;
 
@@ -485,19 +490,24 @@
                     rateLabel = '20% / 30% / 40%（累進）';
                 }
 
-                // 長期持有減徵
+                // 長期持有減徵（土地稅法 §33：僅就「超過最低稅率20%部分」之稅額減徵，
+                // 第一級距 20% 稅額不減徵）
+                let reductionRate = 0;
                 if (holdYears === '20') {
-                    showReduction = true;
-                    reductionLabel = '減徵 20%（持有20年以上）';
-                    tax = Math.round(tax * 0.80);
+                    reductionRate = 0.20;
+                    reductionLabel = '減徵 20%（持有20年以上，僅減超過20%部分）';
                 } else if (holdYears === '30') {
-                    showReduction = true;
-                    reductionLabel = '減徵 30%（持有30年以上）';
-                    tax = Math.round(tax * 0.70);
+                    reductionRate = 0.30;
+                    reductionLabel = '減徵 30%（持有30年以上，僅減超過20%部分）';
                 } else if (holdYears === '40') {
+                    reductionRate = 0.40;
+                    reductionLabel = '減徵 40%（持有40年以上，僅減超過20%部分）';
+                }
+                if (reductionRate > 0 && tax > 0) {
                     showReduction = true;
-                    reductionLabel = '減徵 40%（持有40年以上）';
-                    tax = Math.round(tax * 0.60);
+                    const baseTax = Math.round(totalIncrement * 0.20); // 最低稅率20%部分，不減徵
+                    const excessTax = tax - baseTax;                   // 超過最低稅率之稅額
+                    tax = baseTax + Math.round(excessTax * (1 - reductionRate));
                 }
             }
 
@@ -517,6 +527,16 @@
             }
 
             document.getElementById('rTax').textContent = 'NT$ ' + fmt(tax);
+        }
+
+        function resetForm() {
+            document.getElementById('prevValue').value = '0';
+            document.getElementById('currentValue').value = '0';
+            document.getElementById('improvementCost').value = '0';
+            document.getElementById('priceIndex').value = '100';
+            document.getElementById('taxType').value = 'general';
+            document.getElementById('holdYears').value = '0';
+            onTaxTypeChange();
         }
 
         // Init

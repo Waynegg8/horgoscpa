@@ -353,6 +353,10 @@
                 </div>
             </div>
 
+            <div style="text-align:right;margin-top:24px;">
+                <button type="button" onclick="resetForm()" style="background:none;border:1px solid var(--color-brand);color:var(--color-brand);padding:10px 24px;font-family:var(--font-sans);font-size:.9rem;cursor:pointer;transition:all .3s;">重置為預設值</button>
+            </div>
+
         </div>
 
         <!-- Results -->
@@ -441,7 +445,7 @@
             const estateTotal    = parseAmount('estateTotal');
             const hasSpouse      = parseInt(document.getElementById('hasSpouse').value);
             const childCount     = parseInt(document.getElementById('childCount').value) || 0;
-            const underageYears  = parseInt(document.getElementById('underageYears').value) || 0;
+            const underageYears  = Math.max(0, parseInt(document.getElementById('underageYears').value) || 0); // 防呆：不接受負數
             const parentCount    = parseInt(document.getElementById('parentCount').value) || 0;
             const disabledCount  = parseInt(document.getElementById('disabledCount').value) || 0;
             const spouseProperty = parseAmount('spouseProperty');
@@ -531,6 +535,18 @@
 
             container.innerHTML = html;
             document.getElementById('totalTax').textContent = `NT$ ${fmt(tax)}`;
+        }
+
+        function resetForm() {
+            document.getElementById('estateTotal').value = '50,000,000';
+            document.getElementById('hasSpouse').value = '1';
+            document.getElementById('childCount').value = '2';
+            document.getElementById('underageYears').value = '0';
+            document.getElementById('parentCount').value = '0';
+            document.getElementById('disabledCount').value = '0';
+            document.getElementById('spouseProperty').value = '0';
+            document.getElementById('otherDeduction').value = '0';
+            calculate();
         }
 
         // Init: calculate on page load

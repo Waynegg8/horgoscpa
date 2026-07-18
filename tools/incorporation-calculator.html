@@ -350,6 +350,10 @@
             <!-- Validation warnings -->
             <div id="warnings" style="display:none;background:#fef2f2;border:1px solid #fecaca;padding:16px 20px;font-size:.88rem;color:#991b1b;line-height:1.6;"></div>
 
+            <div style="text-align:right;margin-top:24px;">
+                <button type="button" onclick="resetCalc()" style="background:none;border:1px solid #ccc;color:#666;font-family:var(--font-sans);font-size:.85rem;padding:8px 20px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--color-brand)';this.style.color='var(--color-brand)';" onmouseout="this.style.borderColor='#ccc';this.style.color='#666';">重置</button>
+            </div>
+
         </div>
 
         <!-- Results: Government Fees -->
@@ -413,8 +417,10 @@
             registrationMin: 1000,          // 設立登記最低規費 §3
             registrationPerUnit: 1,         // 每4,000元資本額收1元 §3
             registrationUnit: 4000,         // 計算單位
+            eFilingDiscount: 300,           // 公司設立登記電子申辦每件減收300 §6（前三條=§3~§5）
             // 商業登記規費收費準則（114.12.30 修正）
-            bizRegistration: 1000,          // 商業設立登記 §2
+            bizRegistration: 1000,          // 商業設立登記 §3（每件1,000）
+            bizEfilingRate: 0.8,            // 商業設立登記網路傳輸減徵二成 §3
         };
 
         // 法定要求
@@ -513,7 +519,9 @@
             // Update e-filing description
             const eLabel = document.querySelector('label[for="eFiling"] small');
             if (eLabel) {
-                eLabel.textContent = '線上申請可減免預查規費';
+                eLabel.textContent = t === 'business'
+                    ? '網路申辦：預查減半、設立登記減徵 20%'
+                    : '電子申辦：預查減半、設立登記減收 $300（§6）';
             }
 
             // Reset director min/max
@@ -568,14 +576,23 @@
             });
             total += nameFee;
 
-            // 2. 設立登記規費（無電子減免）
+            // 2. 設立登記規費
             let regFee, regNote;
             if (isBiz) {
+                // 商業登記規費收費準則 §3：設立登記每件 $1,000，網路傳輸減徵二成
                 regFee = GOV_FEES.bizRegistration;
-                regNote = '商業登記規費收費準則 §2：固定 $1,000';
+                if (eFiling) regFee = Math.round(regFee * GOV_FEES.bizEfilingRate);
+                regNote = eFiling
+                    ? '商業登記規費收費準則 §3：每件 $1,000，網路申辦減徵 20%（$800）'
+                    : '商業登記規費收費準則 §3：固定 $1,000';
             } else {
+                // 公司登記規費收費準則 §3：每 $4,000 收 $1，最低 $1,000
                 regFee = Math.max(GOV_FEES.registrationMin, Math.ceil(capital / GOV_FEES.registrationUnit));
-                regNote = '公司登記規費收費準則 §3：每 $4,000 資本額收 $1，最低 $1,000';
+                // §6：以電子方式申請設立登記，每件減收 $300
+                if (eFiling) regFee = Math.max(0, regFee - GOV_FEES.eFilingDiscount);
+                regNote = eFiling
+                    ? '公司登記規費收費準則 §3、§6：每 $4,000 收 $1（最低 $1,000），電子申辦減收 $300'
+                    : '公司登記規費收費準則 §3：每 $4,000 資本額收 $1，最低 $1,000';
             }
             items.push({
                 label: '設立登記規費',
@@ -618,6 +635,15 @@
                     <span style="color:var(--color-brand);font-weight:600;white-space:nowrap;align-self:center;">請洽本所</span>
                 </div>`
             ).join('');
+        }
+
+        function resetCalc() {
+            document.getElementById('companyType').value = 'limited';
+            document.getElementById('capital').value = 1000000;
+            document.getElementById('directors').value = 1;
+            document.getElementById('supervisors').value = 1;
+            document.getElementById('eFiling').value = 'yes';
+            onTypeChange();
         }
 
         // Init

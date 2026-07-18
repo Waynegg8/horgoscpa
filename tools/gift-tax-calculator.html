@@ -283,6 +283,10 @@
 
             </div>
 
+            <div style="text-align:right;margin-top:24px;">
+                <button type="button" onclick="resetForm()" style="background:none;border:1px solid var(--color-brand);color:var(--color-brand);padding:10px 24px;font-family:var(--font-sans);font-size:.9rem;cursor:pointer;transition:all .3s;">重置為預設值</button>
+            </div>
+
         </div>
 
         <div id="identityHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:30px;font-size:.88rem;line-height:1.7;color:var(--text-body);">
@@ -427,6 +431,13 @@
             document.getElementById('rNetGift').textContent = 'NT$ ' + fmt(netGift);
             document.getElementById('rTaxRate').textContent = taxRateLabel;
             document.getElementById('totalTax').textContent = 'NT$ ' + fmt(taxDue);
+        }
+
+        function resetForm() {
+            document.getElementById('giftAmount').value = '5,000,000';
+            document.getElementById('prevGift').value = '0';
+            document.getElementById('deduction').value = '0';
+            calculate();
         }
 
         document.addEventListener('DOMContentLoaded', function() { calculate(); });

@@ -350,6 +350,10 @@
 
                 <div id="rateHint" style="background:var(--color-brand-light);border-left:3px solid var(--color-brand);padding:12px 16px;margin-bottom:20px;font-size:.88rem;line-height:1.7;color:var(--text-body);"></div>
 
+                <div style="text-align:right;">
+                    <button type="button" onclick="resetCalc()" style="background:none;border:1px solid #ccc;color:#666;font-family:var(--font-sans);font-size:.85rem;padding:8px 20px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--color-brand)';this.style.color='var(--color-brand)';" onmouseout="this.style.borderColor='#ccc';this.style.color='#666';">重置</button>
+                </div>
+
             </div>
 
         </div>
@@ -456,7 +460,10 @@
         function calculate() {
             const income = parseAmount('income');
             const distMode = document.getElementById('distMode').value;
-            const distRatio = distMode === 'full' ? 100 : (parseInt(document.getElementById('distRatio').value) || 0);
+            let distRatio = distMode === 'full' ? 100 : (parseInt(document.getElementById('distRatio').value) || 0);
+            // 夾限 0~100，避免超額分配造成負值未分配盈餘
+            if (distRatio < 0) distRatio = 0;
+            if (distRatio > 100) distRatio = 100;
             const personalRate = parseFloat(document.getElementById('personalRate').value);
 
             // ===== Step 1: 營利事業所得稅 (Corporate Income Tax) =====
@@ -599,6 +606,16 @@
                 + '<span class="result-label">' + label + '</span>'
                 + '<span class="result-value">' + value + '</span>'
                 + '</div>';
+        }
+
+        function resetCalc() {
+            document.getElementById('income').value = '3,000,000';
+            document.getElementById('distMode').value = 'full';
+            document.getElementById('distRatio').value = 100;
+            document.getElementById('personalRate').value = '0.20';
+            onDistModeChange();
+            updateRateHint();
+            calculate();
         }
 
         // Init: calculate on page load

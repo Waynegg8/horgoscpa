@@ -324,6 +324,10 @@
 
             </div>
 
+            <div style="text-align:right;margin-top:24px;">
+                <button type="button" onclick="resetForm()" style="background:none;border:1px solid var(--color-brand);color:var(--color-brand);padding:10px 24px;font-family:var(--font-sans);font-size:.9rem;cursor:pointer;transition:all .3s;">重置為預設值</button>
+            </div>
+
         </div>
 
         <!-- Results -->
@@ -548,6 +552,15 @@
             }
 
             document.getElementById('totalTax').textContent = 'NT$ ' + fmt(taxAmount);
+        }
+
+        function resetForm() {
+            document.getElementById('sellPrice').value = '10,000,000';
+            document.getElementById('cost').value = '8,000,000';
+            document.getElementById('expenses').value = '0';
+            document.getElementById('landTax').value = '0';
+            document.getElementById('identity').value = 'resident';
+            onIdentityChange();
         }
 
         document.addEventListener('DOMContentLoaded', function() { onIdentityChange(); });
