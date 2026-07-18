@@ -469,6 +469,15 @@
                         <option value="5">5 人</option>
                     </select>
                 </div>
+
+                <div class="calc-row">
+                    <label class="calc-label" for="rentDeduction">
+                        房屋租金支出特別扣除額
+                        <small>每一申報戶上限 18 萬；限國內租屋自住且申報戶無自有房屋（113年度起由列舉改列，有排富）</small>
+                    </label>
+                    <input type="text" inputmode="numeric" id="rentDeduction" class="calc-input" value="0"
+                        oninput="formatInput(this); calculate()">
+                </div>
             </div>
 
             <!-- Section 4: 最低稅負（基本所得額） -->
@@ -573,7 +582,7 @@
             * 本試算依115年度綜合所得稅課稅級距及免稅額計算。<br>
             * 股利所得可選擇合併計稅（可抵減稅額 8.5%，每戶上限 8 萬元）或分開計稅（單一稅率 28%）。<br>
             * 最低稅負（所得基本稅額）：基本稅額 =（基本所得額 − 750 萬元）× 20%，一般所得稅額與基本稅額取高者為應納。<br>
-            * 長期照顧特別扣除額適用排富條款（適用稅率20%以上不適用）；幼兒學前特別扣除額自113年度起已取消排富。<br>
+            * 長期照顧與房屋租金支出特別扣除額適用排富條款（減除後適用稅率20%（含）以上、股利選28%分開計稅、或基本所得額超過750萬元者，兩項均不適用）；幼兒學前特別扣除額自113年度起已取消排富。<br>
             * 實際稅額以國稅局核定為準。
         </p>
 
@@ -631,6 +640,7 @@
         const EDU_DEDUCTION_PER = 25000;
         const SAVINGS_DEDUCTION_MAX = 270000;
         const LTC_DEDUCTION_PER = 180000;      // 長照特別扣除額（114年起 12萬→18萬）
+        const RENT_DEDUCTION_MAX = 180000;     // 房屋租金支出特別扣除額（113年度起由列舉改列特別扣除，每一申報戶上限）
 
         // 股利所得（所得稅法 §15）
         const DIVIDEND_CREDIT_RATE = 0.085;    // 合併計稅：可抵減稅額比率 8.5%
@@ -662,7 +672,7 @@
             document.getElementById('itemizedRow').style.display = val === 'itemized' ? 'flex' : 'none';
 
             if (val === 'itemized') {
-                hint.innerHTML = '<strong>列舉扣除額項目：</strong>捐贈、保險費、醫藥及生育費、災害損失、自用住宅購屋借款利息（上限30萬）、房屋租金支出（上限18萬）等。';
+                hint.innerHTML = '<strong>列舉扣除額項目：</strong>捐贈、保險費、醫藥及生育費、災害損失、自用住宅購屋借款利息（上限30萬）等。房屋租金支出自113年度起改列特別扣除額，請於下方特別扣除額區輸入。';
                 hint.style.display = 'block';
             } else {
                 hint.style.display = 'none';
@@ -693,6 +703,7 @@
             const eduCount = parseInt(document.getElementById('eduCount').value) || 0;
             const savingsInput = parseAmount('savingsDeduction');
             const ltcCount = parseInt(document.getElementById('ltcCount').value) || 0;
+            const rentInput = parseAmount('rentDeduction');
 
             // 1. 所得總額
             //    合併計稅之股利併入綜合所得總額；分開計稅之股利不併入（另按 28% 單獨計稅）
@@ -725,9 +736,10 @@
             const eduDeduction = eduCount * EDU_DEDUCTION_PER;
             const savingsDeduction = Math.min(savingsInput, SAVINGS_DEDUCTION_MAX);
             let ltcDeduction = ltcCount * LTC_DEDUCTION_PER;
+            let rentDeduction = Math.min(rentInput, RENT_DEDUCTION_MAX);
 
             // 5. 初步計算淨額（用來判斷排富）
-            let specialDeductionPreCheck = salaryDeduction + disabledDeduction + childDeduction + eduDeduction + savingsDeduction + ltcDeduction;
+            let specialDeductionPreCheck = salaryDeduction + disabledDeduction + childDeduction + eduDeduction + savingsDeduction + ltcDeduction + rentDeduction;
             let taxableIncomePreCheck = totalIncome - totalExemption - deduction - specialDeductionPreCheck;
             if (taxableIncomePreCheck < 0) taxableIncomePreCheck = 0;
 
@@ -740,13 +752,18 @@
                 }
             }
 
-            // 長期照顧特別扣除額排富：減除後適用稅率在 20% 以上（含 20%）者不適用
+            // 長照＋房屋租金特別扣除額排富（所得稅法§17，兩項共用同一組條件）：
+            // ①減除後適用稅率在 20% 以上（含 20%）②股利選 28% 分開計稅 ③基本所得額超過 750 萬
             // 幼兒學前特別扣除額自 113 年度起已取消排富，不再歸零
-            if (preCheckRate >= 0.20) {
+            const wealthExcluded = preCheckRate >= 0.20
+                || (dividend > 0 && dividendMethod === 'separate')
+                || (taxableIncomePreCheck + amtAddItems > AMT_DEDUCTION);
+            if (wealthExcluded) {
                 ltcDeduction = 0;
+                rentDeduction = 0;
             }
 
-            const totalSpecialDeduction = salaryDeduction + disabledDeduction + childDeduction + eduDeduction + savingsDeduction + ltcDeduction;
+            const totalSpecialDeduction = salaryDeduction + disabledDeduction + childDeduction + eduDeduction + savingsDeduction + ltcDeduction + rentDeduction;
 
             // 6. 綜合所得淨額
             let taxableIncome = totalIncome - totalExemption - deduction - totalSpecialDeduction;
@@ -854,7 +871,7 @@
             document.getElementById('filingStatus').value = 'single';
             document.getElementById('dependents').value = '0';
             document.getElementById('senior70').value = '0';
-            ['salary', 'salarySpouse', 'interest', 'rental', 'business', 'otherIncome', 'dividend', 'amtAddItems', 'itemizedDeduction', 'savingsDeduction']
+            ['salary', 'salarySpouse', 'interest', 'rental', 'business', 'otherIncome', 'dividend', 'amtAddItems', 'itemizedDeduction', 'savingsDeduction', 'rentDeduction']
                 .forEach(id => { document.getElementById(id).value = '0'; });
             document.getElementById('dividendMethod').value = 'combined';
             document.getElementById('deductionType').value = 'standard';
