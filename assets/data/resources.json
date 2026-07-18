@@ -50,7 +50,7 @@
   },
   {
     "type": "tool",
-    "description": "從營所稅到股利稅，一次試算公司盈餘分配的完整稅負與股東實領金額。",
+    "description": "從營所稅到股利稅，試算公司盈餘分配的整體稅負與股東實領金額。",
     "title": "盈餘分配全流程試算",
     "category": "tool",
     "link": "/tools/profit-distribution-calculator"
